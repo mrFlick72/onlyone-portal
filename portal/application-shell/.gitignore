@@ -1,10 +1,6 @@
 .idea/
 target/
 
-.aws/
-.gitlab/
-.ssh/
-
 *.iml
 */node/
 */node_modules/
