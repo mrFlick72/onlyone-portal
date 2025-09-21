@@ -1,0 +1,15 @@
+{
+  "clientAppName": "local.one-portal",
+  "secret": "",
+  "confidential": "false",
+  "withPkce": "true",
+  "storePassword": "true",
+  "scopes": ["openid", "email", "profile"],
+  "authorizedGrantTypes": ["authorization_code"],
+  "webServerRedirectUri": "http://local.onlyone-portal.com:8070/callback",
+  "accessTokenValidity": "360",
+  "refreshTokenValidity": "360",
+  "postLogoutRedirectUri": "http://local.onlyone-portal.com:8070",
+  "logoutUri": "http://local.onlyone-portal.com:8070/logout",
+  "allowedOrigins": ["http://local.onlyone-portal.com:8070"]
+}

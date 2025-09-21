@@ -1,0 +1,14 @@
+[
+  {
+    "id": "AN_ID",
+    "date": "05/01/2018",
+    "amount": "1.00",
+    "note": "A_NOTE"
+  },
+  {
+    "id": "AN_OTHER_ID",
+    "date": "15/01/2018",
+    "amount": "1.00",
+    "note": ""
+  }
+]

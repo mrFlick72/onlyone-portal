@@ -1,0 +1,61 @@
+aws:
+  dynamodb:
+    endpointOverride: http://localhost:4566
+
+granted-role:
+  budget-api: ROLE_BUDGET
+
+spring:
+  profiles:
+    active: kubernetes
+  data:
+    redis:
+      host: localhost
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${vauthenticator.host}/oauth2/jwks
+cors:
+  allowedOrigins: "http://local.onlyone-portal.com:8070"
+
+server:
+  port: 5050
+  servlet:
+    context-path: /
+  http2:
+    enabled: true
+  compression:
+    enabled: true
+    min-response-size: 1KB
+
+management:
+  server:
+    port: 5051
+    base-path: /
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    probes:
+      enabled: true
+    shutdown:
+      enabled: true
+    health:
+      show-details: ALWAYS
+
+vauthenticator:
+  host: http://local.api.vauthenticator.com:9090
+
+budget-api:
+  dynamo-db:
+    search-tags:
+      table-name: Budget_Api_Search_Tags
+      cache-name: budget-api
+      cache-ttl: 1
+    budget-expense:
+      table-name: Budget_Api_Budget_Expense
+    budget-revenue:
+      table-name: Budget_Api_Budget_Revenue
