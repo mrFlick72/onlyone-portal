@@ -1,0 +1,15 @@
+.idea/
+target/
+
+.aws/
+.gitlab/
+.ssh/
+
+*.iml
+*/node/
+*/node_modules/
+*/package-lock.json
+
+iac/**/.terraform/
+iac/**/.terraform.lock.hcl
+dist
