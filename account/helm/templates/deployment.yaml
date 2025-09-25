@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "account-api.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+  {{- include "account-api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+      {{- with .Values.podAnnotations }}
+      {{- toYaml .Values.lables | nindent 8 }}
+      {{ end }}
+    {{- include "account-api.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: application-config
+          configMap:
+            name: application-config
+
+      containers:
+        - name: {{ .Chart.Name }}
+          volumeMounts:
+            - name: application-config
+              subPath: .env
+              mountPath: /.env
+
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+            - containerPort: 8081
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: {{ .Values.pod.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.pod.probes.liveness.periodSeconds }}
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: {{ .Values.pod.probes.rediness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.pod.probes.rediness.periodSeconds }}
+          resources:
+          {{- toYaml .Values.resources | nindent 12 }}
