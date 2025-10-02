@@ -64,31 +64,42 @@ public class DateTest {
     }
 }"""
 
-from app.time.domain import Date
+import pytest
+from app.time.domain.date import Date, DateParsingException
 
-date_time_formatter_pattern = "dd-MM-YYY"
+date_time_formatter_pattern = "%Y-%m-%d"
 
 
-def test_date_is_formatted_with_custom_formatter():
-    expected_formatted_date = "25-02-2018"
-    another_expected_formatted_fate = "25-03-2018"
-    another_expected_formatted_date2 = "25-05-2018"
+def test_date_from_default_to_iso_format():
+    expected_formatted_date = "2018-02-25"
+    another_expected_formatted_fate = "2018-03-25"
+    another_expected_formatted_date2 = "2018-05-25"
 
-    date = Date("2018-02-25", date_time_formatter_pattern)
-    anotherDate = Date("2018-03-25", date_time_formatter_pattern)
-    anotherDate2 = Date("2018-05-25", date_time_formatter_pattern)
+    date = Date.dateFor("25/02/2018")
+    anotherDate = Date.dateFor("25/03/2018")
+    anotherDate2 = Date.dateFor("25/05/2018")
+
+    assert date.isoFormattedDate() == expected_formatted_date
+    assert anotherDate.isoFormattedDate() == another_expected_formatted_fate
+    assert anotherDate2.isoFormattedDate() == another_expected_formatted_date2
+
+def test_date_from_isp_to_default_format():
+    expected_formatted_date = "25/02/2018"
+    another_expected_formatted_fate = "25/03/2018"
+    another_expected_formatted_date2 = "25/05/2018"
+
+    date = Date.isoDateFor("2018-02-25")
+    anotherDate = Date.isoDateFor("2018-03-25")
+    anotherDate2 = Date.isoDateFor("2018-05-25")
 
     assert date.formattedDate() == expected_formatted_date
     assert anotherDate.formattedDate() == another_expected_formatted_fate
     assert anotherDate2.formattedDate() == another_expected_formatted_date2
 
+def test_when_the_format_is_not_respected():
+    with pytest.raises(DateParsingException):
+         Date.isoDateFor("25/02/2018")
 
-def test_dateIsFormattedWithDefaultFormatter():
-    pass
-
-
-def test_date_from_string():
-    pass
 
 
 def test_first_date_of_month():
