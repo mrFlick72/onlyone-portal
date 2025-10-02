@@ -27,11 +27,11 @@ class Date:
         try:
             return Date(datetime.strptime(content, DEFAULT_DATE_TIME_FORMATTER).date())
         except Exception as _:
-            raise DateParsingException("wrong input formatting. It was {content} that it is not compatible with the pattern {DEFAULT_DATE_TIME_FORMATTER}")
+            raise DateParsingException(f"wrong input formatting. It was {content} that it is not compatible with the pattern {DEFAULT_DATE_TIME_FORMATTER}")
 
     @staticmethod
     def isoDateFor(content: str):
         try:
             return Date(datetime.strptime(content, ISO_DATE_TIME_FORMATTER).date())
         except Exception as _:
-            raise DateParsingException("wrong input formatting. It was {content} that it is not compatible with the pattern {ISO_DATE_TIME_FORMATTER}")
+            raise DateParsingException(f"wrong input formatting. It was {content} that it is not compatible with the pattern {ISO_DATE_TIME_FORMATTER}")
