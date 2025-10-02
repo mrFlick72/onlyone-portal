@@ -1,6 +1,6 @@
 import threading
 
-from user.domain.UserNameResolver import UserNameResolver
+from user.domain.user_name_resolver import UserNameResolver
 
 class LocalThreadUserNameResolver(UserNameResolver):
     __instance = None

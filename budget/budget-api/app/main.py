@@ -1,8 +1,8 @@
 import os
 from dotenv import load_dotenv
 from flask import Flask 
-from infrastructure.management.HealthEndPoint import HealthEndPoint
-from infrastructure.middleware.UserNameInjectorFilter import UserNameInjectorFilter
+from infrastructure.management.health_end_point import HealthEndPoint
+from infrastructure.middleware.user_name_injector_filter import UserNameInjectorFilter
 
 app = Flask(__name__)
 
