@@ -1,9 +1,10 @@
 from datetime import datetime, date
+from typing import Final
 from app.time.domain.year import Year
 from app.time.domain.month import Month
 
-DEFAULT_DATE_TIME_FORMATTER = "%d/%m/%Y"
-ISO_DATE_TIME_FORMATTER = "%Y-%m-%d"
+DEFAULT_DATE_TIME_FORMATTER: Final = "%d/%m/%Y"
+ISO_DATE_TIME_FORMATTER: Final = "%Y-%m-%d"
 
 
 class DateParsingException(Exception):
@@ -23,7 +24,6 @@ class Date:
         return self.content == other.content
 
     def __hash__(self):
-
         # hash(custom_object)
         return hash((self.content))
 
@@ -62,7 +62,7 @@ class Date:
         )
 
     @staticmethod
-    def _last_day_for(month:int, year:int):
+    def _last_day_for(month: int, year: int):
         """returns the number of days in a given month"""
         days_per_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
         d = days_per_month[month - 1]
