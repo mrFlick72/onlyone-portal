@@ -28,12 +28,14 @@
 #     return Objects.equals(amount, money.amount);
 # }
 
-
 import decimal
+from decimal import ROUND_HALF_DOWN, Context, Decimal
 from typing import Final
 
 SCALE_PRECISION: Final = 2
-SCALE_CRITERIA: Final = decimal.ROUND_HALF_DOWN
+SCALE_CRITERIA: Final = ROUND_HALF_DOWN
+
+MONEY_ARITHMETIC_CONTEXT: Final = Context(rounding=SCALE_CRITERIA)
 
 
 class Money:
@@ -43,16 +45,16 @@ class Money:
 
     @staticmethod
     def money_for(amount: str):
-        pass
+        context = MONEY_ARITHMETIC_CONTEXT
+        return Money(context.create_decimal(Decimal(amount)))
 
     def stringify_amount():
         pass
 
-    def plus(self, money: Money):
-        pass
+    def plus(self, addend):
+        context = MONEY_ARITHMETIC_CONTEXT
 
-    def __eq__(self, other):
-        return self.amount == other.amount
-
-    def __hash__(self):
-        return hash((self.amount))
+        first_amount = self.amount
+        second_amount = addend.amount
+        result = round(first_amount + second_amount,SCALE_PRECISION)
+        return context.create_decimal(result)
