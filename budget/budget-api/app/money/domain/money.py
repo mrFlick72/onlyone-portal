@@ -48,13 +48,13 @@ class Money:
         context = MONEY_ARITHMETIC_CONTEXT
         return Money(context.create_decimal(Decimal(amount)))
 
-    def stringify_amount():
-        pass
+    def stringify_amount(self):
+        return str(self.amount)
 
     def plus(self, addend):
         context = MONEY_ARITHMETIC_CONTEXT
 
         first_amount = self.amount
         second_amount = addend.amount
-        result = round(first_amount + second_amount,SCALE_PRECISION)
+        result = round(first_amount + second_amount, SCALE_PRECISION)
         return context.create_decimal(result)
