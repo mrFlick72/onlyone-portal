@@ -1,13 +1,15 @@
 import threading
 
 from user.domain.user_name_resolver import UserNameResolver
+from user.domain.user import UserName
+
 
 class LocalThreadUserNameResolver(UserNameResolver):
     __instance = None
 
     @staticmethod
     def get_instance():
-        """ Static access method. """
+        """Static access method."""
         if LocalThreadUserNameResolver.__instance is None:
             LocalThreadUserNameResolver.__instance = LocalThreadUserNameResolver()
         return LocalThreadUserNameResolver.__instance
@@ -15,8 +17,8 @@ class LocalThreadUserNameResolver(UserNameResolver):
     def __init__(self):
         self.context = threading.local()
 
-    def get_user_name(self) -> str:
+    def get_user_name(self) -> UserName:
         return self.context.user_name
 
-    def set_user_name(self, user_name: str):
+    def set_user_name(self, user_name: UserName):
         self.context.user_name = user_name
