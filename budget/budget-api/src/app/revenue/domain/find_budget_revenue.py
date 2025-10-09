@@ -14,8 +14,12 @@ class FindBudgetRevenue:
         self.userNameResolver = userNameResolver
 
     def findBy(self, year: Year):
+        first_day_of_the_month = Date.first_date_of_month(Month.JANUARY(), year)
+        last_day_of_the_month = Date.last_date_of_month(Month.DECEMBER(), year)
+        current_user_name = self.userNameResolver.get_user_name()
+        
         return self.repository.find_by_data_range(
-            self.userNameResolver.get_user_name(),
-            Date.first_date_of_month(Month.JANUARY(), year),
-            Date.last_date_of_month(Month.DECEMBER(), year),
+            current_user_name,
+            first_day_of_the_month,
+            last_day_of_the_month,
         )
