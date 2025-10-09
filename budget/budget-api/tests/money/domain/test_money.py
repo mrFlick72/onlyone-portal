@@ -1,4 +1,4 @@
-from decimal import Decimal, getcontext
+from decimal import Decimal
 from app.money.domain.money import Money
 
 
@@ -14,3 +14,8 @@ def test_get_money_stringify():
     actual = Money.money_for("20.50")
 
     assert actual.stringify_amount() == "20.50"
+
+def test_equality():
+    actual = Money.money_for("20.50")
+
+    assert actual == Money.money_for("20.50")
