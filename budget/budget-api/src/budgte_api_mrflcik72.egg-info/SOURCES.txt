@@ -6,6 +6,7 @@ src/app/server.py
 src/app/infrastructure/management/health_end_point.py
 src/app/infrastructure/middleware/user_name_injector_filter.py
 src/app/money/domain/money.py
+src/app/revenue/config.py
 src/app/revenue/api/revenue_end_point.py
 src/app/revenue/domain/find_budget_revenue.py
 src/app/revenue/domain/repository.py
