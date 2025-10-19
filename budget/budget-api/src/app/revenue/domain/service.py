@@ -4,6 +4,15 @@ from app.time.domain.month import Month
 
 from app.user.domain.user_name_resolver import UserNameResolver
 from app.revenue.domain.repository import RevenueRepository
+from app.revenue.domain.revenue import Revenue
+
+
+class SaveRevenue:
+
+    def save_revenue(revenue: Revenue):
+        pass
+
+
 
 class FindBudgetRevenue:
 

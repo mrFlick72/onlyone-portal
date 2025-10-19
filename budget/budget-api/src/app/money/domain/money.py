@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import decimal
 from decimal import ROUND_HALF_DOWN, Context, Decimal
 from typing import Final
@@ -7,19 +8,9 @@ SCALE_CRITERIA: Final = ROUND_HALF_DOWN
 
 MONEY_ARITHMETIC_CONTEXT: Final = Context(rounding=SCALE_CRITERIA)
 
-
+@dataclass
 class Money:
-
-    def __init__(self, amount: decimal):
-        self.amount = amount
-        
-    def __eq__(self, other):
-        # Equality Comparison between two objects
-        return self.amount == other.amount
-
-    def __hash__(self):
-        # hash(custom_object)
-        return hash((self.amount))
+    amount: decimal
 
     @staticmethod
     def money_for(amount: str):
