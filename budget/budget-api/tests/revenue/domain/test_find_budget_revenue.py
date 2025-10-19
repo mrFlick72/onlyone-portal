@@ -4,7 +4,7 @@ from app.time.domain.year import Year
 from app.time.domain.month import Month
 from app.money.domain.money import Money
 from app.revenue.domain.revenue import Revenue, RevenueId
-from app.revenue.domain.find_budget_revenue import FindBudgetRevenue
+from app.revenue.domain.service import FindBudgetRevenue
 
 
 from app.user.domain.user import UserName

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime, date
 from typing import Final
 from app.time.domain.year import Year
@@ -13,20 +14,9 @@ class DateParsingException(Exception):
         self.message = message
         super().__init__(self.message)
 
-
+@dataclass
 class Date:
-
-    def __init__(self, content: date):
-        self.content = content
-
-    def __eq__(self, other):
-        # Equality Comparison between two objects
-        return self.content == other.content
-
-    def __hash__(self):
-        # hash(custom_object)
-        return hash((self.content))
-
+    content: date
     def formatted_date(self) -> str:
         return self.content.strftime(DEFAULT_DATE_TIME_FORMATTER)
 
