@@ -1,7 +1,5 @@
-ACCESS_TOKEN="AN_ACCESS_TOKEN_HERE"
-
+ACCESS_TOKEN="eyJraWQiOiJhMTIwYmJiZi1jN2E5LTQyYmQtYThmZC05YjFiNTc3MDQ1NzUiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2YWxlcmlvLnZhdWRpQGdtYWlsLmNvbSIsImF1ZCI6ImxvY2FsLm9uZS1wb3J0YWwiLCJuYmYiOjE3NjA4OTM2OTMsInVzZXJfbmFtZSI6InZhbGVyaW8udmF1ZGlAZ21haWwuY29tIiwic2NvcGUiOlsib3BlbmlkIl0sImlzcyI6Imh0dHA6Ly9sb2NhbC5hcGkudmF1dGhlbnRpY2F0b3IuY29tOjkwOTAiLCJleHAiOjE3OTY4OTM2OTMsImlhdCI6MTc2MDg5MzY5MywianRpIjoiMmY2MDcyZjAtYWQ3Mi00OTc3LWFmNTItNmMyODIzMDc1YjNjIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9CVURHRVQiLCJST0xFX1VTRVIiXX0.aM5N7ryqUWLwwtg1KyTo2XwkN--TrPqwVV2PlMCHRd1eopSnwILwPIzkqLxoJ6mvzSfN10O-CUy2dpwrdB7i5FBkg0h6d_uH6rA8Alm_YsDHeZhR9IVWe7PRuUwOlD2M9I_0rbgp0VOValv3C9XLaxk_mYXaylw0Fnjxn9T06uQ7RyhIm74ElLF6Qd1Xab8bid9OytOeiamWaZRbjO80kSwHMG-nrAm6JHEWrzhrRL2DrshbxC6INvwVv8wxggFR2MNlizoeGuRyPlpc7GSrlTQUduD4wY0YwthJIdnSlU4Al33_imXvrunTljUF6grDHm0wkMLecrG98_KTnVy1eQ"
 curl -v -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ${ACCESS_TOKEN}" -d '{
-    "user_name": "johndoe",
     "date": "10/10/2025",
     "note": "It is a Note",
     "amount": 15000.00
