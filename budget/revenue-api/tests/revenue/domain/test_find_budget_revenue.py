@@ -16,7 +16,7 @@ def test_find_yearly_revenue(mocker: MockerFixture):
         Revenue(
             id=RevenueId("A_REVENUE_ID"),
             user_name=UserName("A_USER_NAME"),
-            registration_date=Date.iso_date_for("2021-02-02"),
+            date=Date.iso_date_for("2021-02-02"),
             amount=Money.money_for("20.10"),
             note="A_NOTE",
         )

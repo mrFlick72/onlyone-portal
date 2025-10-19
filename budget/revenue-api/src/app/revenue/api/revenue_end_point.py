@@ -20,7 +20,7 @@ def save_revenue():
     print(f"revenue_representation: {revenue_representation}")
     revenue = fromRepresentationToDomain(revenue_representation)
     print(f"revenue: {revenue}")
-    # _save_revenue_service.save_revenue(revenue)
+    _save_revenue_service.save_revenue(revenue)
     return _NO_CONTENT, 201
 
 

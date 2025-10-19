@@ -9,7 +9,7 @@ from app.revenue.domain.revenue import Revenue
 
 class SaveRevenue:
 
-    def save_revenue(revenue: Revenue):
+    def save_revenue(self, revenue: Revenue):
         pass
 
 
