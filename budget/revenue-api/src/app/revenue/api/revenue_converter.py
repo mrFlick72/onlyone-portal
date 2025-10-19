@@ -8,7 +8,7 @@ def fromRepresentationToDomain(representation: dict) -> Revenue:
     return Revenue(
         id=None,
         user_name=UserName(representation["user_name"]),
-        registration_date=Date.date_for(representation["registration_date"]),
+        registration_date=Date.date_for(representation["date"]),
         amount=Money.money_for(representation["amount"]),
         note=representation["note"],
     )
