@@ -1,6 +1,6 @@
 curl -v -X POST -H "Content-Type: application/json" -d '{
-    "year": 2024,
-    "month": 6,
-    "department": "Sales",
-    "amount": 15000
+    "user_name": "johndoe",
+    "date": "10/10/2025",
+    "note": "It is a Note",
+    "amount": 15000.00
 }' http://localhost:3030/budget/revenue 
