@@ -2,5 +2,5 @@ IDP_BASE_URL=http://local.api.vauthenticator.com:9090
 CLIENT_ID="local.onlyone.portal"
 AUTH_URL=${IDP_BASE_URL}/oauth2/authorize
 TOKEN_URL=${IDP_BASE_URL}/oauth2/token
-REDIRECT_URL=${IDP_BASE_URL}/callback
+REDIRECT_URL=http://local.cli-user-introspector:2020/callback
 

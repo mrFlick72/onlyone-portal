@@ -28,12 +28,51 @@ import urllib.parse
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import requests
+import shutil
+import subprocess
+import webbrowser
+from typing import Optional
 from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=".local_env")
 
 
 DEFAULT_SCOPE = "openid profile email"
+
+KNOWN_BROWSERS = [
+    # Chrome / Chromium variants
+    ("google-chrome", ["--incognito"]),
+    ("google-chrome-stable", ["--incognito"]),
+    ("chromium", ["--incognito"]),
+    ("chromium-browser", ["--incognito"]),
+    # Firefox
+    ("firefox", ["-private-window"]),
+]
+
+
+def open_in_incognito(url: str) -> None:
+    """
+    Try to open `url` in an incognito/private window using a known browser binary.
+    Falls back to webbrowser.open(url) if no supported browser is available.
+    """
+    for bin_name, flags in KNOWN_BROWSERS:
+        path = shutil.which(bin_name)
+        if path:
+            try:
+                # Use Popen so we don't block; detach from the launcher process
+                subprocess.Popen(
+                    [path, *flags, url],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    close_fds=True,
+                )
+                return
+            except Exception:
+                # If launching that binary fails, try the next one
+                continue
+
+    # Last resort: use default browser (no incognito guarantee)
+    webbrowser.open(url)
 
 
 def generate_pkce_pair():
@@ -102,14 +141,13 @@ def main(argv=None):
     auth_url = AUTH_URL + ("?" + urllib.parse.urlencode(params))
     print("Opening browser to:", auth_url)
 
-    webbrowser.open(auth_url)
+    open_in_incognito(auth_url)
 
     parsed = urllib.parse.urlparse(REDIRECT_URL)
     host = parsed.hostname
     port = parsed.port
     path = parsed.path
 
-    print("parsed", parsed)
     server = HTTPServer((host, port), CodeReceiver)
 
     print(f"Listening for redirect on {host}:{port}{path} ...")
