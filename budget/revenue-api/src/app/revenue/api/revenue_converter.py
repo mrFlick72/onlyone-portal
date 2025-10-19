@@ -8,6 +8,7 @@ _user_name_resolver = user_name_resolver()
 
 
 def fromRepresentationToDomain(representation: dict) -> Revenue:
+    print(f"fromRepresentationToDomain called with: {representation}")
     return Revenue(
         id=None,
         user_name=_user_name_resolver.get_user_name(),  # type: UserName

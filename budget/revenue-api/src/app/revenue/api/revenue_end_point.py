@@ -16,6 +16,7 @@ def get_revenue():
 
 @revenue_end_point.route("/budget/revenue", methods=["POST"])
 def save_revenue():
+    print("Entering save_revenue endpoint")
     revenue_representation = request.get_json()
     print(f"revenue_representation: {revenue_representation}")
     revenue = fromRepresentationToDomain(revenue_representation)
