@@ -1,7 +1,11 @@
-rm -rf ../venv
-python3 -m venv ../venv
-source ../venv/bin/activate
-pip install -r ../requirements.txt
+WITH_FRESH_BUILD=$1
+
+if [ "$WITH_FRESH_BUILD" = "true" ]; then
+    rm -rf ../venv
+    python3 -m venv ../venv
+    source ../venv/bin/activate
+    pip install -r ../requirements.txt 
+fi
 
 export BUDGET_API_CONFIG_FILE_LOCATION="../../local/.env"
 
