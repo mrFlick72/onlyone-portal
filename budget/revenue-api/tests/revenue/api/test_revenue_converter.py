@@ -9,7 +9,7 @@ from app.user.domain.user import UserName
 def test_from_representation_to_domain_happy_path():
     rep = {
         "user_name": "alice",
-        "registration_date": "15/08/2025",
+        "date": "15/08/2025",
         "amount": "123.45",
         "note": "salary",
     }
@@ -30,7 +30,7 @@ def test_from_representation_to_domain_happy_path():
 def test_from_representation_to_domain_invalid_date_raises():
     rep = {
         "user_name": "bob",
-        "registration_date": "2025-08-15",
+        "date": "2025-08-15",
         "amount": "10.00",
         "note": "bonus",
     }
