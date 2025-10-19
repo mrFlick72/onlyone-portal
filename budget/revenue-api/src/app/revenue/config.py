@@ -16,8 +16,10 @@ class RevenueConfigurationProvider:
                     RevenueConfigurationProvider._instance = RevenueConfigurationProvider()
         return RevenueConfigurationProvider._instance
     
+    @staticmethod
     def get_revenue_repository() -> RevenueRepository:
         pass
     
+    @staticmethod
     def get_save_revenue_service() -> SaveRevenue:
-        pass
+        return SaveRevenue()

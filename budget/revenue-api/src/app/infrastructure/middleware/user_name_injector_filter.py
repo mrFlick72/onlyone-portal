@@ -15,6 +15,7 @@ class UserNameInjectorFilter:
         self.user_name_resolver = user_name_resolver
         self.public_keys = {}
         self.jwk_endpoint = f"{os.getenv('IDP_ISS')}/oauth2/jwks"
+        self.load_jwks()
         # todo use  a logger instead of print
         # print(self.jwk_endpoint)
 

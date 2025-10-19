@@ -13,6 +13,6 @@ class RevenueId:
 class Revenue:
     id: RevenueId
     user_name: UserName
-    registration_date: Date
+    date: Date
     amount: Money
     note: str

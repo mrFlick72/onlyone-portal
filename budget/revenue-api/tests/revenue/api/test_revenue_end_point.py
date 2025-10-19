@@ -4,7 +4,7 @@ from pytest_mock import MockerFixture
 from app.user.domain.user import UserName
 from app.time.domain.date import Date
 from app.money.domain.money import Money
-from app.revenue.domain.revenue import Revenue, RevenueId
+from app.revenue.domain.revenue import Revenue
 
 
 @pytest.fixture
