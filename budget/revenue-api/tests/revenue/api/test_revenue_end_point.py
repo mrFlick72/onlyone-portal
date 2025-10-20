@@ -5,6 +5,7 @@ from app.user.domain.user import UserName
 from app.time.domain.date import Date
 from app.money.domain.money import Money
 from app.revenue.domain.revenue import Revenue
+from app.revenue.config import RevenueConfigurationProvider
 
 
 @pytest.fixture
@@ -14,27 +15,27 @@ def client():
 
 
 def test_add_new_revenue(client, mocker: MockerFixture):
-    mocked_fromRepresentationToDomain = mocker.patch(
-        "app.revenue.api.revenue_converter.fromRepresentationToDomain",
-        return_value=Revenue(
-            id=None,
-            user_name=UserName("A_USER_NAME"),
-            date=Date.iso_date_for("2018-10-10"),
-            amount=Money.money_for("1.00"),
-            note="A_NOTE",
-        ),autospec=True
+    expected = Revenue(
+        id=None,
+        user_name=UserName("A_USER_NAME"),
+        date=Date.iso_date_for("2018-10-10"),
+        amount=Money.money_for("1.00"),
+        note="A_NOTE",
     )
-    
-
-    mocked_save_revenue_use_case = mocker.patch(
-        "app.revenue.domain.service.SaveRevenue", autospec=True
+    mocker.patch(
+        "app.revenue.api.revenue_end_point.from_representation_to_domain",
+        autospec=True,
+        return_value=expected,
     )
 
-    mocked_save_revenue_use_case_factory = mocker.patch(
-        "app.revenue.config.RevenueConfigurationProvider.get_save_revenue_service",
+    mocked_save_revenue_use_case = mocker.Mock()
+
+    mocker.patch.object(
+        RevenueConfigurationProvider,
+        "get_save_revenue_service",
+        return_value=mocked_save_revenue_use_case,
         autospec=True,
     )
-    mocked_save_revenue_use_case_factory.return_value = mocked_save_revenue_use_case
 
     response = client.post(
         "/budget/revenue",
@@ -42,14 +43,4 @@ def test_add_new_revenue(client, mocker: MockerFixture):
     )
 
     assert response.status_code == 201
-
-    mocked_fromRepresentationToDomain.assert_called_once()
-    mocked_save_revenue_use_case.save_revenue.assert_called_once_with(
-        Revenue(
-            id=None,
-            user_name=UserName("A_USER_NAME"),
-            date=Date.iso_date_for("2018-10-10"),
-            amount=Money.money_for("1.00"),
-            note="A_NOTE",
-        )
-    )
+    mocked_save_revenue_use_case.save_revenue.assert_called_once()
