@@ -1,6 +1,6 @@
 import pytest
 
-from app.revenue.api.revenue_converter import fromRepresentationToDomain
+from app.revenue.api.revenue_converter import from_representation_to_domain
 from app.money.domain.money import Money
 from app.time.domain.date import Date, DateParsingException
 from app.user.domain.user import UserName
@@ -27,7 +27,7 @@ def test_from_representation_to_domain_happy_path():
         "note": "salary",
     }
 
-    revenue = fromRepresentationToDomain(rep)
+    revenue = from_representation_to_domain(rep)
 
     # id is set to None by the converter
     assert revenue.id is None
@@ -48,4 +48,4 @@ def test_from_representation_to_domain_invalid_date_raises():
     }
 
     with pytest.raises(DateParsingException):
-        fromRepresentationToDomain(rep)
+        from_representation_to_domain(rep)

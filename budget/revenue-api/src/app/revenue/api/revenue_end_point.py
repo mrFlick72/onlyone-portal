@@ -1,10 +1,9 @@
 from flask import Blueprint, request
 from app.revenue.config import RevenueConfigurationProvider
-from app.revenue.api.revenue_converter import fromRepresentationToDomain
+from app.revenue.api.revenue_converter import from_representation_to_domain
 
 revenue_end_point = Blueprint("revenue_end_point", __name__)
 
-_save_revenue_service = RevenueConfigurationProvider.get_save_revenue_service()
 
 _NO_CONTENT = ""
 
@@ -16,12 +15,10 @@ def get_revenue():
 
 @revenue_end_point.route("/budget/revenue", methods=["POST"])
 def save_revenue():
-    print("Entering save_revenue endpoint")
+    save_revenue_service = RevenueConfigurationProvider.get_save_revenue_service()
     revenue_representation = request.get_json()
-    print(f"revenue_representation: {revenue_representation}")
-    revenue = fromRepresentationToDomain(revenue_representation)
-    print(f"revenue: {revenue}")
-    _save_revenue_service.save_revenue(revenue)
+    revenue = from_representation_to_domain(revenue_representation)
+    save_revenue_service.save_revenue(revenue)
     return _NO_CONTENT, 201
 
 
