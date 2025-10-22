@@ -7,6 +7,7 @@ from app.user.domain.user import UserName
 from app.user.adapter.thread.local_thread_user_name_resolver import (
     LocalThreadUserNameResolver,
 )
+from app.revenue.api.representation import RevenueRepresentation
 
 instance = LocalThreadUserNameResolver.get_instance()
 
@@ -21,11 +22,11 @@ def reset_user_name_resolver():
 
 
 def test_from_representation_to_domain_happy_path():
-    rep = {
-        "date": "15/08/2025",
-        "amount": "123.45",
-        "note": "salary",
-    }
+    rep = RevenueRepresentation(
+        date="15/08/2025",
+        amount="123.45",
+        note="salary",
+    )
 
     revenue = from_representation_to_domain(rep)
 
@@ -41,11 +42,10 @@ def test_from_representation_to_domain_happy_path():
 
 
 def test_from_representation_to_domain_invalid_date_raises():
-    rep = {
-        "date": "2025-08-15",
-        "amount": "10.00",
-        "note": "bonus",
-    }
-
+    rep = RevenueRepresentation(
+        date="2025-08-15",
+        amount="10.00",
+        note="bonus",
+    )
     with pytest.raises(DateParsingException):
         from_representation_to_domain(rep)
