@@ -3,30 +3,33 @@ import os
 
 import jwt
 import requests
-from flask import request
+from fastapi import Request
+from starlette.middleware.base import BaseHTTPMiddleware
 from jwt import get_unverified_header, decode
 
 from app.user.domain.user_name_resolver import UserNameResolver
 
 
-class UserNameInjectorFilter:
+class UserNameInjectorFilter(BaseHTTPMiddleware):
 
-    def __init__(self, user_name_resolver : UserNameResolver):
+    def __init__(self, app, user_name_claim: str, user_name_resolver: UserNameResolver):
+        super().__init__(app)
         self.user_name_resolver = user_name_resolver
+        self.user_name_claim = user_name_claim
         self.public_keys = {}
         self.jwk_endpoint = f"{os.getenv('IDP_ISS')}/oauth2/jwks"
         self.load_jwks()
         # todo use  a logger instead of print
         # print(self.jwk_endpoint)
 
-    def filter(self, user_name_claim="user_name"):
-        if request.path not in ["/health"]:
+    async def dispatch(self, request: Request, call_next):
+        if request.url.path not in ["/health"]:
             token = str(request.headers.get("authorization")[7:])  # remove "Bearer "
             current_kid = get_unverified_header(token)["kid"]
             # todo use  a logger instead of print
-            # print("token")
-            # print(token)
-            # print("kid")
+            print("token")
+            print(token)
+            print("kid")
             # print(current_kid)
             decoded_token = decode(
                 jwt=token,
@@ -34,8 +37,10 @@ class UserNameInjectorFilter:
                 algorithms=["RS256"],
                 options={"verify_aud": False},
             )
-            self.user_name_resolver.set_user_name(decoded_token[user_name_claim])
-        return None
+            self.user_name_resolver.set_user_name(decoded_token[self.user_name_claim])
+
+        response = await call_next(request)
+        return response
 
     def load_jwks(self):
         response = requests.get(self.jwk_endpoint)

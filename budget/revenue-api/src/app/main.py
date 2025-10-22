@@ -1,4 +1,4 @@
-from server import app
+import uvicorn
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3030, debug=True)
+    uvicorn.run("server:app", host="0.0.0.0", port=3030, reload=True)
