@@ -6,15 +6,12 @@ from app.time.domain.date import Date
 from app.money.domain.money import Money
 from app.revenue.domain.revenue import Revenue
 from app.revenue.config import RevenueConfigurationProvider
+from fastapi.testclient import TestClient
+
+client = TestClient(app)
 
 
-@pytest.fixture
-def client():
-    with app.test_client() as client:
-        yield client
-
-
-def test_add_new_revenue(client, mocker: MockerFixture):
+def test_add_new_revenue(mocker: MockerFixture):
     expected = Revenue(
         id=None,
         user_name=UserName("A_USER_NAME"),
