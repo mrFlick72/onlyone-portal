@@ -21,6 +21,28 @@ def reset_user_name_resolver():
     instance.set_user_name(None)
 
 
+def test_from_representation_to_domain_with_id():
+    rep = RevenueRepresentation(
+        id="AN_ID",
+        date="15/08/2025",
+        amount="123.45",
+        note="salary",
+    )
+
+    revenue = from_representation_to_domain(rep)
+
+    # id is set to None by the converter
+    assert revenue.id == "AN_ID"
+    assert isinstance(revenue.id, str)
+    assert isinstance(revenue.user_name, UserName)
+    assert revenue.user_name.content == "alice"
+    assert isinstance(revenue.date, Date)
+    assert revenue.date.formatted_date() == "15/08/2025"
+    assert isinstance(revenue.amount, Money)
+    assert revenue.amount.stringify_amount() == str(revenue.amount.amount)
+    assert revenue.note == "salary"
+
+
 def test_from_representation_to_domain_happy_path():
     rep = RevenueRepresentation(
         date="15/08/2025",

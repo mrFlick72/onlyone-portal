@@ -8,7 +8,7 @@ def from_representation_to_domain(representation: RevenueRepresentation) -> Reve
     user_name_resolver = get_user_name_resolver()
 
     return Revenue(
-        id=None,
+        id=representation.id,
         user_name=user_name_resolver.get_user_name(),  # type: UserName
         date=Date.date_for(representation.date),
         amount=Money.money_for(representation.amount),
