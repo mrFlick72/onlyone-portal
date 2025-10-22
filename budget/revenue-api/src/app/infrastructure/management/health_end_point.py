@@ -1,13 +1,7 @@
-from flask import Flask
+from fastapi import APIRouter, Response, status
 
+health_end_point_router = APIRouter()
 
-class HealthEndPoint:
-
-    def __init__(self,
-                 app: Flask,
-                 ):
-        self.app = app
-        app.add_url_rule("/health", "health", self.health, methods=['GET'])
-
-    def health(self):
-        return self.app.response_class(status=200)
+@health_end_point_router.get("/health", tags=["management"])
+async def health():
+    return Response(status_code=status.HTTP_200_OK)
