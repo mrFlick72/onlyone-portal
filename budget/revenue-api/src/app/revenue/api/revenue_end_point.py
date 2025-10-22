@@ -11,7 +11,7 @@ async def get_revenue():
     return {}
 
 
-@revenue_end_point_router.post("/budget/revenue")
+@revenue_end_point_router.post("/budget/revenue", status_code=201)
 async def save_revenue(representation: RevenueRepresentation):
     save_revenue_service = RevenueConfigurationProvider.get_save_revenue_service()
     revenue = from_representation_to_domain(representation)
