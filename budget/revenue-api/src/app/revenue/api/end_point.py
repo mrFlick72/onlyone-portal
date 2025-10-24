@@ -2,11 +2,12 @@ from fastapi import APIRouter, Response,Depends
 from dependency_injector.wiring import Provide
 from typing import Annotated
 
-from app.revenue.config import RevenueConfigurationProvider
 from app.revenue.api.representation import RevenueRepresentation
 from app.revenue.api.converter import RevenueConverter
 from app.user.container import UserConfigContainer
+from app.revenue.container import RevenueConfigContainer
 from app.user.domain.user_name_resolver import UserNameResolver
+from app.revenue.domain.service import SaveRevenue  
 
 revenue_end_point_router = APIRouter()
 
@@ -22,10 +23,12 @@ async def save_revenue(
     user_name_resolver=Annotated[
         UserNameResolver, Depends[Provide[UserConfigContainer.get_user_name_resolver]]
     ],
+    save_revenue_service=Annotated[
+        SaveRevenue, Depends[Provide[RevenueConfigContainer.save_revenue_service]]
+    ],
 ):
     converter = RevenueConverter(user_name_resolver())
 
-    save_revenue_service = RevenueConfigurationProvider.get_save_revenue_service()
     revenue = converter.from_representation_to_domain(representation)
     save_revenue_service.save_revenue(revenue)
     return Response(status_code=201)
