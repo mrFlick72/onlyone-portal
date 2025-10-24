@@ -2,7 +2,7 @@ fastapi==0.119.1
 pydantic==2.12.3
 uvicorn==0.38.0
 httpx==0.28.1
-
+dependency-injector==4.48.2
 cryptography==46.0.1
 PyJWT==2.10.1
 requests==2.32.5

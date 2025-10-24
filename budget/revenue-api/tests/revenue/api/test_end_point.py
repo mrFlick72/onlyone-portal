@@ -8,10 +8,13 @@ from app.revenue.domain.revenue import Revenue
 from app.revenue.config import RevenueConfigurationProvider
 from fastapi.testclient import TestClient
 
-client = TestClient(app)
+
+@pytest.fixture
+def client():
+    return TestClient(app)
 
 
-def test_add_new_revenue(mocker: MockerFixture):
+def test_add_new_revenue(mocker: MockerFixture, client: TestClient):
     expected = Revenue(
         id=None,
         user_name=UserName("A_USER_NAME"),
@@ -19,14 +22,14 @@ def test_add_new_revenue(mocker: MockerFixture):
         amount=Money.money_for("1.00"),
         note="A_NOTE",
     )
+
     mocker.patch(
-        "app.revenue.api.revenue_end_point.from_representation_to_domain",
-        autospec=True,
+        "app.revenue.api.converter.RevenueConverter.from_representation_to_domain",
         return_value=expected,
-    )
-
+        autospec=True,
+    )       
+    
     mocked_save_revenue_use_case = mocker.Mock()
-
     mocker.patch.object(
         RevenueConfigurationProvider,
         "get_save_revenue_service",
