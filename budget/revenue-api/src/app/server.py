@@ -17,6 +17,7 @@ application_container = ApplicationContainer()  # type: ignore
 application_container.wire(modules=["app.revenue.api.end_point"])
 
 app = FastAPI()
+app.container = application_container
 
 # Set up application middleware
 if os.getenv("WITH_MIDDLEWARE", "true").lower() == "true":
