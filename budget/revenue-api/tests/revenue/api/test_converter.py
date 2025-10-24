@@ -1,6 +1,5 @@
 import pytest
 
-from app.revenue.api.revenue_converter import from_representation_to_domain
 from app.money.domain.money import Money
 from app.time.domain.date import Date, DateParsingException
 from app.user.domain.user import UserName
@@ -8,6 +7,7 @@ from app.user.adapter.thread.local_thread_user_name_resolver import (
     LocalThreadUserNameResolver,
 )
 from app.revenue.api.representation import RevenueRepresentation
+from app.revenue.api.revenue_converter import RevenueConverter
 
 instance = LocalThreadUserNameResolver.get_instance()
 
@@ -22,14 +22,15 @@ def reset_user_name_resolver():
 
 
 def test_from_representation_to_domain_with_id():
-    rep = RevenueRepresentation(
+    uut = RevenueConverter(instance)
+    representation = RevenueRepresentation(
         id="AN_ID",
         date="15/08/2025",
         amount="123.45",
         note="salary",
     )
 
-    revenue = from_representation_to_domain(rep)
+    revenue = uut.from_representation_to_domain(representation)
 
     # id is set to None by the converter
     assert revenue.id == "AN_ID"
@@ -44,13 +45,15 @@ def test_from_representation_to_domain_with_id():
 
 
 def test_from_representation_to_domain_happy_path():
-    rep = RevenueRepresentation(
+    uut = RevenueConverter(instance)
+
+    representation = RevenueRepresentation(
         date="15/08/2025",
         amount="123.45",
         note="salary",
     )
 
-    revenue = from_representation_to_domain(rep)
+    revenue = uut.from_representation_to_domain(representation)
 
     # id is set to None by the converter
     assert revenue.id is None
@@ -64,10 +67,11 @@ def test_from_representation_to_domain_happy_path():
 
 
 def test_from_representation_to_domain_invalid_date_raises():
-    rep = RevenueRepresentation(
+    uut = RevenueConverter(instance)
+    representation = RevenueRepresentation(
         date="2025-08-15",
         amount="10.00",
         note="bonus",
     )
     with pytest.raises(DateParsingException):
-        from_representation_to_domain(rep)
+        uut.from_representation_to_domain(representation)
