@@ -13,13 +13,11 @@ class RevenueConverter:
     def from_representation_to_domain(
         self, representation: RevenueRepresentation
     ) -> Revenue:
-
-        print("Converter user name resolver:", self.user_name_resolver)
-
         return Revenue(
-            id=representation.id,
+            id=None,
             user_name=self.user_name_resolver.get_user_name(),  # type: UserName
             date=Date.date_for(representation.date),
             amount=Money.money_for(representation.amount),
             note=representation.note,
         )
+        
