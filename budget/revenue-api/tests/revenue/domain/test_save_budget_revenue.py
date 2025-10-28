@@ -6,6 +6,9 @@ from app.money.domain.money import Money
 from app.revenue.domain.revenue import Revenue
 from app.time.domain.date import Date
 
+from app.revenue.domain.repository import RevenueRepository
+
+
 def test_happy_path(mocker: MockerFixture):
     revenue = Revenue(
         id="generated-id",
@@ -14,6 +17,12 @@ def test_happy_path(mocker: MockerFixture):
         amount=Money.money_for("1.00"),
         note="A_NOTE",
     )
-    uut = SaveRevenue()
+
+    mocked_revenue_repository = mocker.Mock(spec = RevenueRepository)
+    mocked_revenue_repository.save.return_value = None
+
+    uut = SaveRevenue(repository=mocked_revenue_repository)
 
     uut.save(revenue)
+
+    mocked_revenue_repository.save.assert_called_once_with(revenue)
