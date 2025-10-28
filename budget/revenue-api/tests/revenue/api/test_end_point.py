@@ -26,6 +26,7 @@ def test_add_new_revenue(mocker: MockerFixture, client: TestClient):
         amount=Money.money_for("1.00"),
         note="A_NOTE",
     )
+
     revenue_representation = RevenueRepresentation(
         id="generated-id",
         date="10/10/2018",
@@ -40,7 +41,6 @@ def test_add_new_revenue(mocker: MockerFixture, client: TestClient):
 
     mocked_revenue_id_provider = mocker.Mock(spec=RevenueIdProvider)
     mocked_revenue_id_provider.generate_id.return_value = "generated-id"
-    
 
     # Override dependencies
     app.container.revenue_config_container.revenue_converter.override(mocked_converter)

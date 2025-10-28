@@ -8,11 +8,11 @@ classifiers = [
 description = "A budget api for onlyone-portal.com"
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
-name = "budgte-api_mrflcik72"
+name = "revenue-api_mrflcik72"
 readme = "README.md"
 requires-python = ">=3.9"
 version = "0.0.1"
 
 [project.urls]
-Homepage = "https://github.com/mrFlick72/onlyone-portal/tree/main/budget/budget-api"
+Homepage = "https://github.com/mrFlick72/onlyone-portal/tree/main/budget/revenue-api"
 Issues = "https://github.com/mrFlick72/onlyone-portal/issues"
