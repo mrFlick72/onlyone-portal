@@ -9,6 +9,7 @@ from app.time.domain.date import Date
 from app.revenue.domain.repository import RevenueRepository
 from app.revenue.domain.revenue import RevenueIdProvider
 
+
 def test_create_new_revenue_happy_path(mocker: MockerFixture):
     revenue = Revenue(
         id=None,
@@ -18,21 +19,22 @@ def test_create_new_revenue_happy_path(mocker: MockerFixture):
         note="A_NOTE",
     )
 
-    mocked_revenue_repository = mocker.Mock(spec = RevenueRepository)
+    mocked_revenue_repository = mocker.Mock(spec=RevenueRepository)
     mocked_revenue_repository.save.return_value = None
-    
-    mocked_revenue_id_provider = mocker.Mock(spec = RevenueIdProvider)
+
+    mocked_revenue_id_provider = mocker.Mock(spec=RevenueIdProvider)
     mocked_revenue_id_provider.generate_id.return_value = "generated-id"
 
     uut = SaveRevenue(
         repository=mocked_revenue_repository,
-        revenue_id_provider=mocked_revenue_id_provider
-        )
+        revenue_id_provider=mocked_revenue_id_provider,
+    )
 
     uut.save(revenue)
 
     mocked_revenue_repository.save.assert_called_once_with(revenue)
     mocked_revenue_id_provider.generate_id.assert_called_once()
+
 
 def test_update_revenue_happy_path(mocker: MockerFixture):
     revenue = Revenue(
@@ -43,15 +45,15 @@ def test_update_revenue_happy_path(mocker: MockerFixture):
         note="A_NOTE",
     )
 
-    mocked_revenue_repository = mocker.Mock(spec = RevenueRepository)
+    mocked_revenue_repository = mocker.Mock(spec=RevenueRepository)
     mocked_revenue_repository.save.return_value = None
-    
-    mocked_revenue_id_provider = mocker.Mock(spec = RevenueIdProvider)
+
+    mocked_revenue_id_provider = mocker.Mock(spec=RevenueIdProvider)
 
     uut = SaveRevenue(
         repository=mocked_revenue_repository,
-        revenue_id_provider=mocked_revenue_id_provider
-        )
+        revenue_id_provider=mocked_revenue_id_provider,
+    )
 
     uut.save(revenue)
 
