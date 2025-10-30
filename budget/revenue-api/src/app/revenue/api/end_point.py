@@ -2,7 +2,7 @@ from fastapi import APIRouter, Response, Depends
 from dependency_injector.wiring import Provide, inject
 from typing import Annotated
 
-from app.revenue.api.representation import RevenueRepresentation
+from app.revenue.api.representation import RevenueRequestRepresentation
 from app.revenue.api.converter import RevenueConverter
 from app.revenue.domain.service import SaveRevenue,DeleteRevenue
 from app.container import ApplicationContainer
@@ -19,7 +19,7 @@ async def get_revenue():
 @revenue_end_point_router.post("/budget/revenue")
 @inject
 async def save_revenue(
-    representation: RevenueRepresentation,
+    representation: RevenueRequestRepresentation,
     save_revenue_service: Annotated[
         SaveRevenue,
         Depends(
@@ -42,7 +42,7 @@ async def save_revenue(
 @inject
 async def update_revenue(
     id: str,
-    representation: RevenueRepresentation,
+    representation: RevenueRequestRepresentation,
     save_revenue_service: Annotated[
         SaveRevenue,
         Depends(

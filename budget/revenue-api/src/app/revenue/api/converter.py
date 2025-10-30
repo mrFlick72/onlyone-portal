@@ -2,7 +2,7 @@ from app.revenue.domain.revenue import Revenue
 from app.money.domain.money import Money
 from app.time.domain.date import Date
 from app.time.domain.year import Year
-from app.revenue.api.representation import RevenueRepresentation
+from app.revenue.api.representation import RevenueRequestRepresentation
 from app.user.domain.user_name_resolver import UserNameResolver
 from app.revenue.api.representation import QueryParamRepresentation
 
@@ -13,7 +13,7 @@ class RevenueConverter:
         self.user_name_resolver = user_name_resolver
 
     def from_representation_to_domain(
-        self, representation: RevenueRepresentation
+        self, representation: RevenueRequestRepresentation
     ) -> Revenue:
         return Revenue(
             id=None,

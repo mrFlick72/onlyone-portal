@@ -6,7 +6,7 @@ from app.user.domain.user import UserName
 from app.user.adapter.thread.local_thread_user_name_resolver import (
     LocalThreadUserNameResolver,
 )
-from app.revenue.api.representation import RevenueRepresentation
+from app.revenue.api.representation import RevenueRequestRepresentation
 from app.revenue.api.converter import RevenueConverter
 
 instance = LocalThreadUserNameResolver.get_instance()
@@ -24,7 +24,7 @@ def reset_user_name_resolver():
 def test_from_representation_to_domain_happy_path():
     uut = RevenueConverter(instance)
 
-    representation = RevenueRepresentation(
+    representation = RevenueRequestRepresentation(
         date="15/08/2025",
         amount="123.45",
         note="salary",
@@ -45,7 +45,7 @@ def test_from_representation_to_domain_happy_path():
 
 def test_from_representation_to_domain_invalid_date_raises():
     uut = RevenueConverter(instance)
-    representation = RevenueRepresentation(
+    representation = RevenueRequestRepresentation(
         date="2025-08-15",
         amount="10.00",
         note="bonus",
