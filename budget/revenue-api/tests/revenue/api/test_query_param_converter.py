@@ -1,5 +1,3 @@
-import pytest
-
 from app.revenue.api.converter import QueryParamRepresentationConverter
 from app.time.domain.year import Year
 
