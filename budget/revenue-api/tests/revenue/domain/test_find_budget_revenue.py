@@ -4,7 +4,7 @@ from app.time.domain.year import Year
 from app.time.domain.month import Month
 from app.money.domain.money import Money
 from app.revenue.domain.revenue import Revenue, RevenueId
-from app.revenue.domain.service import FindBudgetRevenue
+from app.revenue.domain.service import FindRevenue
 
 
 from app.user.domain.user import UserName
@@ -30,7 +30,7 @@ def test_find_yearly_revenue(mocker: MockerFixture):
         mocked_user_name_resolver_response
     )
 
-    uut = FindBudgetRevenue(mocked_repository, mocked_user_name_resolver)
+    uut = FindRevenue(mocked_repository, mocked_user_name_resolver)
 
     actual = uut.findBy(Year(2021))
 
