@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from app.revenue.domain.service import SaveRevenue, DeleteRevenue
 from app.revenue.api.converter import RevenueConverter
-from app.revenue.api.representation import RevenueRepresentation
+from app.revenue.api.representation import RevenueRequestRepresentation
 
 
 @pytest.fixture
@@ -26,7 +26,7 @@ def test_add_new_revenue(mocker: MockerFixture, client: TestClient):
         note="A_NOTE",
     )
 
-    revenue_representation = RevenueRepresentation(
+    revenue_representation = RevenueRequestRepresentation(
         date="10/10/2018",
         amount="1.00",
         note="A_NOTE",
@@ -60,7 +60,9 @@ def test_add_new_revenue(mocker: MockerFixture, client: TestClient):
 
 
 def test_read_revenue_by_year(mocker: MockerFixture, client: TestClient):
-    pass
+    response = client.get("/budget/revenue?q=year=2023")
+    assert response.status_code == 200
+    assert response.json() == [{}, {}]
 
 
 def test_update_revenue(mocker: MockerFixture, client: TestClient):
@@ -79,7 +81,7 @@ def test_update_revenue(mocker: MockerFixture, client: TestClient):
         note="A_NOTE",
     )
 
-    revenue_representation = RevenueRepresentation(
+    revenue_representation = RevenueRequestRepresentation(
         date="10/10/2018",
         amount="1.00",
         note="A_NOTE",
