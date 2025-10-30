@@ -21,7 +21,7 @@ class SaveRevenue:
         self.repository.save(revenue)
 
 
-class FindBudgetRevenue:
+class FindRevenue:
 
     def __init__(
         self, repository: RevenueRepository, userNameResolver: UserNameResolver

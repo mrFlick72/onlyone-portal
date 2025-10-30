@@ -3,8 +3,7 @@ from app.revenue.domain.service import SaveRevenue, DeleteRevenue
 from app.revenue.api.converter import RevenueConverter
 from app.revenue.domain.revenue import UuidRevenueIdProvider
 from app.revenue.domain.repository import RevenueRepository
-from app.user.domain.user_name_resolver import UserNameResolver
-
+from app.revenue.domain.service import FindRevenue
 
 class RevenueConfigContainer(containers.DeclarativeContainer):
 
@@ -21,6 +20,12 @@ class RevenueConfigContainer(containers.DeclarativeContainer):
 
     revenue_id_provider = providers.Singleton(
         UuidRevenueIdProvider,
+    )
+
+    find_revenue_service = providers.Singleton(
+        FindRevenue,
+        repository=revenue_repository,
+        user_name_resolver=user_config_container.user_name_resolver,
     )
 
     save_revenue_service = providers.Singleton(

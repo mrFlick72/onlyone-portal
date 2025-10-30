@@ -1,8 +1,10 @@
 from app.revenue.domain.revenue import Revenue
 from app.money.domain.money import Money
 from app.time.domain.date import Date
+from app.time.domain.year import Year
 from app.revenue.api.representation import RevenueRepresentation
 from app.user.domain.user_name_resolver import UserNameResolver
+from app.revenue.api.representation import QueryParamRepresentation
 
 
 class RevenueConverter:
@@ -20,4 +22,11 @@ class RevenueConverter:
             amount=Money.money_for(representation.amount),
             note=representation.note,
         )
-        
+
+
+class QueryParamRepresentationConverter:
+
+    def from_query_param_to_year(self, query_param: str) -> QueryParamRepresentation:
+        splitted_params=query_param.split(";")
+        year_param = splitted_params[0].split("=")[1]
+        return QueryParamRepresentation(year=Year(int(year_param)))
