@@ -2,7 +2,7 @@ from app.revenue.domain.revenue import Revenue
 from app.money.domain.money import Money
 from app.time.domain.date import Date
 from app.time.domain.year import Year
-from app.revenue.api.representation import RevenueRequestRepresentation
+from app.revenue.api.representation import RevenueRequestRepresentation,RevenueResponseRepresentation
 from app.user.domain.user_name_resolver import UserNameResolver
 from app.revenue.api.representation import QueryParamRepresentation
 
@@ -23,10 +23,20 @@ class RevenueConverter:
             note=representation.note,
         )
 
+    # to be tested
+    def from_domain_to_representation(self, revenue: Revenue) -> RevenueResponseRepresentation:
+        return RevenueResponseRepresentation(
+            id=revenue.id.content,
+            user_name=revenue.user_name.content,  # type: UserName
+            date=revenue.date.formatted_date(),
+            amount=revenue.amount.stringify_amount(),
+            note=revenue.note,
+        )
+
 
 class QueryParamRepresentationConverter:
 
     def from_query_param_to_year(self, query_param: str) -> QueryParamRepresentation:
-        splitted_params=query_param.split(";")
+        splitted_params = query_param.split(";")
         year_param = splitted_params[0].split("=")[1]
         return QueryParamRepresentation(year=Year(int(year_param)))
