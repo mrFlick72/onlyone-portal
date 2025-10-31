@@ -3,13 +3,21 @@ from app.server import app
 from pytest_mock import MockerFixture
 from app.user.domain.user import UserName
 from app.time.domain.date import Date
+from app.time.domain.year import Year
 from app.money.domain.money import Money
 from app.revenue.domain.revenue import Revenue, RevenueId
 from fastapi.testclient import TestClient
 
-from app.revenue.domain.service import SaveRevenue, DeleteRevenue
-from app.revenue.api.converter import RevenueConverter
-from app.revenue.api.representation import RevenueRequestRepresentation
+from app.revenue.domain.service import SaveRevenue, DeleteRevenue, FindRevenue
+from app.revenue.api.converter import (
+    RevenueConverter,
+    QueryParamRepresentationConverter,
+)
+from app.revenue.api.representation import (
+    RevenueRequestRepresentation,
+    RevenueResponseRepresentation,
+    QueryParamRepresentation,
+)
 
 
 @pytest.fixture
@@ -61,8 +69,53 @@ def test_add_new_revenue(mocker: MockerFixture, client: TestClient):
 
 def test_read_revenue_by_year(mocker: MockerFixture, client: TestClient):
     response = client.get("/budget/revenue?q=year=2023")
-    assert response.status_code == 200
-    assert response.json() == [{}, {}]
+
+    mocked_find_revenue_use_case = mocker.Mock(spec=FindRevenue)
+    mocked_find_revenue_use_case.find_by.return_value = [
+        Revenue(
+            id=RevenueId("revenue-id-1"),
+            user_name=UserName("A_USER_NAME"),
+            date=Date.iso_date_for("2023-03-15"),
+            amount=Money.money_for("10.00"),
+            note="A NOTE",
+        ),
+        Revenue(
+            id=RevenueId("revenue-id-2"),
+            user_name=UserName("A_USER_NAME"),
+            date=Date.iso_date_for("2023-03-16"),
+            amount=Money.money_for("15.00"),
+            note="ANOTHER NOTE",
+        ),
+    ]
+
+    mocked_converter = mocker.Mock(spec=QueryParamRepresentationConverter)
+    mocked_converter.from_query_param_to_year.return_value = (
+        QueryParamRepresentation(year=Year(2023))
+    )
+
+    # Override dependencies
+    app.container.revenue_config_container.query_param_converter.override(mocked_converter)
+    app.container.revenue_config_container.find_revenue_service.override(   
+        mocked_find_revenue_use_case
+    )
+    assert response.status_code ==  200
+    assert response.json() == [
+        RevenueResponseRepresentation(
+            id="revenue-id-1",
+            date="15/03/2023",
+            amount="10.00",
+            note="A NOTE",
+        ),
+        RevenueResponseRepresentation(
+            id="revenue-id-2",
+            date="16/03/2023",
+            amount="15.00",
+            note="ANOTHER NOTE",
+        ),
+    ]
+    
+    mocked_converter.from_query_param_to_year.assert_called_once_with("year=2023")
+    mocked_find_revenue_use_case.find_by.assert_called_once_with(Year(2023))
 
 
 def test_update_revenue(mocker: MockerFixture, client: TestClient):

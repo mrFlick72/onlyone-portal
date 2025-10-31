@@ -29,7 +29,7 @@ class FindRevenue:
         self.repository = repository
         self.userNameResolver = userNameResolver
 
-    def findBy(self, year: Year):
+    def find_by(self, year: Year):
         first_day_of_the_month = Date.first_date_of_month(Month.JANUARY(), year)
         last_day_of_the_month = Date.last_date_of_month(Month.DECEMBER(), year)
         current_user_name = self.userNameResolver.get_user_name()

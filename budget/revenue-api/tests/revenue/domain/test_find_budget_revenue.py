@@ -32,7 +32,7 @@ def test_find_yearly_revenue(mocker: MockerFixture):
 
     uut = FindRevenue(mocked_repository, mocked_user_name_resolver)
 
-    actual = uut.findBy(Year(2021))
+    actual = uut.find_by(Year(2021))
 
     assert actual == mocked_repository_response
     mocked_repository.find_by_data_range.assert_called_once_with(
