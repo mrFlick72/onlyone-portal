@@ -1,9 +1,13 @@
 from dependency_injector import containers, providers
 from app.revenue.domain.service import SaveRevenue, DeleteRevenue
-from app.revenue.api.converter import RevenueConverter
+from app.revenue.api.converter import (
+    RevenueConverter,
+    QueryParamRepresentationConverter,
+)
 from app.revenue.domain.revenue import UuidRevenueIdProvider
 from app.revenue.domain.repository import RevenueRepository
 from app.revenue.domain.service import FindRevenue
+
 
 class RevenueConfigContainer(containers.DeclarativeContainer):
 
@@ -16,6 +20,10 @@ class RevenueConfigContainer(containers.DeclarativeContainer):
     revenue_converter = providers.Singleton(
         RevenueConverter,
         user_config_container.user_name_resolver,
+    )
+
+    query_param_converter = providers.Singleton(
+        QueryParamRepresentationConverter,
     )
 
     revenue_id_provider = providers.Singleton(
