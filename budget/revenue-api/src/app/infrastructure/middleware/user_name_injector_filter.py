@@ -26,11 +26,6 @@ class UserNameInjectorFilter(BaseHTTPMiddleware):
         if request.url.path not in ["/health"]:
             token = str(request.headers.get("authorization")[7:])  # remove "Bearer "
             current_kid = get_unverified_header(token)["kid"]
-            # todo use  a logger instead of print
-            print("token")
-            print(token)
-            print("kid")
-            # print(current_kid)
             decoded_token = decode(
                 jwt=token,
                 key=self.public_keys[current_kid],
