@@ -23,7 +23,6 @@ class RevenueConverter:
             note=representation.note,
         )
 
-    # to be tested
     def from_domain_to_representation(self, revenue: Revenue) -> RevenueResponseRepresentation:
         return RevenueResponseRepresentation(
             id=revenue.id.content,

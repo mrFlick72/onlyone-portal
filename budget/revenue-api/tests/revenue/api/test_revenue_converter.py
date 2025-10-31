@@ -3,10 +3,14 @@ import pytest
 from app.money.domain.money import Money
 from app.time.domain.date import Date, DateParsingException
 from app.user.domain.user import UserName
+from app.revenue.domain.revenue import Revenue, RevenueId
 from app.user.adapter.thread.local_thread_user_name_resolver import (
     LocalThreadUserNameResolver,
 )
-from app.revenue.api.representation import RevenueRequestRepresentation
+from app.revenue.api.representation import (
+    RevenueRequestRepresentation,
+    RevenueResponseRepresentation,
+)
 from app.revenue.api.converter import RevenueConverter
 
 instance = LocalThreadUserNameResolver.get_instance()
@@ -52,3 +56,24 @@ def test_from_representation_to_domain_invalid_date_raises():
     )
     with pytest.raises(DateParsingException):
         uut.from_representation_to_domain(representation)
+
+
+def test_from_domain_to_representation():
+    uut = RevenueConverter(instance)
+    actual = uut.from_domain_to_representation(
+        Revenue(
+            id=RevenueId("123"),
+            user_name=UserName("A_USER_NAME"),
+            date=Date.iso_date_for("2025-10-10"),
+            amount=Money.money_for("1.00"),
+            note="A_NOTE",
+        )
+    )
+    expected = RevenueResponseRepresentation(
+        id="123",
+        user_name="A_USER_NAME",
+        date="10/10/2025",
+        amount="1.00",
+        note="A_NOTE",
+    )
+    assert expected == actual
