@@ -1,3 +1,4 @@
+import json
 import pytest
 from app.server import app
 from pytest_mock import MockerFixture
@@ -68,8 +69,6 @@ def test_add_new_revenue(mocker: MockerFixture, client: TestClient):
 
 
 def test_read_revenue_by_year(mocker: MockerFixture, client: TestClient):
-    response = client.get("/budget/revenue?q=year=2023")
-
     mocked_find_revenue_use_case = mocker.Mock(spec=FindRevenue)
     mocked_find_revenue_use_case.find_by.return_value = [
         Revenue(
@@ -89,31 +88,36 @@ def test_read_revenue_by_year(mocker: MockerFixture, client: TestClient):
     ]
 
     mocked_converter = mocker.Mock(spec=QueryParamRepresentationConverter)
-    mocked_converter.from_query_param_to_year.return_value = (
-        QueryParamRepresentation(year=Year(2023))
+    mocked_converter.from_query_param_to_year.return_value = QueryParamRepresentation(
+        year=Year(2023)
     )
 
     # Override dependencies
-    app.container.revenue_config_container.query_param_converter.override(mocked_converter)
-    app.container.revenue_config_container.find_revenue_service.override(   
+    app.container.revenue_config_container.query_param_converter.override(
+        mocked_converter
+    )
+    app.container.revenue_config_container.find_revenue_service.override(
         mocked_find_revenue_use_case
     )
-    assert response.status_code ==  200
+
+    response = client.get("/budget/revenue?q=year=2023")
+
+    assert response.status_code == 200
     assert response.json() == [
-        RevenueResponseRepresentation(
-            id="revenue-id-1",
-            date="15/03/2023",
-            amount="10.00",
-            note="A NOTE",
-        ),
-        RevenueResponseRepresentation(
-            id="revenue-id-2",
-            date="16/03/2023",
-            amount="15.00",
-            note="ANOTHER NOTE",
-        ),
+        {
+            "id": "revenue-id-1",
+            "date": "15/03/2023",
+            "amount": "10.00",
+            "note": "A NOTE",
+        },
+        {
+            "id": "revenue-id-2",
+            "date": "16/03/2023",
+            "amount": "15.00",
+            "note": "ANOTHER NOTE",
+        },
     ]
-    
+
     mocked_converter.from_query_param_to_year.assert_called_once_with("year=2023")
     mocked_find_revenue_use_case.find_by.assert_called_once_with(Year(2023))
 
