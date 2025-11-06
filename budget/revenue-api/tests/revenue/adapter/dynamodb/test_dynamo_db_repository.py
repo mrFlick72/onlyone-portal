@@ -19,7 +19,13 @@ def test_find_by_data_range():
 
 
 def test_save():
-    dynamo_client = boto3.client("dynamodb")
+    dynamo_client = boto3.resource(
+        service_name="dynamodb",
+        region_name="eu-central-1",
+        aws_access_key_id="xxx",
+        aws_secret_access_key="xxx",
+        endpoint_url="http://localhost:4566",
+    )
 
     uut = DynamoDbRevenueRepository(dynamo_client)
 
@@ -41,7 +47,7 @@ def test_save():
     uut.save(revenue)
 
     actual = uut.find_by_id("123-456")
-    
+
     assert expected_revenue == actual
 
 
