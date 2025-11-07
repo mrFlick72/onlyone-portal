@@ -1,0 +1,11 @@
+.idea/
+
+*.iml
+
+**/__pycache__/
+venv
+build
+csv
+src/*.egg-info
+.env
+localstack
