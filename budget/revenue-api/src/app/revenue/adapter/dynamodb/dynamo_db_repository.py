@@ -1,4 +1,7 @@
+import boto3
 import base64
+from botocore.exceptions import ClientError
+
 from app.revenue.domain.repository import RevenueRepository
 from app.revenue.domain.revenue import Revenue, RevenueId, RevenueIdProvider
 
@@ -57,19 +60,34 @@ class DynamoDbRevenueIdProvider(RevenueIdProvider):
 
 class DynamoDbRevenueRepository(RevenueRepository):
 
-    def find_by_id(revenue_id: RevenueId) -> Revenue:
+    def __init__(self, dynamodb, table_name: str):
+        super().__init__()
+        self.dynamodb = dynamodb
+        self.table_name = table_name
+
+    def find_by_id(self, revenue_id: RevenueId) -> Revenue:
         pass
 
     def find_by_data_range(
-        user_name: UserName, start: Date, end: Date
+        self, user_name: UserName, start: Date, end: Date
     ) -> list[Revenue]:
         pass
 
-    def save(revenue: Revenue) -> Revenue:
+    def save(self, revenue: Revenue) -> Revenue:
+        table = self.dynamodb.Table(self.table_name)
+        try:
+            response = table.put_item(
+                Item=revenue,
+                ConditionExpression="attribute_not_exists(pk)",  # optional: avoid overwriting
+            )
+            print("Item inserted successfully:", response)
+
+        except ClientError as e:
+            # If conditional insert fails or another error occurs
+            print("Error inserting item:", e.response["Error"]["Message"])
+
+    def update(self, revenue: Revenue):
         pass
 
-    def update(revenue: Revenue):
-        pass
-
-    def delete(id: RevenueId):
+    def delete(self, id: RevenueId):
         pass
