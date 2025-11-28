@@ -74,10 +74,13 @@ class DynamoDbRevenueRepository(RevenueRepository):
         pass
 
     def save(self, revenue: Revenue) -> Revenue:
+        print("Saving revenue to DynamoDB:", revenue)
+        print("table_name: ", self.table_name)
         table = self.dynamodb.Table(self.table_name)
         try:
+            # response = table.save(revenue)
             response = table.put_item(
-                Item=revenue,
+                Item=self.__revenueAsDynamoDbItem(revenue),
                 ConditionExpression="attribute_not_exists(pk)",  # optional: avoid overwriting
             )
             print("Item inserted successfully:", response)
@@ -91,3 +94,15 @@ class DynamoDbRevenueRepository(RevenueRepository):
 
     def delete(self, id: RevenueId):
         pass
+
+    def __revenueAsDynamoDbItem(self, revenue: Revenue) -> dict:
+        item = {
+            "pk": revenue.id.content.split("-")[0],
+            "sk": revenue.id.content.split("-")[1],
+            "budget_id": revenue.id.content,
+            "user_name": revenue.user_name.content,
+            "amount": str(revenue.amount.stringify_amount()),
+            "transaction_date": revenue.date.content.isoformat(),
+            "note": revenue.note,
+        }
+        return item
