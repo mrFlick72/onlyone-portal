@@ -6,8 +6,7 @@ from app.time.domain.month import Month
 from app.money.domain.money import Money
 from app.user.domain.user import UserName
 
-from app.revenue.adapter.dynamodb.dynamo_bd_repository import DynamoDbRevenueRepository
-
+from app.revenue.adapter.dynamodb.dynamo_db_repository import DynamoDbRevenueRepository
 
 def test_find_by_id():
     pass
@@ -18,7 +17,7 @@ def test_find_by_data_range():
 
 
 def test_save():
-    table_name = ""
+    table_name = "BUDGET_REVENUE"
     dynamo = boto3.resource(
         service_name="dynamodb",
         region_name="eu-central-1",
