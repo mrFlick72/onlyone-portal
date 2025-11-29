@@ -16,7 +16,6 @@ from app.revenue.api.converter import (
 )
 from app.revenue.api.representation import (
     RevenueRequestRepresentation,
-    RevenueResponseRepresentation,
     QueryParamRepresentation,
 )
 

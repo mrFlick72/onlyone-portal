@@ -2,6 +2,7 @@ import boto3
 import base64
 from botocore.exceptions import ClientError
 
+from app.money.domain.money import Money
 from app.revenue.domain.repository import RevenueRepository
 from app.revenue.domain.revenue import Revenue, RevenueId, RevenueIdProvider
 
@@ -60,13 +61,35 @@ class DynamoDbRevenueIdProvider(RevenueIdProvider):
 
 class DynamoDbRevenueRepository(RevenueRepository):
 
-    def __init__(self, dynamodb, table_name: str):
+    def __init__(self, dynamodb, table_name: str, id_generator: RevenueIdProvider):
         super().__init__()
         self.dynamodb = dynamodb
         self.table_name = table_name
+        self.id_generator = id_generator
 
     def find_by_id(self, revenue_id: RevenueId) -> Revenue:
-        pass
+        table = self.dynamodb.Table(self.table_name)
+        try:
+            response = table.get_item(
+                Key={
+                    "pk": revenue_id.content.split("-")[0],
+                    "sk": revenue_id.content.split("-")[1],
+                }
+            )
+        except ClientError as e:
+            print(e.response["Error"]["Message"])
+        else:
+            item = response.get("Item")
+            if item:
+                return Revenue(
+                    id=RevenueId(item["budget_id"]),
+                    user_name=UserName(item["user_name"]),
+                    amount=Money.money_for(item["amount"]),
+                    date=Date.iso_date_for(item["transaction_date"]),
+                    note=item["note"],
+                )
+            else:
+                return None
 
     def find_by_data_range(
         self, user_name: UserName, start: Date, end: Date
@@ -74,9 +97,9 @@ class DynamoDbRevenueRepository(RevenueRepository):
         pass
 
     def save(self, revenue: Revenue) -> Revenue:
-        print("Saving revenue to DynamoDB:", revenue)
-        print("table_name: ", self.table_name)
+        revenue.id = self.id_generator.generate_id(revenue)
         table = self.dynamodb.Table(self.table_name)
+
         try:
             # response = table.save(revenue)
             response = table.put_item(
@@ -101,7 +124,7 @@ class DynamoDbRevenueRepository(RevenueRepository):
             "sk": revenue.id.content.split("-")[1],
             "budget_id": revenue.id.content,
             "user_name": revenue.user_name.content,
-            "amount": str(revenue.amount.stringify_amount()),
+            "amount": revenue.amount.stringify_amount(),
             "transaction_date": revenue.date.content.isoformat(),
             "note": revenue.note,
         }
