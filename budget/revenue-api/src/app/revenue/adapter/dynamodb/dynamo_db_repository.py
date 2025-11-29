@@ -113,7 +113,7 @@ class DynamoDbRevenueRepository(RevenueRepository):
             print("Error inserting item:", e.response["Error"]["Message"])
 
     def update(self, revenue: Revenue):
-        pass
+        self.save(revenue)
 
     def delete(self, id: RevenueId):
         pass

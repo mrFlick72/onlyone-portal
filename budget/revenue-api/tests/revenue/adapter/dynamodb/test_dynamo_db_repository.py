@@ -31,7 +31,7 @@ def dynamodb_table(dynamodb_resource):
     table = dynamodb_resource.create_table(
         TableName=TABLE_NAME,
         KeySchema=[
-            {"AttributeName": "pk", "KeyType": "HASH"},   # partition key
+            {"AttributeName": "pk", "KeyType": "HASH"},  # partition key
             {"AttributeName": "sk", "KeyType": "RANGE"},  # sort key
         ],
         AttributeDefinitions=[
@@ -40,12 +40,12 @@ def dynamodb_table(dynamodb_resource):
         ],
         BillingMode="PAY_PER_REQUEST",  # on-demand billing
     )
-    
+
     # Wait for table to be created
     table.wait_until_exists()
-    
+
     yield table
-    
+
     # Teardown: delete table after tests
     try:
         table.delete()
@@ -53,10 +53,6 @@ def dynamodb_table(dynamodb_resource):
     except ClientError as e:
         if "ResourceNotFoundException" not in str(e):
             raise
-
-
-def test_find_by_id(dynamodb_table, dynamodb_resource):
-    pass
 
 
 def test_find_by_data_range():
@@ -90,8 +86,51 @@ def test_save(dynamodb_table, dynamodb_resource):
     assert expected_revenue == actual
 
 
-def test_update():
-    pass
+def test_update(dynamodb_table, dynamodb_resource):
+    uut = DynamoDbRevenueRepository(
+        dynamodb_resource, TABLE_NAME, FixedDynamoDbRevenueIdProvider()
+    )
+
+    expected_revenue = [
+        Revenue(
+            id=RevenueId("123-456"),
+            user_name=UserName("USER"),
+            amount=Money.money_for("17.50"),
+            date=Date.date_for("06/01/2018"),
+            note="Lanch",
+        ),
+        Revenue(
+            id=RevenueId("123-456"),
+            user_name=UserName("USER"),
+            amount=Money.money_for("10.50"),
+            date=Date.date_for("12/02/2018"),
+            note="Super Market",
+        ),
+        Revenue(
+            id=RevenueId("123-456"),
+            user_name=UserName("USER"),
+            amount=Money.money_for("17.50"),
+            date=Date.date_for("13/02/2018"),
+            note="Dinner",
+        ),
+        Revenue(
+            id=RevenueId("123-456"),
+            user_name=UserName("USER"),
+            amount=Money.money_for("17.50"),
+            date=Date.date_for("22/02/2018"),
+            note="Super Market",
+        ),
+    ]
+
+    for revenue in expected_revenue:
+        uut.save(revenue)
+
+    actual = uut.find_by_data_range(
+        UserName("USER"), Date.date_for("01/01/2018"), Date.date_for("31/12/2018")
+    )
+    
+    assert expected_revenue == actual
+
 
 
 def test_delete():
