@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 import jwt
@@ -12,6 +13,8 @@ from app.user.domain.user_name_resolver import UserNameResolver
 
 class UserNameInjectorFilter(BaseHTTPMiddleware):
 
+    __logger = logging.getLogger(__name__)
+
     def __init__(self, app, user_name_claim: str, user_name_resolver: UserNameResolver):
         super().__init__(app)
         self.user_name_resolver = user_name_resolver
@@ -19,8 +22,7 @@ class UserNameInjectorFilter(BaseHTTPMiddleware):
         self.public_keys = {}
         self.jwk_endpoint = f"{os.getenv('IDP_ISS')}/oauth2/jwks"
         self.load_jwks()
-        # todo use  a logger instead of print
-        # print(self.jwk_endpoint)
+        self.__logger.debug(self.jwk_endpoint)
 
     async def dispatch(self, request: Request, call_next):
         if request.url.path not in ["/health"]:
