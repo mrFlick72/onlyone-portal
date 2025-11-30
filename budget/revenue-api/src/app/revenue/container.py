@@ -38,7 +38,7 @@ class RevenueConfigContainer(containers.DeclarativeContainer):
     revenue_repository = providers.Singleton(
         DynamoDbRevenueRepository,
         dynamodb=dynamodb_resource,
-        table_name="BUDGET_REVENUE",
+        table_name=os.getenv("REVENUE_DYNAMO_DB_TABLE_NAME", "BUDGET_REVENUE"),
         id_generator=id_provider,
     )
 
