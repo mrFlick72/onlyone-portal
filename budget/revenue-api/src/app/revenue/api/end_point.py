@@ -40,12 +40,10 @@ async def get_revenue(
 ):
     query_param_representation = query_param_converter.from_query_param_to_year(q)
     revenues = find_revenue_service.find_by(query_param_representation.year)
-    print(f"revenues from the database {revenues}")
     json_response = [
         converter.from_domain_to_representation(revenue).model_dump()
         for revenue in revenues
     ]
-    print(json.dumps(json_response))
     
 
     return Response(

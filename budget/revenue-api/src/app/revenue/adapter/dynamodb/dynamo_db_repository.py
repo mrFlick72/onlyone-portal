@@ -1,3 +1,4 @@
+import logging
 from typing import Set
 import boto3
 import base64
@@ -63,6 +64,8 @@ class DynamoDbRevenueIdProvider(RevenueIdProvider):
 
 class DynamoDbRevenueRepository(RevenueRepository):
 
+    ___logger = logging.getLogger(__name__)
+
     def __init__(
         self, dynamodb, table_name: str, id_generator: DynamoDbRevenueIdProvider
     ):
@@ -81,7 +84,7 @@ class DynamoDbRevenueRepository(RevenueRepository):
                 }
             )
         except ClientError as e:
-            print(e.response["Error"]["Message"])
+            self.___logger.error(e.response["Error"]["Message"])
         else:
             item = response.get("Item")
             if item:
@@ -150,11 +153,11 @@ class DynamoDbRevenueRepository(RevenueRepository):
             response = table.put_item(
                 Item=self.__revenueAsDynamoDbItem(revenue),
             )
-            print("Item inserted successfully:", response)
+            self.___logger.debug("Item inserted successfully:", response)
 
         except ClientError as e:
             # If conditional insert fails or another error occurs
-            print("Error inserting item:", e.response["Error"]["Message"])
+            self.___logger.error("Error inserting item:", e.response["Error"]["Message"])
 
     def update(self, revenue: Revenue):
         self.save(revenue)

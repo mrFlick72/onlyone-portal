@@ -1,3 +1,4 @@
+import logging
 import os
 
 from fastapi import FastAPI
@@ -10,9 +11,11 @@ from app.container import ApplicationContainer
 
 from dotenv import load_dotenv
 
+
 load_dotenv(dotenv_path=os.getenv("BUDGET_API_CONFIG_FILE_LOCATION"))
 
 
+__logger = logging.getLogger(__name__)  # noqa: F821
 application_container = ApplicationContainer()  # type: ignore
 application_container.wire(modules=["app.revenue.api.end_point"])
 
@@ -27,6 +30,9 @@ if os.getenv("WITH_MIDDLEWARE", "true").lower() == "true":
         application_container.user_config_container.user_name_resolver(),
     )
 
-print("Middleware loaded:", application_container.user_config_container.user_name_resolver())
+__logger.info(
+    "Middleware loaded:",
+    application_container.user_config_container.user_name_resolver(),
+)
 app.include_router(health_end_point_router)
 app.include_router(revenue_end_point_router)
