@@ -160,7 +160,15 @@ class DynamoDbRevenueRepository(RevenueRepository):
         self.save(revenue)
 
     def delete(self, id: RevenueId):
-        pass
+        table = self.dynamodb.Table(self.table_name)
+        
+        table.delete_item(
+            Key={
+                "pk": id.content.split("-")[0],
+                "range_key": id.content.split("-")[1],
+            }
+        )
+
 
     def __revenueAsDynamoDbItem(self, revenue: Revenue) -> dict:
         item = {

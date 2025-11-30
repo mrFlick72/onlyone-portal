@@ -6,7 +6,11 @@ from app.time.domain.date import Date
 from app.money.domain.money import Money
 from app.user.domain.user import UserName
 
-from app.revenue.adapter.dynamodb.dynamo_db_repository import DynamoDbRevenueIdProvider, DynamoDbRevenueRepository, UuidSaltGenerator
+from app.revenue.adapter.dynamodb.dynamo_db_repository import (
+    DynamoDbRevenueIdProvider,
+    DynamoDbRevenueRepository,
+    UuidSaltGenerator,
+)
 
 
 TABLE_NAME = "BUDGET_REVENUE"
@@ -55,10 +59,6 @@ def dynamodb_table(dynamodb_resource):
             raise
 
 
-def test_find_by_data_range():
-    pass
-
-
 def test_save(dynamodb_table, dynamodb_resource):
     uut = DynamoDbRevenueRepository(
         dynamodb_resource, TABLE_NAME, FakeDynamoDbRevenueIdProvider()
@@ -84,7 +84,6 @@ def test_save(dynamodb_table, dynamodb_resource):
     actual = uut.find_by_id(RevenueId("123-456"))
 
     assert expected_revenue == actual
-
 
 
 def test_find_by_data_range(dynamodb_table, dynamodb_resource):
@@ -129,28 +128,43 @@ def test_find_by_data_range(dynamodb_table, dynamodb_resource):
     actual = uut.find_by_data_range(
         UserName("USER"), Date.date_for("01/01/2018"), Date.date_for("31/12/2018")
     )
-    
+
     assert expected_revenue == actual
 
 
+def test_delete(dynamodb_table, dynamodb_resource):
+    uut = DynamoDbRevenueRepository(
+        dynamodb_resource, TABLE_NAME, FakeDynamoDbRevenueIdProvider()
+    )
+    revenue = Revenue(
+        id=RevenueId("123-456"),
+        user_name=UserName("USER"),
+        amount=Money.money_for("17.50"),
+        date=Date.date_for("06/01/2018"),
+        note="Lanch",
+    )
 
-def test_delete():
-    pass
+    uut.save(revenue)
+    actual = uut.find_by_id(RevenueId("123-456"))
+    assert revenue == actual
+
+    uut.delete(RevenueId("123-456"))
+    actual_after_deletion = uut.find_by_id(RevenueId("123-456"))
+    assert actual_after_deletion is None
 
 
 class FakeDynamoDbRevenueIdProvider(DynamoDbRevenueIdProvider):
-    
+
     def __init__(self):
         super().__init__(UuidSaltGenerator())
-    
+
     def generate_id(self, revenue: Revenue) -> RevenueId:
         if revenue.id is None:
             return RevenueId("123-456")
         return revenue.id
-    
 
     def partition_key_from(self, date: Date, user_name: UserName) -> str:
         return "123"
 
     def range_key_from(self, date: Date) -> str:
-        pass     
+        pass
