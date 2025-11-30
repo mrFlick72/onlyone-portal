@@ -1,12 +1,12 @@
 import boto3
 import pytest
 from botocore.exceptions import ClientError
-from app.revenue.domain.revenue import Revenue, RevenueId, RevenueIdProvider
+from app.revenue.domain.revenue import Revenue, RevenueId
 from app.time.domain.date import Date
 from app.money.domain.money import Money
 from app.user.domain.user import UserName
 
-from app.revenue.adapter.dynamodb.dynamo_db_repository import DynamoDbRevenueRepository
+from app.revenue.adapter.dynamodb.dynamo_db_repository import DynamoDbRevenueIdProvider, DynamoDbRevenueRepository, UuidSaltGenerator
 
 
 TABLE_NAME = "BUDGET_REVENUE"
@@ -32,11 +32,11 @@ def dynamodb_table(dynamodb_resource):
         TableName=TABLE_NAME,
         KeySchema=[
             {"AttributeName": "pk", "KeyType": "HASH"},  # partition key
-            {"AttributeName": "sk", "KeyType": "RANGE"},  # sort key
+            {"AttributeName": "range_key", "KeyType": "RANGE"},  # sort key
         ],
         AttributeDefinitions=[
             {"AttributeName": "pk", "AttributeType": "S"},
-            {"AttributeName": "sk", "AttributeType": "S"},
+            {"AttributeName": "range_key", "AttributeType": "S"},
         ],
         BillingMode="PAY_PER_REQUEST",  # on-demand billing
     )
@@ -61,7 +61,7 @@ def test_find_by_data_range():
 
 def test_save(dynamodb_table, dynamodb_resource):
     uut = DynamoDbRevenueRepository(
-        dynamodb_resource, TABLE_NAME, FixedDynamoDbRevenueIdProvider()
+        dynamodb_resource, TABLE_NAME, FakeDynamoDbRevenueIdProvider()
     )
 
     revenue = Revenue(
@@ -86,35 +86,36 @@ def test_save(dynamodb_table, dynamodb_resource):
     assert expected_revenue == actual
 
 
-def test_update(dynamodb_table, dynamodb_resource):
+
+def test_find_by_data_range(dynamodb_table, dynamodb_resource):
     uut = DynamoDbRevenueRepository(
-        dynamodb_resource, TABLE_NAME, FixedDynamoDbRevenueIdProvider()
+        dynamodb_resource, TABLE_NAME, FakeDynamoDbRevenueIdProvider()
     )
 
     expected_revenue = [
         Revenue(
-            id=RevenueId("123-456"),
+            id=RevenueId("123-4560"),
             user_name=UserName("USER"),
             amount=Money.money_for("17.50"),
             date=Date.date_for("06/01/2018"),
             note="Lanch",
         ),
         Revenue(
-            id=RevenueId("123-456"),
+            id=RevenueId("123-4561"),
             user_name=UserName("USER"),
             amount=Money.money_for("10.50"),
             date=Date.date_for("12/02/2018"),
             note="Super Market",
         ),
         Revenue(
-            id=RevenueId("123-456"),
+            id=RevenueId("123-4562"),
             user_name=UserName("USER"),
             amount=Money.money_for("17.50"),
             date=Date.date_for("13/02/2018"),
             note="Dinner",
         ),
         Revenue(
-            id=RevenueId("123-456"),
+            id=RevenueId("123-4563"),
             user_name=UserName("USER"),
             amount=Money.money_for("17.50"),
             date=Date.date_for("22/02/2018"),
@@ -137,6 +138,19 @@ def test_delete():
     pass
 
 
-class FixedDynamoDbRevenueIdProvider(RevenueIdProvider):
+class FakeDynamoDbRevenueIdProvider(DynamoDbRevenueIdProvider):
+    
+    def __init__(self):
+        super().__init__(UuidSaltGenerator())
+    
     def generate_id(self, revenue: Revenue) -> RevenueId:
-        return RevenueId("123-456")
+        if revenue.id is None:
+            return RevenueId("123-456")
+        return revenue.id
+    
+
+    def partition_key_from(self, date: Date, user_name: UserName) -> str:
+        return "123"
+
+    def range_key_from(self, date: Date) -> str:
+        pass     
