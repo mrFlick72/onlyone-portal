@@ -106,17 +106,12 @@ class DynamoDbRevenueRepository(RevenueRepository):
                 KeyConditionExpression="pk = :pk",
                 ExpressionAttributeValues={
                     ":pk": partitions_key,
-                    # ":start_date": start.iso_formatted_date(),
-                    # ":end_date": end.iso_formatted_date(),
+                    ":start_date": start.iso_formatted_date(),
+                    ":end_date": end.iso_formatted_date(),
                 },
-                # FilterExpression="transaction_date >= :start_date AND transaction_date <= :end_date",
+                FilterExpression="transaction_date >= :start_date AND transaction_date <= :end_date",
             )
             items = response.get("Items")
-            print("items")
-            print(response)
-            print(partitions_key)
-            print(items)
-            print("items")
             revenues.append(
                 [
                     Revenue(
