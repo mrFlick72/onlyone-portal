@@ -1,3 +1,4 @@
+from typing import Set
 import boto3
 import base64
 from botocore.exceptions import ClientError
@@ -8,6 +9,7 @@ from app.revenue.domain.revenue import Revenue, RevenueId, RevenueIdProvider
 
 from app.user.domain.user import UserName
 from app.time.domain.date import Date
+from itertools import chain
 
 
 class SaltGenerator:
@@ -34,12 +36,12 @@ class DynamoDbRevenueIdProvider(RevenueIdProvider):
             date = revenue.date
             user_name = revenue.user_name
             return RevenueId(
-                f"{self.__partition_key_from(date=date, user_name=user_name)}-{self.__range_key_from(date=date)}"
+                f"{self.partition_key_from(date=date, user_name=user_name)}-{self.range_key_from(date=date)}"
             )
         else:
             return revenue.id
 
-    def __partition_key_from(self, date: Date, user_name: UserName) -> str:
+    def partition_key_from(self, date: Date, user_name: UserName) -> str:
         year = date.content.year
         user_name_content = user_name.content
 
@@ -48,7 +50,7 @@ class DynamoDbRevenueIdProvider(RevenueIdProvider):
 
         return base64.b64encode(utf_8_partition_key).decode("ascii")
 
-    def __range_key_from(self, date: Date) -> str:
+    def range_key_from(self, date: Date) -> str:
         day_of_the_month = date.content.day
         month = date.content.month
         salt = self.salt_generator.new_salt()
@@ -61,7 +63,9 @@ class DynamoDbRevenueIdProvider(RevenueIdProvider):
 
 class DynamoDbRevenueRepository(RevenueRepository):
 
-    def __init__(self, dynamodb, table_name: str, id_generator: RevenueIdProvider):
+    def __init__(
+        self, dynamodb, table_name: str, id_generator: DynamoDbRevenueIdProvider
+    ):
         super().__init__()
         self.dynamodb = dynamodb
         self.table_name = table_name
@@ -73,7 +77,7 @@ class DynamoDbRevenueRepository(RevenueRepository):
             response = table.get_item(
                 Key={
                     "pk": revenue_id.content.split("-")[0],
-                    "sk": revenue_id.content.split("-")[1],
+                    "range_key": revenue_id.content.split("-")[1],
                 }
             )
         except ClientError as e:
@@ -94,7 +98,53 @@ class DynamoDbRevenueRepository(RevenueRepository):
     def find_by_data_range(
         self, user_name: UserName, start: Date, end: Date
     ) -> list[Revenue]:
-        pass
+        table = self.dynamodb.Table(self.table_name)
+        partitions_keys = self.__primary_keys_for(user_name, start, end)
+        revenues = list()
+        for partitions_key in partitions_keys:
+            response = table.query(
+                KeyConditionExpression="pk = :pk",
+                ExpressionAttributeValues={
+                    ":pk": partitions_key,
+                    # ":start_date": start.iso_formatted_date(),
+                    # ":end_date": end.iso_formatted_date(),
+                },
+                # FilterExpression="transaction_date >= :start_date AND transaction_date <= :end_date",
+            )
+            items = response.get("Items")
+            print("items")
+            print(response)
+            print(partitions_key)
+            print(items)
+            print("items")
+            revenues.append(
+                [
+                    Revenue(
+                        id=RevenueId(item["budget_id"]),
+                        user_name=UserName(item["user_name"]),
+                        amount=Money.money_for(item["amount"]),
+                        date=Date.iso_date_for(item["transaction_date"]),
+                        note=item["note"],
+                    )
+                    for item in items
+                ]
+            )
+
+            return list(chain.from_iterable(revenues))
+
+    def __primary_keys_for(
+        self, user_name: UserName, start: Date, end: Date
+    ) -> Set[str]:
+        primary_keys = set()
+        current = start
+
+        while current.content <= end.content:
+            primary_keys.add(
+                self.id_generator.partition_key_from(date=current, user_name=user_name)
+            )
+            current = current.plusYears(1)
+
+        return primary_keys
 
     def save(self, revenue: Revenue) -> Revenue:
         revenue.id = self.id_generator.generate_id(revenue)
@@ -104,7 +154,6 @@ class DynamoDbRevenueRepository(RevenueRepository):
             # response = table.save(revenue)
             response = table.put_item(
                 Item=self.__revenueAsDynamoDbItem(revenue),
-                ConditionExpression="attribute_not_exists(pk)",  # optional: avoid overwriting
             )
             print("Item inserted successfully:", response)
 
@@ -121,7 +170,7 @@ class DynamoDbRevenueRepository(RevenueRepository):
     def __revenueAsDynamoDbItem(self, revenue: Revenue) -> dict:
         item = {
             "pk": revenue.id.content.split("-")[0],
-            "sk": revenue.id.content.split("-")[1],
+            "range_key": revenue.id.content.split("-")[1],
             "budget_id": revenue.id.content,
             "user_name": revenue.user_name.content,
             "amount": revenue.amount.stringify_amount(),

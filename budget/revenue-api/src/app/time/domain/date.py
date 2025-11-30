@@ -23,6 +23,16 @@ class Date:
     def iso_formatted_date(self) -> str:
         return self.content.strftime(ISO_DATE_TIME_FORMATTER)
 
+    def plusYears(self, years: int):
+        try:
+            return Date(
+                self.content.replace(year=self.content.year + years)
+            )
+        except ValueError:
+            # Handle February 29 for leap years
+            return Date(
+                self.content.replace(month=2, day=28, year=self.content.year + years)
+            )
     @staticmethod
     def date_for(content: str):
         try:
