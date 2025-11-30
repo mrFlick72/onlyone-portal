@@ -1,11 +1,17 @@
+import os
+import boto3
 from dependency_injector import containers, providers
+from app.revenue.adapter.dynamodb.dynamo_db_repository import (
+    DynamoDbRevenueIdProvider,
+    DynamoDbRevenueRepository,
+    UuidSaltGenerator,
+)
 from app.revenue.domain.service import SaveRevenue, DeleteRevenue
 from app.revenue.api.converter import (
     RevenueConverter,
     QueryParamRepresentationConverter,
 )
 from app.revenue.domain.revenue import UuidRevenueIdProvider
-from app.revenue.domain.repository import RevenueRepository
 from app.revenue.domain.service import FindRevenue
 
 
@@ -13,8 +19,27 @@ class RevenueConfigContainer(containers.DeclarativeContainer):
 
     user_config_container = providers.DependenciesContainer()
 
+    # Singleton DynamoDB resource
+    dynamodb_resource = providers.Singleton(
+        boto3.resource,
+        service_name="dynamodb",
+        region_name=os.getenv("AWS_REGION", "eu-central-1"),
+    )
+
+    # Singleton ID provider
+    salt_generator = providers.Singleton(UuidSaltGenerator)
+
+    id_provider = providers.Singleton(
+        DynamoDbRevenueIdProvider,
+        salt_generator=salt_generator,
+    )
+
+    # Singleton repository that depends on the above
     revenue_repository = providers.Singleton(
-        RevenueRepository,
+        DynamoDbRevenueRepository,
+        dynamodb=dynamodb_resource,
+        table_name="BUDGET_REVENUE",
+        id_generator=id_provider,
     )
 
     revenue_converter = providers.Singleton(
