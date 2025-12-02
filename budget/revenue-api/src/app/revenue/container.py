@@ -23,6 +23,8 @@ class RevenueConfigContainer(containers.DeclarativeContainer):
     dynamodb_resource = providers.Singleton(
         boto3.resource,
         service_name="dynamodb",
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", "xxx"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", "xxx"),
         region_name=os.getenv("AWS_REGION", "eu-central-1"),
     )
 
