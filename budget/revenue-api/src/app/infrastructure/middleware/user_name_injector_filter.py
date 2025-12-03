@@ -4,6 +4,7 @@ import os
 
 import jwt
 import requests
+from app.user.domain.user import UserName
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from jwt import get_unverified_header, decode
@@ -34,7 +35,7 @@ class UserNameInjectorFilter(BaseHTTPMiddleware):
                 algorithms=["RS256"],
                 options={"verify_aud": False},
             )
-            self.user_name_resolver.set_user_name(decoded_token[self.user_name_claim])
+            self.user_name_resolver.set_user_name(UserName(decoded_token[self.user_name_claim]))
 
         response = await call_next(request)
         return response

@@ -149,7 +149,6 @@ class DynamoDbRevenueRepository(RevenueRepository):
         table = self.dynamodb.Table(self.table_name)
 
         try:
-            # response = table.save(revenue)
             response = table.put_item(
                 Item=self.__revenueAsDynamoDbItem(revenue),
             )
