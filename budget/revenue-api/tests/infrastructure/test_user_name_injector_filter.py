@@ -1,3 +1,4 @@
+from app.user.domain.user import UserName
 import pytest
 
 from starlette.requests import Request
@@ -65,7 +66,7 @@ async def test_dispatch_sets_user_name(monkeypatch):
 
     # Assert
     assert response.status_code == 200
-    assert resolver.value == "alice"
+    assert resolver.value == UserName("alice")
 
 
 @pytest.mark.asyncio
