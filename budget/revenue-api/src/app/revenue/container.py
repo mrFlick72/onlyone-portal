@@ -14,6 +14,11 @@ from app.revenue.api.converter import (
 from app.revenue.domain.revenue import UuidRevenueIdProvider
 from app.revenue.domain.service import FindRevenue
 
+from dotenv import load_dotenv
+
+
+load_dotenv(dotenv_path=os.getenv("BUDGET_API_CONFIG_FILE_LOCATION"))
+
 
 class RevenueConfigContainer(containers.DeclarativeContainer):
 
