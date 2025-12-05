@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Set
 import boto3
 import base64
@@ -100,7 +101,7 @@ class DynamoDbRevenueRepository(RevenueRepository):
 
     def find_by_data_range(
         self, user_name: UserName, start: Date, end: Date
-    ) -> list[Revenue]:
+    ) -> list[Revenue]:        
         table = self.dynamodb.Table(self.table_name)
         partitions_keys = self.__primary_keys_for(user_name, start, end)
         revenues = list()

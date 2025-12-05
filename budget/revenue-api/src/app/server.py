@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path=os.getenv("BUDGET_API_CONFIG_FILE_LOCATION"))
 
-
 logger = logging.getLogger(__name__)  # noqa: F821
 application_container = ApplicationContainer()  # type: ignore
 application_container.wire(modules=["app.revenue.api.end_point"])
