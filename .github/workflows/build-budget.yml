@@ -1,0 +1,38 @@
+name: build VAuthenticator
+
+on:
+  push: { }
+  workflow_dispatch: {}
+
+jobs:
+  build-revenue-api:
+    runs-on: ubuntu-24.04
+    services:
+      localstack:
+        image: localstack/localstack:3.2
+        ports:
+          - "4566-4599:4566-4599"
+        env:
+          SERVICES: s3,kms,dynamodb,sns
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+      - name: Install dependencies
+        run: |
+          cd budget/revenue-api 
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt 
+      - name: Run tests
+        run: |
+          export AWS_ACCESS_KEY_ID=test
+          export AWS_SECRET_ACCESS_KEY=test
+          export AWS_DEFAULT_REGION=us-east-1
+          pytest --cov=src/app/revenue tests/  --cov-fail-under=80
+      - name: Build revenue-api package
+        run: |
+          pip install .     
