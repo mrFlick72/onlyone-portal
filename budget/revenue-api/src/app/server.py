@@ -40,7 +40,7 @@ if os.getenv("WITH_MIDDLEWARE", "true").lower() == "true":
     )
 
 logger.info(
-    "Middleware loaded:",
+    "Middleware loaded: %s",
     application_container.user_config_container.user_name_resolver(),
 )
 app.include_router(health_end_point_router)

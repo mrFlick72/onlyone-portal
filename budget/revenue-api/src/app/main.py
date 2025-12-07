@@ -1,4 +1,36 @@
+import logging
+import logging.handlers
 import uvicorn
+import os
+
+log_file = os.getenv("LOG_FILE_LOCATION", "logs/app.log")
+log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
+
+# Convert string to logging level, fallback to INFO if invalid
+level = getattr(logging, log_level_str, logging.INFO)
+
+root = logging.getLogger()
+root.setLevel(level)
+
+# Remove any existing handlers (useful in reload / tests)
+root.handlers.clear()
+
+# Use safe formatter (% style, not f-string)
+fmt = logging.Formatter("%(asctime)s %(name)s %(levelname)s: %(message)s")
+
+# console
+ch = logging.StreamHandler()
+ch.setLevel(level)
+ch.setFormatter(fmt)
+root.addHandler(ch)
+
+# file with rotation
+os.makedirs(os.path.dirname(log_file) or ".", exist_ok=True)
+fh = logging.handlers.RotatingFileHandler(log_file, maxBytes=10_000_000, backupCount=5)
+fh.setLevel(level)
+fh.setFormatter(fmt)
+root.addHandler(fh)
 
 if __name__ == "__main__":
+    root.info("Starting server with log level: %s", log_level_str)
     uvicorn.run("server:app", host="0.0.0.0", port=3030, reload=True)
