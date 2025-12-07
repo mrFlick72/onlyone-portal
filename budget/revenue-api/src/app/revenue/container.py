@@ -71,7 +71,6 @@ class RevenueConfigContainer(containers.DeclarativeContainer):
     save_revenue_service = providers.Singleton(
         SaveRevenue,
         repository=revenue_repository,
-        revenue_id_provider=revenue_id_provider,
     )
 
     delete_revenue_service = providers.Singleton(
