@@ -1,4 +1,4 @@
-import {getBudgetApiBaseUrl} from "../../config/ConfigLoader";
+import {getRevenueApiBaseUrl} from "../../config/ConfigLoader";
 
 const BUDGET_REVENUE_URI = (baseUrl, budgetRevenueId) => budgetRevenueId ?
     `${baseUrl}/budget/revenue/${budgetRevenueId}` :
@@ -8,7 +8,7 @@ const budgetRevenueWith = (baseUrl, year) => `${baseUrl}/budget/revenue?q=year=$
 
 
 export async function deleteBudgetRevenue(budgetRevenueId) {
-    const baseUrl = await getBudgetApiBaseUrl();
+    const baseUrl = await getRevenueApiBaseUrl();
     return fetch(BUDGET_REVENUE_URI(baseUrl, budgetRevenueId), {
         headers: {
             'Authorization': `Bearer ${window.sessionStorage.getItem("ACCESS_TOKEN")}`,
@@ -20,7 +20,7 @@ export async function deleteBudgetRevenue(budgetRevenueId) {
 }
 
 export async function findBudgetRevenue(year) {
-    const baseUrl = await getBudgetApiBaseUrl();
+    const baseUrl = await getRevenueApiBaseUrl();
     let responsePromise = await fetch(budgetRevenueWith(baseUrl, year), {
         method: "GET",
         credentials: 'include',
@@ -33,7 +33,7 @@ export async function findBudgetRevenue(year) {
 }
 
 export async function saveBudgetRevenue(budgetRevenue) {
-    const baseUrl = await getBudgetApiBaseUrl();
+    const baseUrl = await getRevenueApiBaseUrl();
     return fetch(BUDGET_REVENUE_URI(baseUrl, budgetRevenue.id), {
         method: budgetRevenue.id ? "PUT" : "POST",
         credentials: 'include',
