@@ -1,7 +1,7 @@
 {
-  "name": "family-budget-ui",
+  "name": "onlyone-portal-ui",
   "version": "1.0.0",
-  "description": "Family Budget UI library",
+  "description": "onlyone PortalBudget UI",
   "babel": {
     "presets": [
       "@babel/react",
