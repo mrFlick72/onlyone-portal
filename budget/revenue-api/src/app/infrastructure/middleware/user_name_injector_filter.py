@@ -26,7 +26,7 @@ class UserNameInjectorFilter(BaseHTTPMiddleware):
         self.__logger.debug(self.jwk_endpoint)
 
     async def dispatch(self, request: Request, call_next):
-        if request.url.path not in ["/health"]:
+        if request.url.path not in ["/health"] and not request.method == "OPTIONS":
             token = str(request.headers.get("authorization")[7:])  # remove "Bearer "
             current_kid = get_unverified_header(token)["kid"]
             decoded_token = decode(

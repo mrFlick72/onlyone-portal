@@ -4,7 +4,10 @@
 
 **/__pycache__/
 venv
+.venv
+
 build
 src/*.egg-info
+logs/
 
 localstack
