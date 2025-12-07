@@ -1,4 +1,4 @@
-name: build VAuthenticator
+name: build Budget Revenue API
 
 on:
   push: { }
