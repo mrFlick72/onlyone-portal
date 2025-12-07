@@ -4,20 +4,17 @@ from app.time.domain.month import Month
 
 from app.user.domain.user_name_resolver import UserNameResolver
 from app.revenue.domain.repository import RevenueRepository
-from app.revenue.domain.revenue import Revenue, RevenueId, RevenueIdProvider
+from app.revenue.domain.revenue import Revenue, RevenueId
 
 
 class SaveRevenue:
 
     def __init__(
-        self, repository: RevenueRepository, revenue_id_provider: RevenueIdProvider
+        self, repository: RevenueRepository
     ):
         self.repository = repository
-        self.revenue_id_provider = revenue_id_provider
 
     def save(self, revenue: Revenue):
-        if revenue.id is None:
-            revenue.id = self.revenue_id_provider.generate_id()
         self.repository.save(revenue)
 
 
