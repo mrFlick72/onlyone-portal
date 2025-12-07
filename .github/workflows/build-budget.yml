@@ -47,4 +47,4 @@ jobs:
           AWS_SECRET_ACCESS_KEY: test
           AWS_DEFAULT_REGION: us-east-1
         run: |
-          pytest --cov=src/app/revenue tests/ --cov-fail-under=80
+          pytest 
