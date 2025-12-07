@@ -2,6 +2,8 @@ import logging
 import os
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.revenue.api.end_point import revenue_end_point_router
 from app.infrastructure.management.health_end_point import health_end_point_router
 from app.infrastructure.middleware.user_name_injector_filter import (
@@ -19,6 +21,14 @@ application_container = ApplicationContainer()  # type: ignore
 application_container.wire(modules=["app.revenue.api.end_point"])
 
 app = FastAPI()
+origins = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.container = application_container
 
 # Set up application middleware
