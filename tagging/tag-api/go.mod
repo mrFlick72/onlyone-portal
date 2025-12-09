@@ -1,10 +1,22 @@
-module github.com/mrFlick72/onlyone-portal/taggign/tag-api
+module github.com/mrFlick72/onlyone-portal/tagging/tag-api
 
 go 1.25.1
 
 require github.com/gin-gonic/gin v1.11.0
 
 require (
+	github.com/aws/aws-sdk-go-v2 v1.41.0 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.16 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.16 // indirect
+	github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.32.8 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.11.16 // indirect
+	github.com/aws/smithy-go v1.24.0 // indirect
+)
+
+require (
+	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.20.28
+	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.53.4
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
