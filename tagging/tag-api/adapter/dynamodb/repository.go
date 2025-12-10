@@ -10,11 +10,9 @@ import (
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/domain"
 )
 
-
 type TagDynamoDBRepository struct {
-	UserRepository domain.UserRepository
-	Client         *dynamodb.Client
-	TableName      string
+	Client    *dynamodb.Client
+	TableName string
 }
 
 // Implement TagRepository methods here
@@ -24,9 +22,10 @@ type TagDynamoDBRepository struct {
 // You will need to import the domain package to use the Tag struct and TagRepository interface
 // import "tagging/tag-api/domain"
 
-func (r *TagDynamoDBRepository) SaveTag(tag domain.Tag) error {
+func (r *TagDynamoDBRepository) SaveTag(ctx *context.Context, tag *domain.Tag) error {
 	// Implementation for saving a tag to DynamoDB
-	user, err := r.UserRepository.GetCurrentUser()
+
+	user, err := domain.GetCurrentUser(ctx)
 	if err != nil {
 		return err
 	}
@@ -44,9 +43,9 @@ func (r *TagDynamoDBRepository) SaveTag(tag domain.Tag) error {
 	return err
 }
 
-func (r *TagDynamoDBRepository) GetTagBy(key string) (*domain.Tag, error) {
+func (r *TagDynamoDBRepository) GetTagBy(ctx *context.Context, key string) (*domain.Tag, error) {
 	// Implementation for retrieving a tag by key from DynamoDB
-	user, err := r.UserRepository.GetCurrentUser()
+	user, err := domain.GetCurrentUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +75,7 @@ func (r *TagDynamoDBRepository) GetTagBy(key string) (*domain.Tag, error) {
 	return &tag, nil
 }
 
-func (r *TagDynamoDBRepository) FindAllTags() (*[]domain.Tag, error) {
+func (r *TagDynamoDBRepository) FindAllTags(ctx *context.Context) (*[]domain.Tag, error) {
 	// Implementation for retrieving all tags from DynamoDB
 
 	return &[]domain.Tag{}, nil
