@@ -1,12 +1,10 @@
 package api
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
-
 
 func RegisterEndpoints(r *gin.Engine) {
 

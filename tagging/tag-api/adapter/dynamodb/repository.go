@@ -77,6 +77,27 @@ func (r *TagDynamoDBRepository) GetTagBy(ctx *context.Context, key string) (*dom
 
 func (r *TagDynamoDBRepository) FindAllTags(ctx *context.Context) (*[]domain.Tag, error) {
 	// Implementation for retrieving all tags from DynamoDB
+	user, err := domain.GetCurrentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	input := &dynamodb.QueryInput{
+		TableName: aws.String(r.TableName),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":username": &types.AttributeValueMemberS{Value: *user.UserName},
+		},
+		KeyConditionExpression: aws.String("UserName = :username"),
+	}
+	result, err := r.Client.Query(context.TODO(), input)
+	if err != nil {
+		return nil, err
+	}
 
-	return &[]domain.Tag{}, nil
+	var tags []domain.Tag
+	err = attributevalue.UnmarshalListOfMaps(result.Items, &tags)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tags, nil
 }
