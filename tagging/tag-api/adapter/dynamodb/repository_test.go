@@ -2,13 +2,19 @@ package dynamodb
 
 import (
 	"context"
+	"errors"
+	"os"
 	"testing"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/domain"
 )
+
+var TableName = "TestTagsTable"
 
 func newStubbedContext() *context.Context {
 	ctx := context.Background()
@@ -18,7 +24,8 @@ func newStubbedContext() *context.Context {
 	return newCtx
 }
 
-func newTagDynamoDBRepository() *TagDynamoDBRepository {
+func newDynamoDBClient() (*dynamodb.Client, error) {
+
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider("xxx", "xxx", "xxx")),
 		config.WithRegion("eu-central-1"),
@@ -29,12 +36,72 @@ func newTagDynamoDBRepository() *TagDynamoDBRepository {
 		panic("unable to load SDK config, " + err.Error())
 	}
 
+	return dynamodb.NewFromConfig(cfg), err
+}
+
+func newTagDynamoDBRepository() *TagDynamoDBRepository {
+	client, _ := newDynamoDBClient()
 	return &TagDynamoDBRepository{
 		// Initialize with mock or test dependencies as needed
-		TableName: "TestTagsTable",
-		Client:    dynamodb.NewFromConfig(cfg),
+		TableName: TableName,
+		Client:    client,
 	}
 }
+
+func setupTestDynamoDBTable() error {
+	// Create table if not exists
+	client, _ := newDynamoDBClient()
+
+	_, err := client.CreateTable(context.TODO(), &dynamodb.CreateTableInput{
+		TableName: aws.String(TableName),
+		AttributeDefinitions: []types.AttributeDefinition{
+			{
+				AttributeName: aws.String("UserName"),
+				AttributeType: types.ScalarAttributeTypeS,
+			},
+			{
+				AttributeName: aws.String("Key"),
+				AttributeType: types.ScalarAttributeTypeS,
+			},
+		},
+		KeySchema: []types.KeySchemaElement{
+			{
+				AttributeName: aws.String("UserName"),
+				KeyType:       types.KeyTypeHash,
+			},
+			{
+				AttributeName: aws.String("Key"),
+				KeyType:       types.KeyTypeRange,
+			},
+		},
+		BillingMode: types.BillingModePayPerRequest,
+	})
+	if err != nil {
+		var resourceInUseException *types.ResourceInUseException
+		if !errors.As(err, &resourceInUseException) {
+			return err
+		}
+	}
+	return nil
+}
+
+func teardownTestDynamoDBTable() error {
+	client, _ := newDynamoDBClient()
+	_, err := client.DeleteTable(context.TODO(), &dynamodb.DeleteTableInput{
+		TableName: aws.String(TableName),
+	})
+	return err
+}
+
+func TestMain(m *testing.M) {
+	setupTestDynamoDBTable()
+
+	code := m.Run() // run all tests
+
+	teardownTestDynamoDBTable()
+	os.Exit(code)
+}
+
 func TestSaveTag(t *testing.T) {
 	repo := newTagDynamoDBRepository()
 	tag := domain.Tag{Key: "exampleKey", Value: "exampleValue"}
@@ -46,6 +113,7 @@ func TestSaveTag(t *testing.T) {
 }
 
 func TestGetTagBy(t *testing.T) {
+	TestSaveTag(t)
 	repo := newTagDynamoDBRepository()
 	key := "exampleKey"
 
@@ -59,6 +127,8 @@ func TestGetTagBy(t *testing.T) {
 }
 
 func TestFindAllTags(t *testing.T) {
+		TestSaveTag(t)
+
 	repo := newTagDynamoDBRepository()
 
 	tags, err := repo.FindAllTags(newStubbedContext())
