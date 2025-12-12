@@ -102,7 +102,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestSaveTag(t *testing.T) {
+func saveATag(t *testing.T) {
 	repo := newTagDynamoDBRepository()
 	tag := domain.Tag{Key: "exampleKey", Value: "exampleValue"}
 
@@ -112,8 +112,8 @@ func TestSaveTag(t *testing.T) {
 	}
 }
 
-func TestGetTagBy(t *testing.T) {
-	TestSaveTag(t)
+func TestSaveTag(t *testing.T) {
+	saveATag(t)
 	repo := newTagDynamoDBRepository()
 	key := "exampleKey"
 
@@ -127,7 +127,7 @@ func TestGetTagBy(t *testing.T) {
 }
 
 func TestFindAllTags(t *testing.T) {
-		TestSaveTag(t)
+	saveATag(t)
 
 	repo := newTagDynamoDBRepository()
 
