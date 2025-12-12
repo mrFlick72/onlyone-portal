@@ -29,7 +29,7 @@ func newDynamoDBClient() (*dynamodb.Client, error) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider("xxx", "xxx", "xxx")),
 		config.WithRegion("eu-central-1"),
-		config.WithBaseEndpoint("http://localhost:8000"),
+		config.WithBaseEndpoint("http://localhost:4566"),
 	)
 
 	if err != nil {
