@@ -1,6 +1,7 @@
 services:
-    dynamodb:
-      image: amazon/dynamodb-local
-      ports:
-        - "8000:8000"  
-      command: "-jar DynamoDBLocal.jar -inMemory -sharedDb"
+  localstack:
+    image: localstack/localstack:3.2
+    ports:
+      - "4566-4599:4566-4599"
+    environment:
+      SERVICES: dynamodb
