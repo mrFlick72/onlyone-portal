@@ -57,7 +57,6 @@
 // 	`
 // 	jwk := Jwk{
 // 		Url:    "http://localhost/jwk",
-// 		Client: client,
 // 	}
 
 // 	client.On("Get", &web.Request{
