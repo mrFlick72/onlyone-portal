@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/middleware/security"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/web/api"
 )
 
@@ -13,6 +14,7 @@ func main() {
 
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
+	router.Use(security.SetUpOAuth2())
 
 	api.RegisterEndpoints(router, nil)
 
