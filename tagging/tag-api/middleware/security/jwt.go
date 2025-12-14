@@ -2,6 +2,7 @@ package security
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -9,10 +10,13 @@ import (
 	"github.com/lestrrat-go/jwx/v3/jwt"
 )
 
-func SetUpOAuth2(app *gin.Engine, jwk Jwk, role string) {
+func SetUpOAuth2() gin.HandlerFunc {
+	jwk := Jwk{
+		Url: os.Getenv("JWKS_ENDPOINT"),
+	}
+	role := os.Getenv("OAUTH2_ROLE")
 	sets, _ := jwk.JwkSets()
-	var middleware = NewOAuth2Middleware(sets, role)
-	app.Use(middleware)
+	return NewOAuth2Middleware(sets, role)
 }
 
 func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string) gin.HandlerFunc {
@@ -25,7 +29,6 @@ func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string) gin.HandlerFun
 			ctx.Status(401)
 			return
 		}
-
 
 		iat, ok := jwt.IssuedAt()
 		if !ok {
