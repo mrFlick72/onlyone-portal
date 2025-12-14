@@ -22,7 +22,7 @@ func TestFindAllTagsGiveEmptyTags(t *testing.T) {
 	// simple in-memory mock implementing domain.TagRepository
 	mock := &MockRepo{tags: []domain.Tag{}}
 	var repo domain.TagRepository = mock
-	RegisterEndpoints(router, &repo)
+	RegisterEndpoints(router, repo)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/tags", nil)
@@ -48,7 +48,7 @@ func TestFindAllTagsGiveNotEmptyTags(t *testing.T) {
 	}}
 
 	var repo domain.TagRepository = mock
-	RegisterEndpoints(router, &repo)
+	RegisterEndpoints(router, repo)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/tags", nil)
