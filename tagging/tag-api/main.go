@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/adapter/dynamodb"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/middleware/security"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/web/api"
 )
@@ -16,7 +17,7 @@ func main() {
 	router.Use(gin.Recovery())
 	router.Use(security.SetUpOAuth2())
 
-	api.RegisterEndpoints(router, nil)
+	api.RegisterEndpoints(router, dynamodb.NewTagDynamoDBRepository())
 
 	// Start server on port 8080 (default)
 	// Server will listen on 0.0.0.0:8080 (localhost:8080 on Windows)

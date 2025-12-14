@@ -2,11 +2,16 @@ package dynamodb
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/google/uuid"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/domain"
 )
 
@@ -15,12 +20,21 @@ type TagDynamoDBRepository struct {
 	TableName string
 }
 
-// Implement TagRepository methods here
-// For example: SaveTag, GetTagBy, FindAllTags
-// These methods will interact with DynamoDB to perform the required operations
-// based on the TagRepository interface defined in the domain package.
-// You will need to import the domain package to use the Tag struct and TagRepository interface
-// import "tagging/tag-api/domain"
+func NewTagDynamoDBRepository() *TagDynamoDBRepository {
+	sessionName := fmt.Sprintf("onlyone-portal-%s", uuid.New().String())
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(os.Getenv("AWS_ACCESS_KEY_ID"), "AWS_SECRET_ACCESS_KEY", sessionName)),
+		config.WithRegion("eu-central-1"),
+	)
+
+	if err != nil {
+		panic("unable to load SDK config, " + err.Error())
+	}
+	return &TagDynamoDBRepository{
+		Client:    dynamodb.NewFromConfig(cfg),
+		TableName: os.Getenv("TAGS_TABLE_NAME"),
+	}
+}
 
 func (r *TagDynamoDBRepository) SaveTag(ctx *context.Context, tag *domain.Tag) error {
 	// Implementation for saving a tag to DynamoDB

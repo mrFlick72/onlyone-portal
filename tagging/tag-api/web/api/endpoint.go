@@ -7,12 +7,12 @@ import (
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/domain"
 )
 
-func RegisterEndpoints(r *gin.Engine, repository *domain.TagRepository) *gin.Engine {
+func RegisterEndpoints(r *gin.Engine, repository domain.TagRepository) *gin.Engine {
 
 	// GET /api/tags — return all tags as JSON
 	r.GET("/api/tags", func(c *gin.Context) {
 		ctx := c.Request.Context()
-		tags, err := (*repository).FindAllTags(&ctx)
+		tags, err := repository.FindAllTags(&ctx)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -34,7 +34,7 @@ func RegisterEndpoints(r *gin.Engine, repository *domain.TagRepository) *gin.Eng
 		}
 
 		ctx := c.Request.Context()
-		if err := (*repository).SaveTag(&ctx, &tag); err != nil {
+		if err := repository.SaveTag(&ctx, &tag); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
