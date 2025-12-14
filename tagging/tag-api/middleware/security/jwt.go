@@ -19,8 +19,21 @@ func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string) gin.HandlerFun
 
 	return func(ctx *gin.Context) {
 		authorization := authorizationHeaderFor(ctx)
-		jwt, _ := jwt.ParseString(authorization)
-		iat, _ := jwt.IssuedAt()
+		jwt, err := jwt.ParseString(authorization)
+		if err != nil {
+			fmt.Printf("failed to parse jwt token: %v\n", err)
+			ctx.Status(401)
+			return
+		}
+
+
+		iat, ok := jwt.IssuedAt()
+		if !ok {
+			fmt.Printf("failed to fetch iat from token: %v\n", err)
+			ctx.Status(401)
+			return
+		}
+
 		if time.Now().After(iat) {
 			ctx.Status(401)
 			return
