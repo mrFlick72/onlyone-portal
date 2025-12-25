@@ -82,8 +82,8 @@ func getClaimFromToken(token jwt.Token, claimName string) *string {
 
 func getClaimListFromToken(token jwt.Token, claimName string) *[]string {
 	var raw []interface{}
-	if err := token.Get("authorities", &raw); err != nil {
-		log.Println("failed to fetch claim authorities")
+	if err := token.Get(claimName, &raw); err != nil {
+		log.Println("failed to fetch claim authorities:", err)
 		return nil
 	}
 
@@ -91,7 +91,7 @@ func getClaimListFromToken(token jwt.Token, claimName string) *[]string {
 	for _, v := range raw {
 		s, ok := v.(string)
 		if !ok {
-			log.Println("element non string nel claim authorities")
+			log.Println("element is not a string")
 			return nil
 		}
 		roles = append(roles, s)
