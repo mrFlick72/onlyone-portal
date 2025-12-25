@@ -22,10 +22,15 @@ type TagDynamoDBRepository struct {
 
 func NewTagDynamoDBRepository() *TagDynamoDBRepository {
 	sessionName := fmt.Sprintf("onlyone-portal-%s", uuid.New().String())
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
+	cfg, err := config.LoadDefaultConfig(
+		context.TODO(),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(os.Getenv("AWS_ACCESS_KEY_ID"), "AWS_SECRET_ACCESS_KEY", sessionName)),
 		config.WithRegion("eu-central-1"),
 	)
+
+	if os.Getenv("DYNAMODB_ENDPOINT") != "" {
+		cfg.BaseEndpoint = aws.String("http://localhost:4566")
+	}
 
 	if err != nil {
 		panic("unable to load SDK config, " + err.Error())

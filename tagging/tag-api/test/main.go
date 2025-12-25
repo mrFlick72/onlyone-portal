@@ -30,7 +30,7 @@ func setupTestDynamoDBTable() error {
 	// Create table if not exists
 	client, _ := newDynamoDBClient()
 
-	TableName := ""
+	TableName := "Tags_Local_Test_Table"
 	_, err := client.CreateTable(context.TODO(), &dynamodb.CreateTableInput{
 		TableName: aws.String(TableName),
 		AttributeDefinitions: []types.AttributeDefinition{

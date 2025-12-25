@@ -19,7 +19,7 @@ var TableName = "TestTagsTable"
 func newStubbedContext() *context.Context {
 	ctx := context.Background()
 	userName := domain.UserName("testuser")
-	user := &domain.User{UserName: &userName}
+	user := domain.User{UserName: &userName}
 	newCtx, _ := domain.SetCurrentUser(user, &ctx)
 	return newCtx
 }
