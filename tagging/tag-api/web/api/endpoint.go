@@ -1,6 +1,8 @@
 package api
 
 import (
+	"context"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,9 +13,9 @@ func RegisterEndpoints(r *gin.Engine, repository domain.TagRepository) *gin.Engi
 
 	// GET /api/tags — return all tags as JSON
 	r.GET("/api/tags", func(c *gin.Context) {
-		ctx := c.Request.Context()
-		tags, err := repository.FindAllTags(&ctx)
+		tags, err := repository.FindAllTags(CopyGinKeysToRequestContext(c))
 		if err != nil {
+			log.Println("error occurred:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -33,8 +35,8 @@ func RegisterEndpoints(r *gin.Engine, repository domain.TagRepository) *gin.Engi
 			return
 		}
 
-		ctx := c.Request.Context()
-		if err := repository.SaveTag(&ctx, &tag); err != nil {
+		ctx := CopyGinKeysToRequestContext(c)
+		if err := repository.SaveTag(ctx, &tag); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -43,4 +45,13 @@ func RegisterEndpoints(r *gin.Engine, repository domain.TagRepository) *gin.Engi
 	})
 
 	return r
+}
+
+
+func CopyGinKeysToRequestContext(c *gin.Context) *context.Context {
+    newCtx := c.Request.Context()
+    for k, v := range c.Keys {
+        newCtx = context.WithValue(newCtx,k, v)
+    }
+   return &newCtx
 }
