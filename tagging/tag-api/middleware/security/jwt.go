@@ -31,19 +31,22 @@ func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string) gin.HandlerFun
 		if err != nil {
 			log.Printf("failed to parse jwt token: %v\n", err)
 			ctx.Status(401)
+			ctx.Abort()
 			return
 		}
 
 		exp, ok := jwt.Expiration()
 		if !ok {
-			log.Printf("failed to fetch iat from token: %v\n", err)
+			log.Printf("failed to fetch exp from token: %v\n", err)
 			ctx.Status(401)
+			ctx.Abort()
 			return
 		}
 
 		if time.Now().After(exp) {
 			log.Printf("token is expired: %v\n", err)
 			ctx.Status(401)
+			ctx.Abort()
 			return
 		}
 
@@ -56,6 +59,7 @@ func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string) gin.HandlerFun
 		if ok := contains(toStringSlice(*authorities), allowedAuthority); !ok {
 			log.Printf("user %s does not have required authority: %s\n", *userName, allowedAuthority)
 			ctx.Status(403)
+			ctx.Abort()
 			return
 		}else {
 			log.Printf("user %s has required authority: %s\nThe user has %s", *userName, allowedAuthority, *authorities)
@@ -101,13 +105,12 @@ func getClaimListFromToken(token jwt.Token, claimName string) *[]string {
 }
 
 func contains(slice *[]string, item string) bool {
-	set := make(map[string]struct{}, len(*slice))
 	for _, s := range *slice {
-		set[s] = struct{}{}
+		if s == item {
+			return true
+		}
 	}
-
-	_, ok := set[item]
-	return ok
+	return false
 }
 func toStringSlice(slice []string) *[]string {
 	result := make([]string, 0)
