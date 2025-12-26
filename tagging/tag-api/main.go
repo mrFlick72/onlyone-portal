@@ -1,27 +1,18 @@
 package main
 
 import (
-	"log"
-
-	"github.com/gin-gonic/gin"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/adapter/dynamodb"
-	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/middleware/security"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/web/api"
+	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/web/server"
 )
 
 func main() {
 	// Create a Gin router with default middleware (logger and recovery)
-	router := gin.Default()
+	engine := server.WebServerProvisioner{}
 
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
-	router.Use(security.SetUpOAuth2())
-
+	router := engine.ConfigureEngine()
+	
 	api.RegisterEndpoints(router, dynamodb.NewTagDynamoDBRepository())
 
-	// Start server on port 8080 (default)
-	// Server will listen on 0.0.0.0:8080 (localhost:8080 on Windows)
-	if err := router.Run("0.0.0.0:8000"); err != nil {
-		log.Fatalf("failed to run server: %v", err)
-	}
+	engine.StartEngine()
 }

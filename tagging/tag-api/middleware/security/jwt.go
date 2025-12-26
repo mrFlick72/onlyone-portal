@@ -21,6 +21,7 @@ func SetUpOAuth2() gin.HandlerFunc {
 	return NewOAuth2Middleware(sets, role)
 }
 
+// todo remove /management form the oauth2 evaluation
 func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string) gin.HandlerFunc {
 
 	return func(ctx *gin.Context) {
