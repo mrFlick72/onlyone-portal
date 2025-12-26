@@ -1,19 +1,19 @@
 package api
 
 import (
-	"context"
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/domain"
+	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/web/server"
 )
 
 func RegisterEndpoints(r *gin.Engine, repository domain.TagRepository) *gin.Engine {
 
 	// GET /api/tags — return all tags as JSON
 	r.GET("/api/tags", func(c *gin.Context) {
-		tags, err := repository.FindAllTags(CopyGinKeysToRequestContext(c))
+		tags, err := repository.FindAllTags(server.CopyGinKeysToRequestContext(c))
 		if err != nil {
 			log.Println("error occurred:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -35,7 +35,7 @@ func RegisterEndpoints(r *gin.Engine, repository domain.TagRepository) *gin.Engi
 			return
 		}
 
-		ctx := CopyGinKeysToRequestContext(c)
+		ctx := server.CopyGinKeysToRequestContext(c)
 		if err := repository.SaveTag(ctx, &tag); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -45,13 +45,4 @@ func RegisterEndpoints(r *gin.Engine, repository domain.TagRepository) *gin.Engi
 	})
 
 	return r
-}
-
-
-func CopyGinKeysToRequestContext(c *gin.Context) *context.Context {
-    newCtx := c.Request.Context()
-    for k, v := range c.Keys {
-        newCtx = context.WithValue(newCtx,k, v)
-    }
-   return &newCtx
 }
