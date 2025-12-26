@@ -35,21 +35,21 @@ func setupTestDynamoDBTable() error {
 		TableName: aws.String(TableName),
 		AttributeDefinitions: []types.AttributeDefinition{
 			{
-				AttributeName: aws.String("UserName"),
+				AttributeName: aws.String("user_name"),
 				AttributeType: types.ScalarAttributeTypeS,
 			},
 			{
-				AttributeName: aws.String("Key"),
+				AttributeName: aws.String("search_tag_key"),
 				AttributeType: types.ScalarAttributeTypeS,
 			},
 		},
 		KeySchema: []types.KeySchemaElement{
 			{
-				AttributeName: aws.String("UserName"),
+				AttributeName: aws.String("user_name"),
 				KeyType:       types.KeyTypeHash,
 			},
 			{
-				AttributeName: aws.String("Key"),
+				AttributeName: aws.String("search_tag_key"),
 				KeyType:       types.KeyTypeRange,
 			},
 		},

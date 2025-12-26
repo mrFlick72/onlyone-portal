@@ -2,16 +2,14 @@ package dynamodb
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"log"
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/google/uuid"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/domain"
 )
 
@@ -21,15 +19,17 @@ type TagDynamoDBRepository struct {
 }
 
 func NewTagDynamoDBRepository() *TagDynamoDBRepository {
-	sessionName := fmt.Sprintf("onlyone-portal-%s", uuid.New().String())
+	// sessionName := fmt.Sprintf("onlyone-portal-%s", uuid.New().String())
 	cfg, err := config.LoadDefaultConfig(
 		context.TODO(),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(os.Getenv("AWS_ACCESS_KEY_ID"), "AWS_SECRET_ACCESS_KEY", sessionName)),
 		config.WithRegion("eu-central-1"),
 	)
 
 	if os.Getenv("DYNAMODB_ENDPOINT") != "" {
+		log.Println("Using local DynamoDB endpoint:", os.Getenv("DYNAMODB_ENDPOINT"))
 		cfg.BaseEndpoint = aws.String("http://localhost:4566")
+	} else {
+		log.Println("Using AWS DynamoDB service without local endpoint")
 	}
 
 	if err != nil {
@@ -52,9 +52,9 @@ func (r *TagDynamoDBRepository) SaveTag(ctx *context.Context, tag *domain.Tag) e
 	input := &dynamodb.PutItemInput{
 		TableName: aws.String(r.TableName),
 		Item: map[string]types.AttributeValue{
-			"Key":      &types.AttributeValueMemberS{Value: tag.Key},
-			"Value":    &types.AttributeValueMemberS{Value: tag.Value},
-			"UserName": &types.AttributeValueMemberS{Value: *user.UserName},
+			"search_tag_key":   &types.AttributeValueMemberS{Value: tag.Key},
+			"search_tag_value": &types.AttributeValueMemberS{Value: tag.Value},
+			"user_name":        &types.AttributeValueMemberS{Value: *user.UserName},
 		},
 	}
 	_, err = r.Client.PutItem(context.TODO(), input)
@@ -69,29 +69,28 @@ func (r *TagDynamoDBRepository) GetTagBy(ctx *context.Context, key string) (*dom
 		return nil, err
 	}
 
-	input := &dynamodb.GetItemInput{
+	input := &dynamodb.QueryInput{
 		TableName: aws.String(r.TableName),
-		Key: map[string]types.AttributeValue{
-			"Key":      &types.AttributeValueMemberS{Value: key},
-			"UserName": &types.AttributeValueMemberS{Value: *user.UserName},
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":user_name":      &types.AttributeValueMemberS{Value: *user.UserName},
+			":search_tag_key": &types.AttributeValueMemberS{Value: key},
 		},
+		KeyConditionExpression: aws.String("user_name =:user_name AND search_tag_key =:search_tag_key"),
 	}
-	result, err := r.Client.GetItem(context.TODO(), input)
+	result, err := r.Client.Query(context.TODO(), input)
 	if err != nil {
 		return nil, err
 	}
 
-	if result.Item == nil {
-		return nil, nil // Tag not found
-	}
-	var tag domain.Tag
-	err = attributevalue.UnmarshalMap(result.Item, &tag)
-	if err != nil {
-		return nil, err
+	if len(result.Items) == 0 {
+		return nil, errors.New("tag not found") // Tag not found
 	}
 
-	// Return the tag found
-	return &tag, nil
+	item := result.Items[0]
+	return &domain.Tag{
+		Key:   item["search_tag_key"].(*types.AttributeValueMemberS).Value,
+		Value: item["search_tag_value"].(*types.AttributeValueMemberS).Value,
+	}, nil
 }
 
 func (r *TagDynamoDBRepository) FindAllTags(ctx *context.Context) (*[]domain.Tag, error) {
@@ -105,7 +104,7 @@ func (r *TagDynamoDBRepository) FindAllTags(ctx *context.Context) (*[]domain.Tag
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":username": &types.AttributeValueMemberS{Value: *user.UserName},
 		},
-		KeyConditionExpression: aws.String("UserName = :username"),
+		KeyConditionExpression: aws.String("user_name = :username"),
 	}
 	result, err := r.Client.Query(context.TODO(), input)
 	if err != nil {
@@ -113,9 +112,11 @@ func (r *TagDynamoDBRepository) FindAllTags(ctx *context.Context) (*[]domain.Tag
 	}
 
 	var tags []domain.Tag
-	err = attributevalue.UnmarshalListOfMaps(result.Items, &tags)
-	if err != nil {
-		return nil, err
+	for _, item := range result.Items {
+		tags = append(tags, domain.Tag{
+			Key:   item["search_tag_key"].(*types.AttributeValueMemberS).Value,
+			Value: item["search_tag_value"].(*types.AttributeValueMemberS).Value,
+		})
 	}
 
 	return &tags, nil
