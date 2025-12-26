@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -10,6 +11,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
+
+var client, _ = newDynamoDBClient()
+var TableName = "Tags_Local_Test_Table"
 
 func newDynamoDBClient() (*dynamodb.Client, error) {
 
@@ -27,10 +31,26 @@ func newDynamoDBClient() (*dynamodb.Client, error) {
 }
 
 func setupTestDynamoDBTable() error {
-	// Create table if not exists
-	client, _ := newDynamoDBClient()
+	deleteTestDynamoDBTable()
+	createTestDynamoDBTable()
+	return nil
+}
 
-	TableName := "Tags_Local_Test_Table"
+func deleteTestDynamoDBTable() error {
+	_, err := client.DeleteTable(context.TODO(), &dynamodb.DeleteTableInput{
+		TableName: aws.String(TableName),
+	})
+	if err != nil {
+		var resourceNotFoundException *types.ResourceNotFoundException
+		fmt.Println("Error deleting table:", err)
+		if !errors.As(err, &resourceNotFoundException) {
+			return err
+		}
+	}
+	return nil
+}
+
+func createTestDynamoDBTable() error {
 	_, err := client.CreateTable(context.TODO(), &dynamodb.CreateTableInput{
 		TableName: aws.String(TableName),
 		AttributeDefinitions: []types.AttributeDefinition{
@@ -57,6 +77,7 @@ func setupTestDynamoDBTable() error {
 	})
 	if err != nil {
 		var resourceInUseException *types.ResourceInUseException
+		fmt.Println("Error creating table:", err)
 		if !errors.As(err, &resourceInUseException) {
 			return err
 		}

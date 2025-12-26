@@ -1,21 +1,28 @@
 package com.onlyoneportal.budget.config;
 
-import com.onlyoneportal.budget.expense.repository.BudgetExpenseRepository;
-import com.onlyoneportal.budget.expense.repository.DynamoDbBudgetExpenseRepository;
-import com.onlyoneportal.budget.revenue.BudgetRevenueRepository;
-import com.onlyoneportal.budget.revenue.DynamoDbBudgetRevenueRepository;
-import com.onlyoneportal.budget.infrastructure.dynamodb.*;
-import com.onlyoneportal.budget.searchtag.CachedSearchTagRepository;
-import com.onlyoneportal.budget.searchtag.DynamoDBSearchTagRepository;
-import com.onlyoneportal.budget.searchtag.SearchTagRepository;
-import com.onlyoneportal.budget.user.SpringSecurityUserRepository;
-import com.onlyoneportal.budget.user.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.client.RestTemplate;
+
+import com.onlyoneportal.budget.expense.repository.BudgetExpenseRepository;
+import com.onlyoneportal.budget.expense.repository.DynamoDbBudgetExpenseRepository;
+import com.onlyoneportal.budget.infrastructure.dynamodb.BudgetExpenseDynamoDbIdFactory;
+import com.onlyoneportal.budget.infrastructure.dynamodb.BudgetRevenueDynamoDbIdFactory;
+import com.onlyoneportal.budget.infrastructure.dynamodb.DynamoDbAttributeValueFactory;
+import com.onlyoneportal.budget.infrastructure.dynamodb.SaltGenerator;
+import com.onlyoneportal.budget.infrastructure.dynamodb.UUIDSaltGenerator;
+import com.onlyoneportal.budget.revenue.BudgetRevenueRepository;
+import com.onlyoneportal.budget.revenue.DynamoDbBudgetRevenueRepository;
+import com.onlyoneportal.budget.searchtag.CachedSearchTagRepository;
+import com.onlyoneportal.budget.searchtag.RestTagsRepository;
+import com.onlyoneportal.budget.searchtag.SearchTagRepository;
+import com.onlyoneportal.budget.security.BearerTokenInterceptor;
+import com.onlyoneportal.budget.user.SpringSecurityUserRepository;
+import com.onlyoneportal.budget.user.UserRepository;
+
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 @Configuration(proxyBeanMethods = false)
@@ -28,8 +35,8 @@ public class RepositoryConfiguration {
 
     @Bean
     public BudgetRevenueRepository budgetRevenueRepository(DynamoDbClient dynamoDbClient,
-                                                           @Value("${budget-api.dynamo-db.budget-revenue.table-name}") String tableName,
-                                                           UserRepository userRepository, SaltGenerator saltGenerator) {
+            @Value("${budget-api.dynamo-db.budget-revenue.table-name}") String tableName,
+            UserRepository userRepository, SaltGenerator saltGenerator) {
 
         return new DynamoDbBudgetRevenueRepository(tableName, dynamoDbClient,
                 new BudgetRevenueDynamoDbIdFactory(saltGenerator),
@@ -38,8 +45,8 @@ public class RepositoryConfiguration {
 
     @Bean
     public BudgetExpenseRepository budgetExpenseRepository(DynamoDbClient dynamoDbClient,
-                                                           @Value("${budget-api.dynamo-db.budget-expense.table-name}") String tableName,
-                                                           UserRepository userRepository, SaltGenerator saltGenerator) {
+            @Value("${budget-api.dynamo-db.budget-expense.table-name}") String tableName,
+            UserRepository userRepository, SaltGenerator saltGenerator) {
 
         return new DynamoDbBudgetExpenseRepository(tableName, dynamoDbClient,
                 new BudgetExpenseDynamoDbIdFactory(saltGenerator),
@@ -48,18 +55,25 @@ public class RepositoryConfiguration {
 
     @Bean
     public SearchTagRepository searchTagRepository(DynamoDbClient dynamoDbClient,
-                                                   RedisTemplate redisTemplate,
-                                                   @Value("${budget-api.dynamo-db.search-tags.cache-name}") String cacheName,
-                                                   @Value("${budget-api.dynamo-db.search-tags.cache-ttl}") Integer cacheTtl,
-                                                   @Value("${budget-api.dynamo-db.search-tags.table-name}") String tableName,
-                                                   UserRepository userRepository) {
-        DynamoDBSearchTagRepository repository = new DynamoDBSearchTagRepository(tableName, userRepository, dynamoDbClient, new DynamoDbAttributeValueFactory());
+            RedisTemplate redisTemplate,
+            RestTemplate restTemplate,
+            @Value("${budget-api.tag-api.base-url:http://localhost:8000}") String tagApiBaseUrl,
+            @Value("${budget-api.dynamo-db.search-tags.cache-name}") String cacheName,
+            @Value("${budget-api.dynamo-db.search-tags.cache-ttl}") Integer cacheTtl,
+            @Value("${budget-api.dynamo-db.search-tags.table-name}") String tableName,
+            UserRepository userRepository) {
+        RestTagsRepository repository = new RestTagsRepository(restTemplate, tagApiBaseUrl);
+        // DynamoDBSearchTagRepository repository = new
+        // DynamoDBSearchTagRepository(tableName, userRepository, dynamoDbClient, new
+        // DynamoDbAttributeValueFactory());
         return new CachedSearchTagRepository(cacheName, cacheTtl, redisTemplate, userRepository, repository);
     }
 
     @Bean
     public RestTemplate repositoryServiceRestTemplate() {
-        return new RestTemplateBuilder().build();
+        return new RestTemplateBuilder()
+                .additionalInterceptors(new BearerTokenInterceptor())
+                .build();
     }
 
     @Bean

@@ -15,6 +15,7 @@ import (
 )
 
 var TableName = "TestTagsTable"
+var client, _ = newDynamoDBClient()
 
 func newStubbedContext() *context.Context {
 	ctx := context.Background()
@@ -40,7 +41,6 @@ func newDynamoDBClient() (*dynamodb.Client, error) {
 }
 
 func newTagDynamoDBRepository() *TagDynamoDBRepository {
-	client, _ := newDynamoDBClient()
 	return &TagDynamoDBRepository{
 		// Initialize with mock or test dependencies as needed
 		TableName: TableName,
@@ -49,9 +49,8 @@ func newTagDynamoDBRepository() *TagDynamoDBRepository {
 }
 
 func setupTestDynamoDBTable() error {
-	// Create table if not exists
-	client, _ := newDynamoDBClient()
-
+	// it is an attempt to clean up possible dirty state before creating
+	teardownTestDynamoDBTable()
 	_, err := client.CreateTable(context.TODO(), &dynamodb.CreateTableInput{
 		TableName: aws.String(TableName),
 		AttributeDefinitions: []types.AttributeDefinition{
@@ -77,6 +76,7 @@ func setupTestDynamoDBTable() error {
 		BillingMode: types.BillingModePayPerRequest,
 	})
 	if err != nil {
+
 		var resourceInUseException *types.ResourceInUseException
 		if !errors.As(err, &resourceInUseException) {
 			return err
