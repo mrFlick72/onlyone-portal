@@ -3,9 +3,9 @@ package com.onlyoneportal.budget.searchtag;
 import java.util.List;
 
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.RequestEntity;
 import org.springframework.web.client.RestTemplate;
-
-import com.fasterxml.jackson.core.type.TypeReference;
 
 public class RestTagsRepository implements SearchTagRepository {
 
@@ -19,19 +19,23 @@ public class RestTagsRepository implements SearchTagRepository {
 
     @Override
     public SearchTag findSearchTagBy(String key) {
-        restTemplate.getForObject(baseUrl + "/api/tags/" + key, SearchTag.class);
-        return null;
+        return findAllSearchTag().stream()
+                .filter(tag -> tag.key().equals(key))
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
     public List<SearchTag> findAllSearchTag() {
-    restTemplate.getForEntity(baseUrl + "/api/tags", new ParameterizedTypeReference<List<SearchTag>>(){})
-            return null;
+
+        return restTemplate.exchange(baseUrl + "/api/tags",
+                HttpMethod.GET, RequestEntity.EMPTY, new ParameterizedTypeReference<List<SearchTag>>() {
+                }).getBody();
     }
 
     @Override
     public void save(SearchTag searchTag) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        restTemplate.put(baseUrl + "/api/tags", searchTag);
     }
 
 }
