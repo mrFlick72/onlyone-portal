@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { FC, useEffect, useState } from 'react'
 import { OnlyonePortalPagesConfigMap } from "../../messages/OnlyonePortalPagesConfigMap";
 import SearchTagsTable from "./SearchTagsTable";
 import SearchTagsForm from "./SearchTagsForm";
@@ -8,12 +8,15 @@ import themeProvider from "../../theme/ThemeProvider";
 import Menu from "../../components/menu/Menu";
 import AccountPageMenuItem from "../../components/menu/AccountPageMenuItem";
 import Separator from "../../components/form/Separator";
+import { MessageBundle } from '../../messages/MessageRepository';
 
-const SearchTagsPage = (props) => {
-    let { messageRegistry } = props
+interface SearchTagsPageProps {
+    messageRegistry: MessageBundle;
+}
+const SearchTagsPage: FC<SearchTagsPageProps> = ({ messageRegistry }) => {
     const configMap = new OnlyonePortalPagesConfigMap()
 
-    const [searchTagsRegistry, setSearchTagsRegistry] = useState([])
+    const [searchTagsRegistry, setSearchTagsRegistry] = useState<SearchTag[]>([])
     const [searchTagKey, setSearchTagKey] = useState("")
     const [searchTagValue, setSearchTagValue] = useState("")
 
@@ -24,10 +27,10 @@ const SearchTagsPage = (props) => {
     }, [])
 
     const formHandler = {
-        valueHandler: (value) => {
+        valueHandler: (value: React.ChangeEvent<HTMLInputElement>) => {
             setSearchTagValue(value.target.value);
         },
-        submitHandler: (searchTagKey, searchTagValue) => {
+        submitHandler: (searchTagKey: string, searchTagValue: string) => {
             saveSearchTag({ key: searchTagKey, value: searchTagValue })
                 .then(ignore => getSearchTagRegistry())
                 .then(registry => {
@@ -38,7 +41,7 @@ const SearchTagsPage = (props) => {
 
 
 
-    const tableHandler = (searchTagKey, searchTagValue) => {
+    const tableHandler = (searchTagKey: string, searchTagValue: string) => {
         setSearchTagKey(searchTagKey)
         setSearchTagValue(searchTagValue)
     }
@@ -47,7 +50,7 @@ const SearchTagsPage = (props) => {
 
     return <ThemeProvider theme={theme}>
         <Paper variant="outlined">
-            <Menu messages={configMap.searchTags(messageRegistry).menuMessages}>
+            <Menu messages={configMap.searchTags(messageRegistry).menuMessages} navBarItems={[]}>
                 <AccountPageMenuItem text={configMap.searchTags(messageRegistry).menuMessages.userProfileLabel} />
             </Menu>
 
