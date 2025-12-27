@@ -9,6 +9,7 @@ import (
 	"github.com/lestrrat-go/jwx/v3/jwk"
 	"github.com/lestrrat-go/jwx/v3/jwt"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/domain"
+	"go.xrfang.cn/wild"
 )
 
 func SetUpOAuth2() gin.HandlerFunc {
@@ -18,13 +19,27 @@ func SetUpOAuth2() gin.HandlerFunc {
 	role := os.Getenv("OAUTH2_ROLE")
 	sets, _ := jwk.JwkSets()
 	log.Println("OAuth2 middleware set up with role:", role)
-	return NewOAuth2Middleware(sets, role)
+	return NewOAuth2Middleware(sets, role, []string{"/management/*"})
 }
 
-// todo remove /management form the oauth2 evaluation
-func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string) gin.HandlerFunc {
+func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string, ignored []string) gin.HandlerFunc {
 
 	return func(ctx *gin.Context) {
+		for _, path := range ignored {
+			m := wild.MustCompile(path, wild.Extended())
+
+			if m.Match(ctx.FullPath()) {
+				log.Printf("skipping oauth2 evaluation for path: %s\n", path)
+				ctx.Next()
+				return
+			}
+		}
+		if ctx.Request.Method == "OPTIONS" {
+			log.Printf("skipping oauth2 evaluation for OPTIONS request\n")
+			ctx.Next()
+			return
+		}	
+		
 		authorization := authorizationHeaderFor(ctx)
 		log.Printf("verifying token: %s\n", authorization)
 		jwt, err := jwt.Parse([]byte(authorization), jwt.WithVerify(false))
@@ -61,11 +76,10 @@ func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string) gin.HandlerFun
 			ctx.Status(403)
 			ctx.Abort()
 			return
-		}else {
+		} else {
 			log.Printf("user %s has required authority: %s\nThe user has %s", *userName, allowedAuthority, *authorities)
 		}
 
-		
 		ctx.Set("user", domain.User{
 			UserName:    userName,
 			Authorities: toStringSlice(*authorities),
@@ -74,6 +88,7 @@ func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string) gin.HandlerFun
 		log.Printf("authenticated user: %s\n", *userName)
 		ctx.Next()
 	}
+
 }
 
 func getClaimFromToken(token jwt.Token, claimName string) *string {
@@ -101,7 +116,7 @@ func getClaimListFromToken(token jwt.Token, claimName string) *[]string {
 		}
 		roles = append(roles, s)
 	}
-	return &roles	
+	return &roles
 }
 
 func contains(slice *[]string, item string) bool {

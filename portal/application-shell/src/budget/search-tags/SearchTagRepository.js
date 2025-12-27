@@ -1,8 +1,8 @@
-import {getBudgetApiBaseUrl} from "../../config/ConfigLoader";
+import {getTagApiBaseUrl} from "../../config/ConfigLoader";
 
 export async function getSearchTagRegistry() {
-    const baseUrl = await getBudgetApiBaseUrl();
-    return fetch(`${baseUrl}/budget-expense/search-tag`, {
+    const baseUrl = await getTagApiBaseUrl();
+    return fetch(`${baseUrl}/api/tags`, {
         method: "GET",
         mode: "cors",
         credentials: 'include',
@@ -14,8 +14,8 @@ export async function getSearchTagRegistry() {
 }
 
 export async function saveSearchTag(searchTag) {
-    const baseUrl = await getBudgetApiBaseUrl();
-    return fetch(`${baseUrl}/budget-expense/search-tag`, {
+    const baseUrl = await getTagApiBaseUrl();
+    return fetch(`${baseUrl}/api/tags`, {
         method: "PUT",
         credentials: 'same-origin',
         body: JSON.stringify(searchTag),

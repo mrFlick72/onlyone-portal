@@ -6,7 +6,8 @@ type ApplicationConfig = {
     authenticationCheckInterval: number
     budgetApiBaseUrl: string
     revenueApiBaseUrl: string
-    accountApiBaseUrl: string
+    accountApiBaseUrl: string,
+    tagApiBaseUrl: string
 
 }
 export const applicationConfigLoader = async () => {
@@ -18,7 +19,9 @@ export const applicationConfigLoader = async () => {
         authenticationCheckInterval: Number(process.env.AUTHENTICATION_CHECK_INTERVAL),
         budgetApiBaseUrl: process.env.BUDGET_API_BASE_URL,
         revenueApiBaseUrl: process.env.REVENUE_API_BASE_URL,
-        accountApiBaseUrl: process.env.ACCOUNT_API_BASE_URL
+        accountApiBaseUrl: process.env.ACCOUNT_API_BASE_URL,
+        tagApiBaseUrl: process.env.TAG_API_BASE_URL
+
     };
     return configData as ApplicationConfig
 }
@@ -36,4 +39,9 @@ export async function getRevenueApiBaseUrl() {
 export async function getAccountApiBaseUrl() {
     const appConfig = await applicationConfigLoader()
     return appConfig.accountApiBaseUrl;
+}
+
+export async function getTagApiBaseUrl() {
+    const appConfig = await applicationConfigLoader()
+    return appConfig.tagApiBaseUrl;
 }

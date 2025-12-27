@@ -21,8 +21,9 @@ func newStubbedContext() *context.Context {
 	ctx := context.Background()
 	userName := domain.UserName("testuser")
 	user := domain.User{UserName: &userName}
-	newCtx, _ := domain.SetCurrentUser(user, &ctx)
-	return newCtx
+	newCtx := context.WithValue(ctx, "user", user)
+
+	return &newCtx
 }
 
 func newDynamoDBClient() (*dynamodb.Client, error) {

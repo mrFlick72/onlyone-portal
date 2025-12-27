@@ -31,7 +31,7 @@ func TestGetClaimFromToken(t *testing.T) {
 }
 
 func TestWhenARequestIsAuthorized(t *testing.T) {
-	router := SetupAuthenticatedTestWebServer()
+	router := SetupAuthenticatedTestWebServer([]string{})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/sample", nil)
@@ -43,7 +43,7 @@ func TestWhenARequestIsAuthorized(t *testing.T) {
 }
 
 func TestWhenARequestIsNoAuthorized(t *testing.T) {
-	router := SetupAuthenticatedTestWebServer()
+	router := SetupAuthenticatedTestWebServer([]string{})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/sample", nil)
@@ -53,9 +53,29 @@ func TestWhenARequestIsNoAuthorized(t *testing.T) {
 	assert.Equal(t, http.StatusForbidden, w.Code)
 }
 
-func SetupAuthenticatedTestWebServer() *gin.Engine {
+func TestWhenAuthorizationEvaluationIsSkipped(t *testing.T) {
+	router := SetupAuthenticatedTestWebServer([]string{"/api/sample"})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/sample", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestWhenAuthorizationEvaluationIsSkippedWithWildcard(t *testing.T) {
+	router := SetupAuthenticatedTestWebServer([]string{"/api/*"})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/sample", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func SetupAuthenticatedTestWebServer(ignored []string) *gin.Engine {
 	keySet, _ := jwk.ParseString(testutils.JwkStr)
-	middleware := NewOAuth2Middleware(keySet, "ROLE_USER")
+	middleware := NewOAuth2Middleware(keySet, "ROLE_USER", ignored)
 
 	router := testutils.SetupTestWebServer([]gin.HandlerFunc{middleware})
 
