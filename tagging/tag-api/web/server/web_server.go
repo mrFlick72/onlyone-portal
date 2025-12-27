@@ -29,7 +29,7 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ","),
 		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin"},
+		AllowHeaders:     []string{"Origin","Authorization", "Content-Type", "Accept"},
 		AllowCredentials: true,
 		MaxAge:           60 * time.Minute,
 	}))

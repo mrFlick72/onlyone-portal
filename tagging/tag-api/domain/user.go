@@ -22,8 +22,3 @@ func GetCurrentUser(ctx *context.Context) (*User, error) {
 	}
 }
 
-// todo to delete
-func SetCurrentUser(user User, ctx *context.Context) (*context.Context, error) {
-	newCtx := context.WithValue(*ctx, "user", user)
-	return &newCtx, nil
-}
