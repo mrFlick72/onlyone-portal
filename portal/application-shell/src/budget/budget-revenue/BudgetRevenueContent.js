@@ -1,4 +1,3 @@
-import React from "react"
 import BudgetRevenueRow from "./BudgetRevenueRow";
 import {Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@mui/material";
 

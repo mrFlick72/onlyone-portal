@@ -1,9 +1,14 @@
-import React from "react"
-import {Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow} from "@mui/material";
-import {ModeEdit} from "@mui/icons-material";
+import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
+import { ModeEdit } from "@mui/icons-material";
 import FormButton from "../../components/form/FormButton";
+import { FC } from "react";
 
-export default ({searchTagsRegistry, handler}) => {
+interface SearchTagsTableProps {
+    searchTagsRegistry: SearchTag[];
+    handler: (searchTagKey: string, searchTagValue: string) => void;
+}
+
+const SearchTagsTable: FC<SearchTagsTableProps> = ({ searchTagsRegistry, handler }) => {
     return <TableContainer component={Paper}>
         <Table aria-label="simple table">
             <TableHead>
@@ -20,8 +25,9 @@ export default ({searchTagsRegistry, handler}) => {
                         </TableCell>
                         <TableCell>
                             <FormButton type="button"
-                                        labelPrefix={<ModeEdit/>}
-                                        onClickHandler={handler.editHandler.bind(this, searchTag.key, searchTag.value)}
+                                label=""
+                                labelPrefix={<ModeEdit />}
+                                onClickHandler={() => handler(searchTag.key, searchTag.value)}
                             />
                         </TableCell>
                     </TableRow>
@@ -30,3 +36,5 @@ export default ({searchTagsRegistry, handler}) => {
         </Table>
     </TableContainer>
 }
+
+export default SearchTagsTable;

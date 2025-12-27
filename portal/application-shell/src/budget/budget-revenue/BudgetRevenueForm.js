@@ -1,5 +1,3 @@
-import React from "react"
-
 import {v1 as uuidv1} from 'uuid';
 import {Box} from "@mui/material";
 import moment from "moment/moment";
