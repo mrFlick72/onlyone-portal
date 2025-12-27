@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react'
 import {OnlyonePortalPagesConfigMap} from "../../messages/OnlyonePortalPagesConfigMap";
 import SearchTagsTable from "./SearchTagsTable";
 import SearchTagsForm from "./SearchTagsForm";
-import {getSearchTagRegistry, saveSearchTag} from "./SearchTagRepository";
+import {getSearchTagRegistry, saveSearchTag} from "./domain/SearchTagRepository";
 import {Container, Paper, ThemeProvider} from "@mui/material";
 import themeProvider from "../../theme/ThemeProvider";
 import Menu from "../../components/menu/Menu";

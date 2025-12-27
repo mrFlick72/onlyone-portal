@@ -11,7 +11,7 @@ import {deleteBudgetExpense, findBudgetExpense, saveBudgetExpense} from "./Budge
 import moment from "moment";
 import {OnlyonePortalPagesConfigMap} from "../../messages/OnlyonePortalPagesConfigMap";
 import {getMonthRegistry} from "../../time/MonthRepository";
-import {getSearchTagRegistry} from "../search-tags/SearchTagRepository";
+import {getSearchTagRegistry} from "../search-tags/domain/SearchTagRepository";
 import {Container, Paper, Tab, Tabs, ThemeProvider} from "@mui/material";
 import themeProvider from "../../theme/ThemeProvider";
 import SaveBudgetExpensePopUp from "./popup/SaveBudgetExpensePopUp";
