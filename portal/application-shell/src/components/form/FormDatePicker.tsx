@@ -1,6 +1,6 @@
 import React from "react";
 import { Grid2 } from "@mui/material";
-import { DatePicker, DesktopDatePicker } from "@mui/x-date-pickers"
+import { DesktopDatePicker } from "@mui/x-date-pickers"
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { commonStyle } from "../../theme/ThemeProvider";
@@ -8,14 +8,15 @@ import moment from "moment";
 
 interface FormDatePickerProps {
     label: string
-    value: string
+    value: any
     onClickHandler: (value: any) => void
     pattern: string
 
 }
 
 
-const FormDatePicker: React.FC<FormDatePickerProps> = ({ label, value, onClickHandler, pattern }) => {
+const FormDatePicker: React.FC<FormDatePickerProps> = ({
+    label, value, onClickHandler, pattern }) => {
     let val = value && moment(value, pattern)
 
     return <Grid2 container alignItems="flex-end" style={commonStyle.formRow}>
