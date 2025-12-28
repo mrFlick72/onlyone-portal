@@ -7,7 +7,7 @@ export function getMonthSearchCriteria() {
     return month
 }
 
-export function setMonthSearchCriteria(month) {
+export function setMonthSearchCriteria(month: string) {
     window.sessionStorage.setItem("month", month)
 }
 
@@ -20,7 +20,7 @@ export function getYearSearchCriteria() {
     return year
 }
 
-export function setYearSearchCriteria(year) {
+export function setYearSearchCriteria(year: string) {
     window.sessionStorage.setItem("year", year)
 }
 
@@ -33,7 +33,7 @@ export function getSearchTagsSearchCriteria() {
     return searchTags.split(",")
 }
 
-export function setSearchTagsSearchCriteria(searchTags) {
+export function setSearchTagsSearchCriteria(searchTags: string) {
     window.sessionStorage.setItem("searchTags", searchTags)
 }
 
