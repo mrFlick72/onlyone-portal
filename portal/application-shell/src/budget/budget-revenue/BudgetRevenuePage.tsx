@@ -15,10 +15,9 @@ import { FormDateFormatPattern } from "../../components/form/FormDatePicker";
 import BudgetRevenue from "./domain/BudbetRevenue";
 interface BudgetRevenuePageProps {
     messageRegistry: any;
-    links: { text: string; url: string }[];
 }
 
-const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry, links }) => {
+const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }) => {
 
     const [deletableItem, setDeletableItem] = useState<BudgetRevenue | null>(null)
     const [revenues, setRevenues] = useState([])

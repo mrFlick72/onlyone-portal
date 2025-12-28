@@ -9,7 +9,7 @@ module.exports = {
         callback: path.resolve(__dirname, './auth/Callback.tsx'),
         logout: path.resolve(__dirname, './auth/Logout.tsx'),
         home: path.resolve(__dirname, './home/index.tsx'),
-        budget: path.resolve(__dirname, './budget/index.js'),
+        budget: path.resolve(__dirname, './budget/index.tsx'),
         account: path.resolve(__dirname, './account/index.tsx')
     },
     resolve: {
