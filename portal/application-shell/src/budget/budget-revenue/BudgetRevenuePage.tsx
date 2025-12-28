@@ -12,10 +12,15 @@ import SaveBudgetRevenuePopUp from "./SaveBudgetRevenuePopUp";
 import Menu from "../../components/menu/Menu";
 import OpenPopUpMenuItem from "../../components/menu/OpenPopUpMenuItem";
 import { FormDateFormatPattern } from "../../components/form/FormDatePicker";
+import BudgetRevenue from "./domain/BudbetRevenue";
+interface BudgetRevenuePageProps {
+    messageRegistry: any;
+    links: { text: string; url: string }[];
+}
 
-const BudgetRevenuePage = ({ messageRegistry, links }) => {
+const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry, links }) => {
 
-    const [deletableItem, setDeletableItem] = useState({})
+    const [deletableItem, setDeletableItem] = useState<BudgetRevenue | null>(null)
     const [revenues, setRevenues] = useState([])
     const [currentBudgetRevenueId, setCurrentBudgetRevenueId] = useState("")
     const [currentBudgetRevenueDate, setCurrentBudgetRevenueDate] = useState(moment())
@@ -34,16 +39,16 @@ const BudgetRevenuePage = ({ messageRegistry, links }) => {
         setOpenSaveBudgetRevenuePopUp(false)
     }, [])
 
-    const makeUpdateBudgetRevenuePopUpOpen = useCallback((revenue) => {
-        setCurrentBudgetRevenueId(revenue.id)
+    const makeUpdateBudgetRevenuePopUpOpen = useCallback((revenue: BudgetRevenue) => {
+        setCurrentBudgetRevenueId(revenue.id!)
         setCurrentBudgetRevenueDate(moment(revenue.date, "DD/MM/YYYY"))
-        setCurrentBudgetRevenueAmount(revenue.amount)
+        setCurrentBudgetRevenueAmount(revenue.amount!.toString())
         setCurrentBudgetRevenueNote(revenue.note)
         setOpenSaveBudgetRevenuePopUp(true)
     }, [])
 
     const [openDeleteBudgetRevenuePopUp, setOpenDeleteBudgetRevenuePopUp] = useState(false)
-    const makeDeleteBudgetRevenuePopUpOpen = useCallback((revenue) => {
+    const makeDeleteBudgetRevenuePopUpOpen = useCallback((revenue: BudgetRevenue) => {
         setDeletableItem(revenue)
         setOpenDeleteBudgetRevenuePopUp(true)
     }, [])
@@ -60,13 +65,13 @@ const BudgetRevenuePage = ({ messageRegistry, links }) => {
     }
 
     const budgetRevenueHandlers = {
-        date: (value) => setCurrentBudgetRevenueDate(value),
-        amount: (event) => setCurrentBudgetRevenueAmount(event.target.value),
-        note: (event) => setCurrentBudgetRevenueNote(event.target.value)
+        date: (value:moment.Moment) => setCurrentBudgetRevenueDate(value),
+        amount: (event: React.ChangeEvent<HTMLInputElement>) => setCurrentBudgetRevenueAmount(event.target.value),
+        note: (event: React.ChangeEvent<HTMLTextAreaElement>) => setCurrentBudgetRevenueNote(event.target.value)
     }
 
     const deleteItem = useCallback(() => {
-        deleteBudgetRevenue(deletableItem.id)
+        deleteBudgetRevenue(deletableItem?.id!)
             .then((response) => {
                 if (response.status === 204) {
                     budgetRevenue()
@@ -98,7 +103,7 @@ const BudgetRevenuePage = ({ messageRegistry, links }) => {
     return <ThemeProvider theme={theme}>
         <Paper variant="outlined">
 
-            <Menu messages={configMap.budgetRevenue(messageRegistry).menuMessages} links={links}>
+            <Menu messages={configMap.budgetRevenue(messageRegistry).menuMessages} navBarItems={[]}>
 
                 <OpenPopUpMenuItem icon={<Money />}
                     openPopupHandler={makeSaveBudgetRevenuePopUpOpen}
@@ -110,7 +115,7 @@ const BudgetRevenuePage = ({ messageRegistry, links }) => {
                     open={openSaveBudgetRevenuePopUp}
                     handleClose={saveBudgetRevenuePopUpCloseHandler}
                     budgetRevenue={{
-                        date: currentBudgetRevenueDate,
+                        date: currentBudgetRevenueDate.format(FormDateFormatPattern),
                         amount: currentBudgetRevenueAmount,
                         note: currentBudgetRevenueNote
                     }}

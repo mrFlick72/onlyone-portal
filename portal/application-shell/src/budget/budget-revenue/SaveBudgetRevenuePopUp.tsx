@@ -8,7 +8,7 @@ import BudgetRevenue from "./domain/BudbetRevenue";
 interface SaveBudgetRevenuePopUpProps {
     budgetRevenue: BudgetRevenue;
     handlers: {
-        date: (date: moment.Moment | null) => void;
+        date: (date: moment.Moment) => void;
         amount: (event: React.ChangeEvent<HTMLInputElement>) => void;
         note: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
     };

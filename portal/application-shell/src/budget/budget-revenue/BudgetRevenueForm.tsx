@@ -1,21 +1,19 @@
 import React from "react";
 
 import { Box } from "@mui/material";
-import {v1 as uuidv1} from 'uuid';
+import { v1 as uuidv1 } from 'uuid';
 
 import moment from "moment/moment";
 import FormDatePicker, { FormDateFormatPattern } from "../../components/form/FormDatePicker";
 import FormMoneyFormat from "../../components/form/FormMoneyFormat";
 import FormTextArea from "../../components/form/FormTextArea";
+import { B } from "react-router/dist/development/route-data-Cw8htKcF";
+import BudgetRevenue from "./domain/BudbetRevenue";
 
 interface BudgetRevenueFormProps {
-    budgetRevenueData: {
-        date: string;
-        amount: number;
-        note: string;
-    };
+    budgetRevenueData: BudgetRevenue;
     budgetRevenueHandlers: {
-        date: (date: moment.Moment | null) => void;
+        date: (date: moment.Moment) => void;
         amount: (event: React.ChangeEvent<HTMLInputElement>) => void;
         note: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
     };
@@ -25,7 +23,7 @@ const BudgetRevenueForm: React.FC<BudgetRevenueFormProps> = ({ budgetRevenueData
         <FormDatePicker
             pattern={FormDateFormatPattern}
             label={"Date:"}
-            value={moment(budgetRevenueData.date, FormDateFormatPattern)}
+            value={budgetRevenueData.date}
             onClickHandler={budgetRevenueHandlers.date} />
 
         <FormMoneyFormat
