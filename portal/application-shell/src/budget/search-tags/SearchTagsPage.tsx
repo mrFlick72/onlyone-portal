@@ -17,8 +17,9 @@ const SearchTagsPage: FC<SearchTagsPageProps> = ({ messageRegistry }) => {
     const configMap = new OnlyonePortalPagesConfigMap()
 
     const [searchTagsRegistry, setSearchTagsRegistry] = useState<SearchTag[]>([])
-    const [searchTagKey, setSearchTagKey] = useState("")
-    const [searchTagValue, setSearchTagValue] = useState("")
+
+    const [searchTag, setSearchTag] = useState<SearchTag>({ key: "", value: "" })
+
 
     useEffect(() => {
         getSearchTagRegistry().then(registry => {
@@ -28,7 +29,11 @@ const SearchTagsPage: FC<SearchTagsPageProps> = ({ messageRegistry }) => {
 
     const formHandler = {
         valueHandler: (value: React.ChangeEvent<HTMLInputElement>) => {
-            setSearchTagValue(value.target.value);
+            setSearchTag((prevState) => ({
+                ...prevState,
+                value: value.target.value
+            }))
+
         },
         submitHandler: (searchTagKey: string, searchTagValue: string) => {
             saveSearchTag({ key: searchTagKey, value: searchTagValue })
@@ -42,8 +47,7 @@ const SearchTagsPage: FC<SearchTagsPageProps> = ({ messageRegistry }) => {
 
 
     const tableHandler = (searchTagKey: string, searchTagValue: string) => {
-        setSearchTagKey(searchTagKey)
-        setSearchTagValue(searchTagValue)
+        setSearchTag({ key: searchTagKey, value: searchTagValue })
     }
 
     let theme = themeProvider
@@ -55,7 +59,7 @@ const SearchTagsPage: FC<SearchTagsPageProps> = ({ messageRegistry }) => {
             </Menu>
 
             <Container>
-                <SearchTagsForm searchTag={{ key: searchTagKey, value: searchTagValue }} handler={formHandler} />
+                <SearchTagsForm searchTag={{ key: searchTag.key, value: searchTag.value }} handler={formHandler} />
 
                 <Separator />
 
