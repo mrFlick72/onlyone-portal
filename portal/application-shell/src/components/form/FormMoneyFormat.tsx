@@ -7,9 +7,9 @@ type FormMoneyFormatProps = {
     id: string
     label: string
     required: boolean
-    autoFocus: boolean
-    disabled: boolean
-    value: string
+    autoFocus?: boolean
+    disabled?: boolean
+    value: any
     handler: any
 }
 

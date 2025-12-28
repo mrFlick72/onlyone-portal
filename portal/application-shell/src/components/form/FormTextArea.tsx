@@ -6,13 +6,13 @@ import { commonStyle } from "../../theme/ThemeProvider";
 type FormTextAreaProps = {
     id: string,
     label: string,
-    type: string,
-    required: boolean,
-    autoFocus: boolean,
-    disabled: boolean,
+    type?: string,
+    required?: boolean,
+    autoFocus?: boolean,
+    disabled?: boolean,
     value: string,
     onChangeHandler : React.ChangeEventHandler,
-    row: number
+    row?: number
 }
 
 const FormTextArea: React.FC<FormTextAreaProps> = ({ id, label, type, required, autoFocus, disabled, value, onChangeHandler, row }) => {

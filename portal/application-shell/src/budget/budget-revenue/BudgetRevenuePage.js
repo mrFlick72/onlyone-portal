@@ -1,19 +1,19 @@
-import React, {useCallback, useEffect, useState} from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import moment from "moment";
-import {OnlyonePortalPagesConfigMap} from "../../messages/OnlyonePortalPagesConfigMap";
+import { OnlyonePortalPagesConfigMap } from "../../messages/OnlyonePortalPagesConfigMap";
 import * as searchCriteria from "../SearchCriteriaProvider";
-import {deleteBudgetRevenue, findBudgetRevenue, saveBudgetRevenue} from "./BudgetRevenueRepository";
+import { deleteBudgetRevenue, findBudgetRevenue, saveBudgetRevenue } from "./domain/BudgetRevenueRepository";
 import themeProvider from "../../theme/ThemeProvider";
-import {Container, Paper, ThemeProvider} from "@mui/material";
-import {Money} from "@mui/icons-material";
+import { Container, Paper, ThemeProvider } from "@mui/material";
+import { Money } from "@mui/icons-material";
 import BudgetRevenueContent from "./BudgetRevenueContent";
 import DeleteBudgetRevenueConfirmationPopUp from "./DeleteBudgetRevenueConfirmationPopUp";
 import SaveBudgetRevenuePopUp from "./SaveBudgetRevenuePopUp";
 import Menu from "../../components/menu/Menu";
 import OpenPopUpMenuItem from "../../components/menu/OpenPopUpMenuItem";
-import {FormDateFormatPattern} from "../../components/form/FormDatePicker";
+import { FormDateFormatPattern } from "../../components/form/FormDatePicker";
 
-const BudgetRevenuePage = ({messageRegistry, links}) => {
+const BudgetRevenuePage = ({ messageRegistry, links }) => {
 
     const [deletableItem, setDeletableItem] = useState({})
     const [revenues, setRevenues] = useState([])
@@ -100,9 +100,9 @@ const BudgetRevenuePage = ({messageRegistry, links}) => {
 
             <Menu messages={configMap.budgetRevenue(messageRegistry).menuMessages} links={links}>
 
-                <OpenPopUpMenuItem icon={<Money/>}
-                                   openPopupHandler={makeSaveBudgetRevenuePopUpOpen}
-                                   text={configMap.budgetExpense(messageRegistry).menuMessages.insertBudgetModal}/>
+                <OpenPopUpMenuItem icon={<Money />}
+                    openPopupHandler={makeSaveBudgetRevenuePopUpOpen}
+                    text={configMap.budgetExpense(messageRegistry).menuMessages.insertBudgetModal} />
 
             </Menu>
             <Container>
@@ -116,17 +116,17 @@ const BudgetRevenuePage = ({messageRegistry, links}) => {
                     }}
                     handlers={budgetRevenueHandlers}
                     modal={configMap.budgetRevenue(messageRegistry).saveBudgetRevenueModal}
-                    saveCallback={saveRevenue}/>
+                    saveCallback={saveRevenue} />
 
                 <DeleteBudgetRevenueConfirmationPopUp
                     open={openDeleteBudgetRevenuePopUp}
                     handleClose={deleteBudgetRevenuePopUpOpenCloseHandler}
                     modal={deleteConfirmationPopupMessages}
-                    saveCallback={deleteItem}/>
+                    saveCallback={deleteItem} />
 
                 <BudgetRevenueContent openUpdatePopUp={makeUpdateBudgetRevenuePopUpOpen}
-                                      openDeletePopUp={makeDeleteBudgetRevenuePopUpOpen}
-                                      revenues={revenues}/>
+                    openDeletePopUp={makeDeleteBudgetRevenuePopUpOpen}
+                    revenues={revenues} />
             </Container>
 
         </Paper>
