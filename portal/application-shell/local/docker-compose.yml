@@ -1,6 +1,6 @@
 version: "3"
 services:
-  nginx:
+  onlyone-portal:
     image: nginx
     volumes:
       - ../dist:/usr/share/nginx/html
