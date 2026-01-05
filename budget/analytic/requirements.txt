@@ -2,3 +2,7 @@ pandas
 numpy
 matplotlib
 seaborn
+fastapi==0.100.0
+matplotlib==3.10.3
+uvicorn==0.23.2
+python-dotenv==1.1.1
