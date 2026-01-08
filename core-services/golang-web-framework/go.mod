@@ -1,4 +1,4 @@
-module github.com/mrflick72/onlyone-portal/core-service/golang-web-framework
+module github.com/mrflick72/onlyone-portal/core-services/golang-web-framework
 
 go 1.25.1
 
