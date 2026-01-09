@@ -8,4 +8,4 @@ user:
   required-role: USER_ROLE
 
 logger:
-  file-name: log.log
+  file-name: logs.log
