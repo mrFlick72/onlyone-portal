@@ -1,4 +1,4 @@
-..d name: build GoLang Web Framework (the base foundation for golang apps of OnlyOne Portal)
+name: build GoLang Web Framework (the base foundation for golang apps of OnlyOne Portal)
 
 on:
   push: { }
