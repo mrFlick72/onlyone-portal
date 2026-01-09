@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mrflick72/onlyone-portal/plan/plan-service/pkg/clock"
+	"github.com/mrflick72/onlyone-portal/plan/plan-service/src/pkg/clock"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/src/plan"
 
 	"github.com/labstack/echo"

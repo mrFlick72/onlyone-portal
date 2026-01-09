@@ -1,0 +1,29 @@
+name: build GoLang Web Framework (the base foundation for golang apps of OnlyOne Portal)
+
+on:
+  push: { }
+  workflow_dispatch: {}
+
+jobs:
+  build-golang-web-framework:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: core-services/golang-web-framework
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      
+      - name: Set up Golang
+        uses: actions/setup-go@v6
+        with:
+          go-version: 1.25.1
+
+      - name: Build golang-web-framework package
+        run: |
+          go build -o golang-web-framework .
+
+      - name: Run tests
+        run: |
+          go test -tags test ./...
