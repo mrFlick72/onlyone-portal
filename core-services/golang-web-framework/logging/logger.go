@@ -49,7 +49,7 @@ func logInit(f *os.File) *zap.SugaredLogger {
 }
 
 func new() *Logger {
-	fileName := manager.GetConfigFor("LOGGING_FILE_NAME")
+	fileName := manager.GetConfigFor("logger.file-name")
 	var f *os.File
 	f, err := os.Create(fileName)
 	if err != nil {
