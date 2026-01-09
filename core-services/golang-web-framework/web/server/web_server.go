@@ -1,18 +1,22 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
-	"github.com/mrflick72/onlyone-portal/core-service/golang-web-framework/middleware/security"
-	"github.com/mrflick72/onlyone-portal/core-service/golang-web-framework/web/magangement"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/magangement"
 
 	"github.com/gin-gonic/gin"
 )
 
+var configurationManager = config.GetConfigurationManagerInstance()
+ 
 type WebServerProvisioner struct {
 	router *gin.Engine
 }
@@ -27,7 +31,7 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ","),
+		AllowOrigins:     strings.Split(configurationManager.GetConfigFor("CORS_ALLOWED_ORIGINS"), ","),
 		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin","Authorization", "Content-Type", "Accept"},
 		AllowCredentials: true,
@@ -45,7 +49,9 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 }
 
 func (wsp *WebServerProvisioner) StartEngine() error {
-	if err := wsp.router.Run("0.0.0.0:8000"); err != nil {
+	port := os.Getenv("WEBSERVER_PORT")
+	serverBinder := fmt.Sprintf("0.0.0.0:%s", port)
+	if err := wsp.router.Run(serverBinder); err != nil {
 		log.Fatalf("failed to run server: %v", err)
 	}
 	return nil

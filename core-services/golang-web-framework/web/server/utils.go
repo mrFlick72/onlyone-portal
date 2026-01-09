@@ -7,9 +7,9 @@ import (
 )
 
 func CopyGinKeysToRequestContext(c *gin.Context) *context.Context {
-    newCtx := c.Request.Context()
-    for k, v := range c.Keys {
-        newCtx = context.WithValue(newCtx,k, v)
-    }
-   return &newCtx
+	newCtx := c.Request.Context()
+	for k, v := range c.Keys {
+		newCtx = context.WithValue(newCtx, k, v)
+	}
+	return &newCtx
 }
