@@ -15,9 +15,9 @@ var configurationManager = config.GetConfigurationManagerInstance()
 
 func SetUpOAuth2() gin.HandlerFunc {
 	jwk := Jwk{
-		Url: configurationManager.GetConfigFor("JWKS_ENDPOINT"),
+		Url: configurationManager.GetConfigFor("idp.jwks-endpoint"),
 	}
-	role := configurationManager.GetConfigFor("OAUTH2_ROLE")
+	role := configurationManager.GetConfigFor("	")
 	sets, _ := jwk.JwkSets()
 	log.Println("OAuth2 middleware set up with role:", role)
 	return NewOAuth2Middleware(sets, role, []string{"/management/*"})
