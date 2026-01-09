@@ -9,20 +9,37 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInfoLevelLog(t *testing.T) {
+var logFileLocation string
+var uut *Logger
+
+func TestMain(m *testing.M) {
 	os.Setenv("CONFIG_FILE_LOCATION", "../test/application.yml")
 	configManager := config.GetConfigurationManagerInstance()
-	logFileLocation := configManager.GetConfigFor("logger.file-name")
+	logFileLocation = configManager.GetConfigFor("logger.file-name")
 
-	tearDown(logFileLocation)
+	uut = GetLoggerInstance()
 
-	var logger = GetLoggerInstance()
+	code := m.Run() // run tests
 
-	logger.LogInfoFor("A Message")
+	// global teardown
+	os.Remove(logFileLocation)
 
+	os.Exit(code)
+}
+
+func TestInfoLevelLog(t *testing.T) {
+	uut.LogInfoFor("A Message")
+
+	actual := getLogRecordFrom(t)
+
+	assert.Equal(t, "A Message", actual.Msg)
+	assert.Equal(t, "info", actual.Level)
+}
+
+func getLogRecordFrom(t *testing.T) LogRecord {
 	content, err := os.ReadFile(logFileLocation)
 	if err != nil {
-		t.Fatal("no log file was written", err)
+		t.Fatal("no log file was written ", logFileLocation, err)
 	}
 
 	actual := LogRecord{}
@@ -32,16 +49,8 @@ func TestInfoLevelLog(t *testing.T) {
 		t.Fatal("log record parsing error: ", err)
 
 	}
-	assert.Equal(t, "A Message", actual.Msg)
-	assert.Equal(t, "info", actual.Level)
 
-}
-
-func tearDown(logFileLocation string) {
-	_, error := os.Stat(logFileLocation)
-	if error != nil {
-		os.Remove(logFileLocation)
-	}
+	return actual
 }
 
 type LogRecord struct {

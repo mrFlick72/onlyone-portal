@@ -23,7 +23,6 @@ type Logger struct {
 func GetLoggerInstance() *Logger {
 	once.Do(func() {
 		manager = config.GetConfigurationManagerInstance()
-
 		loggerManager = new()
 	})
 
