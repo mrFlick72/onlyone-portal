@@ -2,20 +2,22 @@ package security
 
 import (
 	"log"
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lestrrat-go/jwx/v3/jwk"
 	"github.com/lestrrat-go/jwx/v3/jwt"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"go.xrfang.cn/wild"
 )
 
+var configurationManager = config.GetConfigurationManagerInstance()
+
 func SetUpOAuth2() gin.HandlerFunc {
 	jwk := Jwk{
-		Url: os.Getenv("JWKS_ENDPOINT"),
+		Url: configurationManager.GetConfigFor("JWKS_ENDPOINT"),
 	}
-	role := os.Getenv("OAUTH2_ROLE")
+	role := configurationManager.GetConfigFor("OAUTH2_ROLE")
 	sets, _ := jwk.JwkSets()
 	log.Println("OAuth2 middleware set up with role:", role)
 	return NewOAuth2Middleware(sets, role, []string{"/management/*"})
@@ -37,8 +39,8 @@ func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string, ignored []stri
 			log.Printf("skipping oauth2 evaluation for OPTIONS request\n")
 			ctx.Next()
 			return
-		}	
-		
+		}
+
 		authorization := authorizationHeaderFor(ctx)
 		log.Printf("verifying token: %s\n", authorization)
 		jwt, err := jwt.Parse([]byte(authorization), jwt.WithVerify(false))

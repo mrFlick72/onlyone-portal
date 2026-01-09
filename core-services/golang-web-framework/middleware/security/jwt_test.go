@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/lestrrat-go/jwx/v3/jwk"
 	"github.com/lestrrat-go/jwx/v3/jwt"
-	"github.com/mrflick72/onlyone-portal/core-service/golang-web-framework/internal/testutils"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/internal/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
