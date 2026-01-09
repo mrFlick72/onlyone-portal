@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	manager       = config.GetConfigurationManagerInstance()
+	manager       *config.ConfigurationManager
 	loggerManager *Logger
 	once          sync.Once
 )
@@ -22,6 +22,8 @@ type Logger struct {
 
 func GetLoggerInstance() *Logger {
 	once.Do(func() {
+		manager = config.GetConfigurationManagerInstance()
+
 		loggerManager = new()
 	})
 
