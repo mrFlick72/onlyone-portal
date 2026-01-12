@@ -11,13 +11,19 @@ type Money struct {
 }
 
 func MoneyFor(amount string) (*Money, error) {
-	return nil, nil
+	var result, err = decimal.NewFromString(amount)
+	if err != nil {
+		return nil, err
+	}
+	return &Money{
+		content: result,
+	}, nil
 }
 
 func (m *Money) Plus(money *Money) *Money {
-	return nil
+	return &Money{content: m.content.Add(money.content)}
 }
 
 func (m *Money) StringifyAmount() string {
-	return ""
+	return m.content.StringFixed(2)
 }

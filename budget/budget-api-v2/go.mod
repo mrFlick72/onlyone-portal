@@ -4,7 +4,12 @@ go 1.25.1
 
 replace github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../core-services/golang-web-framework
 
-require github.com/mrflick72/onlyone-portal/core-services/golang-web-framework v0.0.0
+require (
+	github.com/gin-gonic/gin v1.11.0
+	github.com/go-playground/assert/v2 v2.2.0
+	github.com/mrflick72/onlyone-portal/core-services/golang-web-framework v0.0.0
+	github.com/shopspring/decimal v1.4.0
+)
 
 require (
 	github.com/bytedance/sonic v1.14.0 // indirect
@@ -15,7 +20,6 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
 	github.com/gin-contrib/cors v1.7.6 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
-	github.com/gin-gonic/gin v1.11.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.27.0 // indirect
@@ -41,7 +45,6 @@ require (
 	github.com/quic-go/quic-go v0.54.0 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
-	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
