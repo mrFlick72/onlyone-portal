@@ -1,9 +1,5 @@
 package domain
 
-type Date struct {
-	// todo
-}
-
 type Month struct {
 	Content int8
 }
