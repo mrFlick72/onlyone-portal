@@ -6,30 +6,6 @@ import (
 	"github.com/go-playground/assert/v2"
 )
 
-//     @Test
-//     public void dateFromString() {
-//         Date expectedDateForDateString = new Date(LocalDate.of(2018, 02, 25));
-//         Date actualDateForDateString = Date.dateFor("25/02/2018");
-//         Assertions.assertEquals(actualDateForDateString, expectedDateForDateString);
-//     }
-
-//     @Test
-//     public void firstDateOfMonth() {
-//         Date expected = Date.dateFor("01/02/2018");
-//         Date actual = Date.firstDateOfMonth(Month.FEBRUARY, Year.of(2018));
-
-//         Assertions.assertEquals(actual, expected);
-//     }
-
-//     @Test
-//     public void lastDateOfMonth() {
-//         Date expected = Date.dateFor("28/02/2018");
-//         Date actual = Date.lastDateOfMonth(Month.FEBRUARY, Year.of(2018));
-
-//         Assertions.assertEquals(actual, expected);
-//     }
-// }
-
 func TestDateIsFormattedWithDefaultFormatter(t *testing.T) {
 	expectedFormattedDate := "25/02/2018"
 	anotherExpectedFormattedDate := "25/03/2018"
