@@ -16,7 +16,7 @@ import (
 )
 
 var configurationManager = config.GetConfigurationManagerInstance()
- 
+
 type WebServerProvisioner struct {
 	router *gin.Engine
 }

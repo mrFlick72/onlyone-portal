@@ -19,7 +19,6 @@ type TagDynamoDBRepository struct {
 }
 
 func NewTagDynamoDBRepository() *TagDynamoDBRepository {
-	// sessionName := fmt.Sprintf("onlyone-portal-%s", uuid.New().String())
 	cfg, err := config.LoadDefaultConfig(
 		context.TODO(),
 		config.WithRegion("eu-central-1"),
