@@ -74,7 +74,10 @@ type BudgetExpenseRepositoryMock struct {
 }
 
 func (mock *BudgetExpenseRepositoryMock) FindFor(ctx *context.Context, budgetExpenseId BudgetExpenseId) (*BudgetExpense, error) {
-	args := mock.Called(budgetExpenseId)
+	args := mock.Called(ctx,budgetExpenseId)
+	if(args.Get(0) == nil){
+		return nil, args.Error(1)
+	}	
 	return args.Get(0).(*BudgetExpense), args.Error(1)
 }
 
