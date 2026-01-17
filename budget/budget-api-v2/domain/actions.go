@@ -20,25 +20,15 @@ type FindBudgetExpense struct {
 	repository BudgetExpenseRepository
 }
 
-/*
-	public void updateWithoutAttachment(BudgetExpense budgetExpense) {
-	    budgetExpenseRepository.findFor(budgetExpense.id())
-	            .ifPresent(foundBudgetExpense -> {
-	                BudgetExpense updatedBudgetExpense = new BudgetExpense(budgetExpense.id(),
-	                        budgetExpense.userName(),
-	                        budgetExpense.date(),
-	                        budgetExpense.amount(), budgetExpense.note(),
-	                        budgetExpense.tag()
-	                );
+func (action *FindBudgetExpense) Execute(ctx *context.Context, id BudgetExpenseId) (*BudgetExpense, error) {
+	return nil, nil
+}
 
-	                budgetExpenseRepository.save(updatedBudgetExpense);
-	            });
-	}
-*/
 type UpdateBudgetExpense struct {
 	repository BudgetExpenseRepository
 }
 
+//todo add check for user ownership
 func (action *UpdateBudgetExpense) Execute(ctx *context.Context, budgetExpense *BudgetExpense) error {
 	existingBudgetExpense, err := action.repository.FindFor(ctx, budgetExpense.Id)
 	if err != nil {
@@ -46,10 +36,27 @@ func (action *UpdateBudgetExpense) Execute(ctx *context.Context, budgetExpense *
 	}
 	if existingBudgetExpense != nil {
 		return action.repository.Save(ctx, budgetExpense)
-	}	
+	}
 	return nil
 }
 
 type DeleteBudgetExpense struct {
 	repository BudgetExpenseRepository
+}
+
+func (action *DeleteBudgetExpense) Execute(ctx *context.Context, id BudgetExpenseId) error {
+	userName, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		return err
+	}
+
+	existingBudgetExpense, err := action.repository.FindFor(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if existingBudgetExpense != nil && existingBudgetExpense.UserName == *userName.UserName {
+		return action.repository.Delete(ctx, id)
+	}
+	return nil
 }

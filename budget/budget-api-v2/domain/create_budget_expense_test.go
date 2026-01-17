@@ -74,10 +74,10 @@ type BudgetExpenseRepositoryMock struct {
 }
 
 func (mock *BudgetExpenseRepositoryMock) FindFor(ctx *context.Context, budgetExpenseId BudgetExpenseId) (*BudgetExpense, error) {
-	args := mock.Called(ctx,budgetExpenseId)
-	if(args.Get(0) == nil){
+	args := mock.Called(ctx, budgetExpenseId)
+	if args.Get(0) == nil {
 		return nil, args.Error(1)
-	}	
+	}
 	return args.Get(0).(*BudgetExpense), args.Error(1)
 }
 
@@ -91,5 +91,6 @@ func (mock *BudgetExpenseRepositoryMock) Save(ctx *context.Context, budgetExpens
 
 }
 func (mock *BudgetExpenseRepositoryMock) Delete(ctx *context.Context, idBudgetExpense BudgetExpenseId) error {
-	return nil
+	args := mock.Called(ctx, idBudgetExpense)
+	return args.Error(0)
 }
