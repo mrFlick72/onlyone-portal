@@ -2,45 +2,73 @@ package expense
 
 import (
 	"testing"
+
+	"github.com/go-playground/assert/v2"
+	"github.com/mrflick72/budget/budget-api/domain/tags"
+	"github.com/mrflick72/budget/budget-api/domain/time/date"
 )
 
 func TestBudgetExpenseTotalBySearchTagsWithConstraints(t *testing.T) {
 
-/*
-        given(userRepository.currentLoggedUserName())
-                .willReturn(A_USER_NAME);
+	ctx := newUserContext()
+	mockedSearchTagRepository := new(SearchTagRepositoryMock)
+	mockedBudgetExpenseRepository := new(BudgetExpenseRepositoryMock)
+	uut := FindSpentBudget{
+		budgetExpenseRepository: mockedBudgetExpenseRepository,
+		searchTagRepository:     mockedSearchTagRepository,
+	}
 
-        lenient().when(searchTagRepository.findSearchTagBy("super-market")).thenReturn(new SearchTag("super-market", "super-market"));
-        given(searchTagRepository.findSearchTagBy("dinner")).willReturn(new SearchTag("dinner", "dinner"));
+	mockedSearchTagRepository.On("GetTagBy", &ctx, "super-market").Return(&tags.SearchTag{Key: "super-market", Value: "super-market"}, nil)
+        mockedSearchTagRepository.On("GetTagBy", &ctx, "dinner").Return(&tags.SearchTag{Key: "dinner", Value: "dinner"}, nil)
+        
+	mockedBudgetExpenseRepository.On("FindByDateRange", &ctx, "A_USER_NAME", safeDateFor("01/04/2018"), safeDateFor("30/04/2018"), []string{"dinner", "super-market"}).
+		Return(&[]BudgetExpense{
+			{Id: "1", UserName: "A_USER_NAME", Date: safeDateFor("15/04/2018"), Amount: safeMoneyFor("10.00"), Note: "dinner", Tag: "dinner"},
+			{Id: "2", UserName: "A_USER_NAME", Date: safeDateFor("01/04/2018"), Amount: safeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
+			{Id: "3", UserName: "A_USER_NAME", Date: safeDateFor("05/04/2018"), Amount: safeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
+			{Id: "4", UserName: "A_USER_NAME", Date: safeDateFor("04/04/2018"), Amount: safeMoneyFor("20.00"), Note: "dinner", Tag: "dinner"},
+			{Id: "5", UserName: "A_USER_NAME", Date: safeDateFor("03/04/2018"), Amount: safeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
+			{Id: "6", UserName: "A_USER_NAME", Date: safeDateFor("02/04/2018"), Amount: safeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
+			{Id: "7", UserName: "A_USER_NAME", Date: safeDateFor("01/04/2018"), Amount: safeMoneyFor("15.00"), Note: "dinner", Tag: "dinner"},
+		}, nil)
+	actual, err := uut.Execute(&ctx, date.APRIL(), date.NewYear(2018), []string{"dinner", "super-market"})
 
-        given(budgetExpenseRepository.findByDateRange(A_USER_NAME, Date.firstDateOfMonth(Month.FEBRUARY, Year.of(2018)),
-                Date.lastDateOfMonth(Month.FEBRUARY, Year.of(2018)), "dinner", "super-market"))
+	assert.NotEqual(t, nil, actual)
+	assert.Equal(t, nil, err)
+	/*
+	   given(userRepository.currentLoggedUserName())
+	           .willReturn(A_USER_NAME);
 
-                .willReturn(asList(new BudgetExpense(BudgetFixture.emptyBudgetExpenseId(), A_USER_NAME, Date.dateFor("15/02/2018"), Money.moneyFor("10"), "dinner", "dinner"),
-                        new BudgetExpense(BudgetFixture.emptyBudgetExpenseId(), A_USER_NAME, Date.dateFor("01/02/2018"), Money.moneyFor("12.50"), "super-market", "super-market"),
-                        new BudgetExpense(BudgetFixture.emptyBudgetExpenseId(), A_USER_NAME, Date.dateFor("05/02/2018"), Money.moneyFor("12.50"), "super-market", "super-market"),
-                        new BudgetExpense(BudgetFixture.emptyBudgetExpenseId(), A_USER_NAME, Date.dateFor("04/02/2018"), Money.moneyFor("20"), "dinner", "dinner"),
-                        new BudgetExpense(BudgetFixture.emptyBudgetExpenseId(), A_USER_NAME, Date.dateFor("03/02/2018"), Money.moneyFor("12.50"), "super-market", "super-market"),
-                        new BudgetExpense(BudgetFixture.emptyBudgetExpenseId(), A_USER_NAME, Date.dateFor("02/02/2018"), Money.moneyFor("12.50"), "super-market", "super-market"),
-                        new BudgetExpense(BudgetFixture.emptyBudgetExpenseId(), A_USER_NAME, Date.dateFor("01/02/2018"), Money.moneyFor("15"), "dinner", "dinner")));
+	   lenient().when(searchTagRepository.findSearchTagBy("super-market")).thenReturn(new SearchTag("super-market", "super-market"));
+	   given(searchTagRepository.findSearchTagBy("dinner")).willReturn(new SearchTag("dinner", "dinner"));
 
-        SpentBudget actual = new FindSpentBudget(userRepository, budgetExpenseRepository, searchTagRepository)
-                .findBy(Month.FEBRUARY, Year.of(2018), asList("dinner", "super-market"));
+	   given(budgetExpenseRepository.findByDateRange(A_USER_NAME, Date.firstDateOfMonth(Month.FEBRUARY, Year.of(2018)),
+	           Date.lastDateOfMonth(Month.FEBRUARY, Year.of(2018)), "dinner", "super-market"))
 
-        Map<SearchTag, Money> expected = Map.of(new SearchTag("super-market", "super-market"), Money.moneyFor("50.00"),
-                new SearchTag("dinner", "dinner"), Money.moneyFor("45.00"));
+	           .willReturn(asList(new BudgetExpense(BudgetFixture.emptyBudgetExpenseId(), A_USER_NAME, Date.dateFor("15/02/2018"), Money.moneyFor("10"), "dinner", "dinner"),
+	                   new BudgetExpense(BudgetFixture.emptyBudgetExpenseId(), A_USER_NAME, Date.dateFor("01/02/2018"), Money.moneyFor("12.50"), "super-market", "super-market"),
+	                   new BudgetExpense(BudgetFixture.emptyBudgetExpenseId(), A_USER_NAME, Date.dateFor("05/02/2018"), Money.moneyFor("12.50"), "super-market", "super-market"),
+	                   new BudgetExpense(BudgetFixture.emptyBudgetExpenseId(), A_USER_NAME, Date.dateFor("04/02/2018"), Money.moneyFor("20"), "dinner", "dinner"),
+	                   new BudgetExpense(BudgetFixture.emptyBudgetExpenseId(), A_USER_NAME, Date.dateFor("03/02/2018"), Money.moneyFor("12.50"), "super-market", "super-market"),
+	                   new BudgetExpense(BudgetFixture.emptyBudgetExpenseId(), A_USER_NAME, Date.dateFor("02/02/2018"), Money.moneyFor("12.50"), "super-market", "super-market"),
+	                   new BudgetExpense(BudgetFixture.emptyBudgetExpenseId(), A_USER_NAME, Date.dateFor("01/02/2018"), Money.moneyFor("15"), "dinner", "dinner")));
 
-        verify(userRepository).currentLoggedUserName();
-        verify(searchTagRepository).findSearchTagBy("dinner");
-        verify(searchTagRepository).findSearchTagBy("super-market");
-        verify(budgetExpenseRepository)
-                .findByDateRange(A_USER_NAME, Date.firstDateOfMonth(Month.FEBRUARY, Year.of(2018)),
-                        Date.lastDateOfMonth(Month.FEBRUARY, Year.of(2018)), "dinner", "super-market");
+	   SpentBudget actual = new FindSpentBudget(userRepository, budgetExpenseRepository, searchTagRepository)
+	           .findBy(Month.FEBRUARY, Year.of(2018), asList("dinner", "super-market"));
 
-        Assertions.assertEquals(expected, actual.totalForSearchTags());
-        Assertions.assertEquals(actual.total(), Money.moneyFor("95.00"));
-		*/
+	   Map<SearchTag, Money> expected = Map.of(new SearchTag("super-market", "super-market"), Money.moneyFor("50.00"),
+	           new SearchTag("dinner", "dinner"), Money.moneyFor("45.00"));
 
+	   verify(userRepository).currentLoggedUserName();
+	   verify(searchTagRepository).findSearchTagBy("dinner");
+	   verify(searchTagRepository).findSearchTagBy("super-market");
+	   verify(budgetExpenseRepository)
+	           .findByDateRange(A_USER_NAME, Date.firstDateOfMonth(Month.FEBRUARY, Year.of(2018)),
+	                   Date.lastDateOfMonth(Month.FEBRUARY, Year.of(2018)), "dinner", "super-market");
+
+	   Assertions.assertEquals(expected, actual.totalForSearchTags());
+	   Assertions.assertEquals(actual.total(), Money.moneyFor("95.00"));
+	*/
 
 }
 

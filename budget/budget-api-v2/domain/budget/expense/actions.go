@@ -3,7 +3,10 @@ package expense
 import (
 	"context"
 	"errors"
+	"fmt"
 
+	"github.com/mrflick72/budget/budget-api/domain/tags"
+	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
 
@@ -17,16 +20,70 @@ func (action *CreateBudgetExpense) Execute(ctx *context.Context, budgetExpense *
 	return action.repository.Save(ctx, budgetExpense)
 }
 
-type FindBudgetExpense struct {
-	repository BudgetExpenseRepository
+type FindSpentBudget struct {
+	budgetExpenseRepository BudgetExpenseRepository
+	searchTagRepository     tags.SearchTagRepository
 }
 
-func (action *FindBudgetExpense) ExecuteAll(ctx *context.Context) (*SpentBudget, error) {
-	return nil, nil
+func (action *FindSpentBudget) Execute(ctx *context.Context, month date.Month, year date.Year, searchTagKeys []tags.SearchTagKey) (*SpentBudget, error) {
+	userName, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	firstDate, err := date.FirstDateOfMonth(month, year)
+	if err != nil {
+		return nil, err
+	}
+	lastDate, err := date.LastDateOfMonth(month, year)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("First Date:", firstDate.GetFormattedDate())
+	fmt.Println("Last Date:", lastDate.GetFormattedDate())	
+	budgetByDateRange, err := action.budgetExpenseRepository.FindByDateRange(ctx, *userName.UserName, *firstDate, *lastDate, searchTagKeys)
+	if err != nil {
+		return nil, err
+	}
+	/*   private String[] searchTags(List<String> searchTagList) {
+	    return Optional.ofNullable(searchTagList)
+	            .map(searchTagListAux -> searchTagListAux.stream()
+	                    .filter(tag -> !"".equals(tag.trim()))
+	                    .collect(toList()))
+	            .map(tags -> tags.toArray(new String[tags.size()]))
+	            .orElse(new String[0]);
+	}
+
+	private List<BudgetExpense> orderByDate(List<BudgetExpense> budgetExpenseListFromRepository) {
+	    return budgetExpenseListFromRepository.stream()
+	            .sorted(Comparator.comparing(BudgetExpense::date))
+	            .collect(toList());
+	}
+
+	private List<SearchTag> getAllSearchTagFor(List<BudgetExpense> budgetExpenses) {
+	    return budgetExpenses.stream().map(BudgetExpense::tag)
+	            .distinct().map(searchTagRepository::findSearchTagBy)
+	            .collect(toList());
+	} */
+	searchTags, err := action.getAllSearchTagFor(ctx, budgetByDateRange)
+	return &SpentBudget{BudgetExpenseList: budgetByDateRange, SearchTags: searchTags}, err
 }
 
-func (action *FindBudgetExpense) Execute(ctx *context.Context, id BudgetExpenseId) (*BudgetExpense, error) {
-	return nil, nil
+func (action *FindSpentBudget) getAllSearchTagFor(ctx *context.Context, budgetExpenses *[]BudgetExpense) (*[]tags.SearchTag, error) {
+	var searchTags []tags.SearchTag
+	seen := make(map[string]bool)
+	for _, expense := range *budgetExpenses {
+		if !seen[expense.Tag] {
+			seen[expense.Tag] = true
+			searchTag, err := action.searchTagRepository.GetTagBy(ctx, expense.Tag)
+			if err != nil {
+				return nil, err
+			}
+			searchTags = append(searchTags, *searchTag)
+		}
+	}
+	return &searchTags, nil
 }
 
 type UpdateBudgetExpense struct {

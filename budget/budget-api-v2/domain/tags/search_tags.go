@@ -2,13 +2,14 @@ package tags
 
 import "context"
 
+type SearchTagKey = string
+type SearchTagValue = string
+
 type SearchTag struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+	Key   SearchTagKey   `json:"key"`
+	Value SearchTagValue `json:"value"`
 }
 
-type TagRepository interface {
-	SaveTag(ctx *context.Context, tag *SearchTag) error
+type SearchTagRepository interface {
 	GetTagBy(ctx *context.Context, key string) (*SearchTag, error)
-	FindAllTags(ctx *context.Context) (*[]SearchTag, error)
 }
