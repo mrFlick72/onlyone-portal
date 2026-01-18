@@ -1,0 +1,43 @@
+package domain
+//go:build test
+
+import (
+	"context"
+
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
+	"github.com/stretchr/testify/mock"
+)
+
+
+type BudgetExpenseRepositoryMock struct {
+	mock.Mock
+}
+
+func (mock *BudgetExpenseRepositoryMock) FindFor(ctx *context.Context, budgetExpenseId BudgetExpenseId) (*BudgetExpense, error) {
+	args := mock.Called(ctx, budgetExpenseId)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*BudgetExpense), args.Error(1)
+}
+
+func (mock *BudgetExpenseRepositoryMock) FindByDateRange(ctx *context.Context, userName UserName, star Date, end Date, searchTags []string) (*[]BudgetExpense, error) {
+	return nil, nil
+}
+func (mock *BudgetExpenseRepositoryMock) Save(ctx *context.Context, budgetExpense *BudgetExpense) error {
+	budgetExpense.Id = "A_BUDGET_ID"
+	args := mock.Called(ctx, budgetExpense)
+	return args.Error(0)
+
+}
+func (mock *BudgetExpenseRepositoryMock) Delete(ctx *context.Context, idBudgetExpense BudgetExpenseId) error {
+	args := mock.Called(ctx, idBudgetExpense)
+	return args.Error(0)
+}
+
+func newUserContext() context.Context {
+	UserName := "A_USER_NAME"
+	user := security.User{UserName: &UserName, Authorities: nil}
+	return context.WithValue(context.TODO(), "user", user)
+}
+

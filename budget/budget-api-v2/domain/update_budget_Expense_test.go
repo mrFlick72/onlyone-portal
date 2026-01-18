@@ -1,12 +1,10 @@
 package domain
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
 	"github.com/go-playground/assert/v2"
-	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
 
 /*
@@ -44,9 +42,8 @@ func TestWhenABudgetExpenseUpdateSucceed(t *testing.T) {
 		Tag:      "super-market",
 	}
 
-	UserName := "A_USER_NAME"
-	user := security.User{UserName: &UserName, Authorities: nil}
-	ctx := context.WithValue(context.TODO(), "user", user)
+	ctx := newUserContext()
+
 
 	foundBudgetExpense := &BudgetExpense{
 		Id:       "A_BUDGET_ID",
@@ -80,9 +77,7 @@ func TestWhenABudgetExpenseUpdateDoesDoneNothingBecauseTheBudgetExpenseDoesNotEx
 		Tag:      "super-market",
 	}
 
-	UserName := "A_USER_NAME"
-	user := security.User{UserName: &UserName, Authorities: nil}
-	ctx := context.WithValue(context.TODO(), "user", user)
+	ctx := newUserContext()
 
 	mockedRepository.On("FindFor", &ctx, "A_BUDGET_ID").Return(nil, fmt.Errorf("budget expense with the id %s was not found", "A_BUDGET_ID"))
 
@@ -112,9 +107,7 @@ func TestWhenABudgetExpenseUpdateFails(t *testing.T) {
 		Tag:      "super-market",
 	}
 
-	UserName := "A_USER_NAME"
-	user := security.User{UserName: &UserName, Authorities: nil}
-	ctx := context.WithValue(context.TODO(), "user", user)
+	ctx := newUserContext()
 
 	foundBudgetExpense := &BudgetExpense{
 		Id:       "A_BUDGET_ID",
@@ -133,15 +126,12 @@ func TestWhenABudgetExpenseUpdateFails(t *testing.T) {
 
 
 func TestWhenABudgetExpenseUpdateFailsBecauseUserOwnership(t *testing.T) {
-mockedRepository := new(BudgetExpenseRepositoryMock)
+	mockedRepository := new(BudgetExpenseRepositoryMock)
 	uut := UpdateBudgetExpense{
 		repository: mockedRepository,
 	}
 
-	UserName := "A_USER_NAME"
-	user := security.User{UserName: &UserName, Authorities: nil}
-	ctx := context.WithValue(context.TODO(), "user", user)
-
+	ctx := newUserContext()
 	foundBudgetExpense := &BudgetExpense{
 		Id:       "A_BUDGET_ID",
 		UserName: "A_DIFFERENT_USER_NAME",

@@ -21,6 +21,10 @@ type FindBudgetExpense struct {
 	repository BudgetExpenseRepository
 }
 
+func (action *FindBudgetExpense) ExecuteAll(ctx *context.Context) (*SpentBudget, error) {
+	return nil, nil
+}
+
 func (action *FindBudgetExpense) Execute(ctx *context.Context, id BudgetExpenseId) (*BudgetExpense, error) {
 	return nil, nil
 }

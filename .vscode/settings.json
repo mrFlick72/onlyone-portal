@@ -10,6 +10,9 @@
     "python.analysis.extraPaths": [
         "./budget/revenue-api/src"
     ],
-      "go.buildTags": "test",
-
+    "go.buildTags": "test",
+    "go.testTags": "test",
+    "go.toolsEnvVars": {
+        "GOFLAGS": "-tags=test"
+    }
 }
