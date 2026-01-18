@@ -82,7 +82,7 @@ func TestWhenABudgetExpenseDeleteDoesDoneNothingBecauseTheBudgetExpenseDoesNotEx
 	mockedRepository.AssertNotCalled(t, "Delete", &ctx, "A_BUDGET_ID")
 }
 
-func TestWhenABudgetExpenseDeleteFailsBecauseTheUserWasWrong(t *testing.T) {
+func TestWhenABudgetExpenseDeleteFailsBecauseUserOwnership(t *testing.T) {
 mockedRepository := new(BudgetExpenseRepositoryMock)
 	uut := DeleteBudgetExpense{
 		repository: mockedRepository,
@@ -100,7 +100,7 @@ mockedRepository := new(BudgetExpenseRepositoryMock)
 
 	err := uut.Execute(&ctx, "A_BUDGET_ID")
 
-	assert.Equal(t, nil, err)
+	assert.NotEqual(t, nil, err)
 
 	mockedRepository.AssertCalled(t, "FindFor", &ctx, "A_BUDGET_ID")
 	mockedRepository.AssertNotCalled(t, "Delete", &ctx, "A_BUDGET_ID")
