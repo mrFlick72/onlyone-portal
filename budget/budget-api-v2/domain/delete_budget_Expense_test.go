@@ -1,12 +1,10 @@
 package domain
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
 	"github.com/go-playground/assert/v2"
-	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
 
 func TestWhenABudgetExpenseDeletionSucceed(t *testing.T) {
@@ -16,10 +14,7 @@ func TestWhenABudgetExpenseDeletionSucceed(t *testing.T) {
 		repository: mockedRepository,
 	}
 
-	UserName := "A_USER_NAME"
-	user := security.User{UserName: &UserName, Authorities: nil}
-	ctx := context.WithValue(context.TODO(), "user", user)
-
+	ctx := newUserContext()
 	foundBudgetExpense := &BudgetExpense{
 		Id:       "A_BUDGET_ID",
 		UserName: "A_USER_NAME",
@@ -42,9 +37,7 @@ func TestWhenABudgetExpenseDeletionFails(t *testing.T) {
 		repository: mockedRepository,
 	}
 
-	UserName := "A_USER_NAME"
-	user := security.User{UserName: &UserName, Authorities: nil}
-	ctx := context.WithValue(context.TODO(), "user", user)
+	ctx := newUserContext()
 
 	foundBudgetExpense := &BudgetExpense{
 		Id:       "A_BUDGET_ID",
@@ -67,10 +60,7 @@ func TestWhenABudgetExpenseDeleteDoesDoneNothingBecauseTheBudgetExpenseDoesNotEx
 	uut := DeleteBudgetExpense{
 		repository: mockedRepository,
 	}
-
-	UserName := "A_USER_NAME"
-	user := security.User{UserName: &UserName, Authorities: nil}
-	ctx := context.WithValue(context.TODO(), "user", user)
+	ctx := newUserContext()
 
 	mockedRepository.On("FindFor", &ctx, "A_BUDGET_ID").Return(nil, fmt.Errorf("budget expense with the id %s was not found", "A_BUDGET_ID"))
 
@@ -88,9 +78,7 @@ mockedRepository := new(BudgetExpenseRepositoryMock)
 		repository: mockedRepository,
 	}
 
-	UserName := "A_USER_NAME"
-	user := security.User{UserName: &UserName, Authorities: nil}
-	ctx := context.WithValue(context.TODO(), "user", user)
+	ctx := newUserContext()
 
 	foundBudgetExpense := &BudgetExpense{
 		Id:       "A_BUDGET_ID",
