@@ -1,5 +1,4 @@
 package domain
-//go:build test
 
 import (
 	"context"
