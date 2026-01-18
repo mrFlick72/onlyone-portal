@@ -2,6 +2,7 @@ package expense
 
 import (
 	"github.com/mrflick72/budget/budget-api/domain/money"
+	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 )
 
@@ -84,8 +85,8 @@ import (
 	}
 */
 type SpentBudget struct {
-	BudgetExpenseList BudgetExpense
-	SearchTags        map[string]string
+	BudgetExpenseList *[]BudgetExpense
+	SearchTags        *[]tags.SearchTag
 }
 
 type BudgetExpense struct {

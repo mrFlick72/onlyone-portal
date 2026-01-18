@@ -3,11 +3,12 @@ package expense
 import (
 	"context"
 
+	"github.com/mrflick72/budget/budget-api/domain/money"
+	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 	"github.com/stretchr/testify/mock"
 )
-
 
 type BudgetExpenseRepositoryMock struct {
 	mock.Mock
@@ -22,6 +23,10 @@ func (mock *BudgetExpenseRepositoryMock) FindFor(ctx *context.Context, budgetExp
 }
 
 func (mock *BudgetExpenseRepositoryMock) FindByDateRange(ctx *context.Context, userName UserName, star date.Date, end date.Date, searchTags []string) (*[]BudgetExpense, error) {
+	argrs := mock.Called(ctx, userName, star, end, searchTags)
+	if argrs.Get(0) != nil {
+		return argrs.Get(0).(*[]BudgetExpense), argrs.Error(1)
+	}
 	return nil, nil
 }
 func (mock *BudgetExpenseRepositoryMock) Save(ctx *context.Context, budgetExpense *BudgetExpense) error {
@@ -35,9 +40,36 @@ func (mock *BudgetExpenseRepositoryMock) Delete(ctx *context.Context, idBudgetEx
 	return args.Error(0)
 }
 
+type SearchTagRepositoryMock struct {
+	mock.Mock
+}
+
+func (mock *SearchTagRepositoryMock) GetTagBy(ctx *context.Context, searchTagKey tags.SearchTagKey) (*tags.SearchTag, error) {
+	args := mock.Called(ctx, searchTagKey)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*tags.SearchTag), args.Error(1)
+}
+
 func newUserContext() context.Context {
 	UserName := "A_USER_NAME"
 	user := security.User{UserName: &UserName, Authorities: nil}
 	return context.WithValue(context.TODO(), "user", user)
 }
 
+func safeDateFor(dateStr string) date.Date {
+	d, err := date.DateFor(dateStr)
+	if err != nil {
+		panic(err)
+	}
+	return *d
+}
+
+func safeMoneyFor(moneyStr string) money.Money {
+	m, err := money.MoneyFor(moneyStr)
+	if err != nil {
+		panic(err)
+	}
+	return *m
+}

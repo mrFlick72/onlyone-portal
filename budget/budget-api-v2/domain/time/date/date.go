@@ -18,11 +18,13 @@ func (d *Date) GetIsoFormattedDate() string {
 }
 
 func FirstDateOfMonth(month Month, year Year) (*Date, error) {
-	return nil, nil
+	DateContent := time.Date(int(year.Content), time.Month(month.Content), 1, 0, 0, 0, 0, time.UTC)
+	return &Date{t: DateContent}, nil
 }
 
 func LastDateOfMonth(month Month, year Year) (*Date, error) {
-	return nil, nil
+	lastDate := time.Date(int(year.Content), time.Month(month.Content)+1, 0, 0, 0, 0, 0, time.UTC)
+	return &Date{t: lastDate}, nil
 }
 
 // DateFor tries several common layouts and returns a Date.

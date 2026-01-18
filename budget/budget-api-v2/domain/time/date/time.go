@@ -79,3 +79,9 @@ func DECEMBER() Month {
 type Year struct {
 	Content int16
 }
+
+func NewYear(year int16) Year {
+	return Year{
+		Content: year,
+	}
+}
