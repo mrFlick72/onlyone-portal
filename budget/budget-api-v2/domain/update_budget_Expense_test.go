@@ -130,3 +130,32 @@ func TestWhenABudgetExpenseUpdateFails(t *testing.T) {
 	mockedRepository.AssertCalled(t, "FindFor", &ctx, "A_BUDGET_ID")
 	mockedRepository.AssertCalled(t, "Save", &ctx, &aBudgetExpense)
 }
+
+
+func TestWhenABudgetExpenseUpdateFailsBecauseUserOwnership(t *testing.T) {
+mockedRepository := new(BudgetExpenseRepositoryMock)
+	uut := UpdateBudgetExpense{
+		repository: mockedRepository,
+	}
+
+	UserName := "A_USER_NAME"
+	user := security.User{UserName: &UserName, Authorities: nil}
+	ctx := context.WithValue(context.TODO(), "user", user)
+
+	foundBudgetExpense := &BudgetExpense{
+		Id:       "A_BUDGET_ID",
+		UserName: "A_DIFFERENT_USER_NAME",
+	}
+	aBudgetExpense := &BudgetExpense{
+		Id:       "A_BUDGET_ID",
+		UserName: "A_USER_NAME",
+	}
+	mockedRepository.On("FindFor", &ctx, "A_BUDGET_ID").Return(foundBudgetExpense, nil)
+
+	err := uut.Execute(&ctx, aBudgetExpense)
+
+	assert.NotEqual(t, nil, err)
+
+	mockedRepository.AssertCalled(t, "FindFor", &ctx, "A_BUDGET_ID")
+	mockedRepository.AssertNotCalled(t, "Save", &ctx, aBudgetExpense)
+}
