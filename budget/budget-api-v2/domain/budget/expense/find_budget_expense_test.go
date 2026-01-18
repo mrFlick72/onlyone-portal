@@ -1,10 +1,11 @@
-package domain
+package expense
 
 import (
 	"testing"
 )
 
 func TestBudgetExpenseTotalBySearchTagsWithConstraints(t *testing.T) {
+
 /*
         given(userRepository.currentLoggedUserName())
                 .willReturn(A_USER_NAME);
@@ -40,7 +41,7 @@ func TestBudgetExpenseTotalBySearchTagsWithConstraints(t *testing.T) {
         Assertions.assertEquals(actual.total(), Money.moneyFor("95.00"));
 		*/
 
-		
+
 }
 
 func TestBudgetExpenseTotalBySearchTagsWithoutConstraints(t *testing.T) {

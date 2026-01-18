@@ -1,8 +1,9 @@
-package domain
+package expense
 
 import (
 	"context"
 
+	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 	"github.com/stretchr/testify/mock"
 )
@@ -20,7 +21,7 @@ func (mock *BudgetExpenseRepositoryMock) FindFor(ctx *context.Context, budgetExp
 	return args.Get(0).(*BudgetExpense), args.Error(1)
 }
 
-func (mock *BudgetExpenseRepositoryMock) FindByDateRange(ctx *context.Context, userName UserName, star Date, end Date, searchTags []string) (*[]BudgetExpense, error) {
+func (mock *BudgetExpenseRepositoryMock) FindByDateRange(ctx *context.Context, userName UserName, star date.Date, end date.Date, searchTags []string) (*[]BudgetExpense, error) {
 	return nil, nil
 }
 func (mock *BudgetExpenseRepositoryMock) Save(ctx *context.Context, budgetExpense *BudgetExpense) error {

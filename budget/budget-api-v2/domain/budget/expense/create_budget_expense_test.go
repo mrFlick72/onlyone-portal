@@ -1,10 +1,12 @@
-package domain
+package expense
 
 import (
 	"errors"
 	"testing"
 
 	"github.com/go-playground/assert/v2"
+	"github.com/mrflick72/budget/budget-api/domain/money"
+	"github.com/mrflick72/budget/budget-api/domain/time/date"
 )
 
 func TestWhenANewBudgetExpenseISCreated(t *testing.T) {
@@ -14,8 +16,8 @@ func TestWhenANewBudgetExpenseISCreated(t *testing.T) {
 		repository: mockedRepository,
 	}
 
-	aDate, _ := IsoDateFor("2018-01-01")
-	anAmount, _ := MoneyFor("1.00")
+	aDate, _ := date.IsoDateFor("2018-01-01")
+	anAmount, _ := money.MoneyFor("1.00")
 	aBudgetExpense := BudgetExpense{
 		Date:   *aDate,
 		Amount: *anAmount,
@@ -42,8 +44,8 @@ func TestWhenANewBudgetExpenseCreationFails(t *testing.T) {
 		repository: mockedRepository,
 	}
 
-	aDate, _ := IsoDateFor("2018-01-01")
-	anAmount, _ := MoneyFor("1.00")
+	aDate, _ := date.IsoDateFor("2018-01-01")
+	anAmount, _ := money.MoneyFor("1.00")
 	aBudgetExpense := BudgetExpense{
 		Date:   *aDate,
 		Amount: *anAmount,
