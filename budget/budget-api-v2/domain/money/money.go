@@ -1,4 +1,4 @@
-package domain
+package money
 
 import "github.com/shopspring/decimal"
 

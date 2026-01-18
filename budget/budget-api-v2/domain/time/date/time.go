@@ -1,4 +1,4 @@
-package domain
+package date
 
 type Month struct {
 	Content int8
