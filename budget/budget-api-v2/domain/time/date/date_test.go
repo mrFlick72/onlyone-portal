@@ -33,3 +33,41 @@ func TestDateIsFormattedWithIsoFormatter(t *testing.T) {
 	assert.Equal(t, anotherDate.GetIsoFormattedDate(), anotherExpectedFormattedDate)
 	assert.Equal(t, anotherDate2.GetIsoFormattedDate(), anotherExpectedFormattedDate2)
 }
+
+func TestFirstDateOfTheMouth(t *testing.T) {
+	expectedFormattedDate := "01/04/2018"
+
+	month := APRIL()
+	year := NewYear(2018)
+
+	firstDate, _ := FirstDateOfMonth(month, year)
+
+	assert.Equal(t, firstDate.GetFormattedDate(), expectedFormattedDate)
+}
+
+func TestFirstDateOfTheMouthWhenTheDataAreInvalid(t *testing.T) {
+	month := Month{Content: 13}
+	year := NewYear(2018)
+
+	_, err := FirstDateOfMonth(month, year)
+	assert.NotEqual(t, nil, err)
+}
+
+func TestLastDateOfTheMouth(t *testing.T) {
+	expectedFormattedDate := "30/04/2018"
+
+	month := APRIL()
+	year := NewYear(2018)			
+	lastDate, _ := LastDateOfMonth(month, year)
+	
+	assert.Equal(t, lastDate.GetFormattedDate(), expectedFormattedDate)
+}
+
+
+func TestLastDateOfTheMouthWhenTheDataAreInvalid(t *testing.T) {
+	month := Month{Content: 13}
+	year := NewYear(2018)
+
+	_, err := LastDateOfMonth(month, year)
+	assert.NotEqual(t, nil, err)
+}
