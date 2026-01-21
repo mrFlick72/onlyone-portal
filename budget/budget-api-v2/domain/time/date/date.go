@@ -18,11 +18,17 @@ func (d *Date) GetIsoFormattedDate() string {
 }
 
 func FirstDateOfMonth(month Month, year Year) (*Date, error) {
+	if month.Content < 1 || month.Content > 12 {
+		return nil, errors.New("invalid month value")
+	}
 	DateContent := time.Date(int(year.Content), time.Month(month.Content), 1, 0, 0, 0, 0, time.UTC)
 	return &Date{t: DateContent}, nil
 }
 
 func LastDateOfMonth(month Month, year Year) (*Date, error) {
+	if month.Content < 1 || month.Content > 12 {
+		return nil, errors.New("invalid month value")
+	}
 	lastDate := time.Date(int(year.Content), time.Month(month.Content)+1, 0, 0, 0, 0, 0, time.UTC)
 	return &Date{t: lastDate}, nil
 }
