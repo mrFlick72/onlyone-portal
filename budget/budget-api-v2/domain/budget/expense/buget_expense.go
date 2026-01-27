@@ -100,3 +100,7 @@ type BudgetExpense struct {
 
 type BudgetExpenseId = string
 type UserName = string
+
+type BudgetExpenseIdProvider interface {
+	GenerateIdFor(budgetExpense *BudgetExpense) BudgetExpenseId
+}	

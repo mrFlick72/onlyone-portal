@@ -3,6 +3,7 @@ package dynamodb
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 
@@ -95,11 +96,12 @@ func newDynamoDBClient() (*dynamodb.Client, error) {
 	return dynamodb.NewFromConfig(cfg), err
 }
 
-func newBudgetExpenseRepository() *DynamoDbBudgetExpenseRepository {
+func newBudgetExpenseRepository(budgetExpenseIdProvider expense.BudgetExpenseIdProvider) *DynamoDbBudgetExpenseRepository {
 	return &DynamoDbBudgetExpenseRepository{
 		// Initialize with mock or test dependencies as needed
-		TableName: TableName,
-		Client:    client,
+		TableName:               TableName,
+		Client:                  client,
+		BudgetExpenseIdProvider: budgetExpenseIdProvider,
 	}
 }
 
@@ -130,8 +132,8 @@ func setupTestDynamoDBTable() error {
 		},
 		BillingMode: types.BillingModePayPerRequest,
 	})
-	if err != nil {
 
+	if err != nil {
 		var resourceInUseException *types.ResourceInUseException
 		if !errors.As(err, &resourceInUseException) {
 			return err
@@ -170,7 +172,8 @@ func TestMain(m *testing.M) {
 // }
 
 func TestSaveANewBudgetExpense(t *testing.T) {
-	repo := newBudgetExpenseRepository()
+	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
+	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
 	ctx := newStubbedContext()
 
 	// Implement the test logic here
@@ -183,6 +186,8 @@ func TestSaveANewBudgetExpense(t *testing.T) {
 		Tag:      "TAG",
 	}
 
+	mockedBudgetExpenseIdProvider.On("GenerateIdFor", &expected).Return("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU")
+
 	err := repo.Save(ctx, &expected)
 
 	if err != nil {
@@ -193,5 +198,7 @@ func TestSaveANewBudgetExpense(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error retrieving budget expense: %v", err)
 	}
+	fmt.Println("Expected:", expected.Amount.StringifyAmount())
+	fmt.Println("Retrieved:", retrievedBudgetExpense.Amount.StringifyAmount())
 	assert.Equal(t, expected, retrievedBudgetExpense)
 }
