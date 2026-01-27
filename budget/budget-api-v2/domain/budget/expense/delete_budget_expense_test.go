@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-playground/assert/v2"
+	"github.com/mrflick72/budget/budget-api/internal/testutils"
 )
 
 func TestWhenABudgetExpenseDeletionSucceed(t *testing.T) {
@@ -14,7 +15,7 @@ func TestWhenABudgetExpenseDeletionSucceed(t *testing.T) {
 		repository: mockedRepository,
 	}
 
-	ctx := newUserContext()
+	ctx := testutils.NewUserContext()
 	foundBudgetExpense := &BudgetExpense{
 		Id:       "A_BUDGET_ID",
 		UserName: "A_USER_NAME",
@@ -37,7 +38,7 @@ func TestWhenABudgetExpenseDeletionFails(t *testing.T) {
 		repository: mockedRepository,
 	}
 
-	ctx := newUserContext()
+	ctx := testutils.NewUserContext()
 
 	foundBudgetExpense := &BudgetExpense{
 		Id:       "A_BUDGET_ID",
@@ -60,7 +61,7 @@ func TestWhenABudgetExpenseDeleteDoesDoneNothingBecauseTheBudgetExpenseDoesNotEx
 	uut := DeleteBudgetExpense{
 		repository: mockedRepository,
 	}
-	ctx := newUserContext()
+	ctx := testutils.NewUserContext()
 
 	mockedRepository.On("FindFor", &ctx, "A_BUDGET_ID").Return(nil, fmt.Errorf("budget expense with the id %s was not found", "A_BUDGET_ID"))
 
@@ -78,7 +79,7 @@ mockedRepository := new(BudgetExpenseRepositoryMock)
 		repository: mockedRepository,
 	}
 
-	ctx := newUserContext()
+	ctx := testutils.NewUserContext()
 
 	foundBudgetExpense := &BudgetExpense{
 		Id:       "A_BUDGET_ID",

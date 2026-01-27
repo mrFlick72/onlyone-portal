@@ -3,6 +3,7 @@ package dynamodb
 import (
 	"context"
 
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
@@ -10,6 +11,8 @@ import (
 )
 
 type DynamoDbBudgetExpenseRepository struct {
+	TableName string
+	Client    *dynamodb.Client
 }
 
 func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.Context, userName security.UserName, start date.Date, end date.Date, searchTags []tags.SearchTagKey) (*[]expense.BudgetExpense, error) {
