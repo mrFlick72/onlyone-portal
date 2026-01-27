@@ -6,11 +6,12 @@ import (
 	"github.com/go-playground/assert/v2"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
+	"github.com/mrflick72/budget/budget-api/internal/testutils"
 )
 
 func TestBudgetExpenseTotalBySearchTagsWithConstraints(t *testing.T) {
 
-	ctx := newUserContext()
+	ctx := testutils.NewUserContext()
 	mockedSearchTagRepository := new(SearchTagRepositoryMock)
 	mockedBudgetExpenseRepository := new(BudgetExpenseRepositoryMock)
 	uut := FindSpentBudget{
@@ -20,16 +21,16 @@ func TestBudgetExpenseTotalBySearchTagsWithConstraints(t *testing.T) {
 
 	mockedSearchTagRepository.On("GetTagBy", &ctx, "super-market").Return(&tags.SearchTag{Key: "super-market", Value: "super-market"}, nil)
         mockedSearchTagRepository.On("GetTagBy", &ctx, "dinner").Return(&tags.SearchTag{Key: "dinner", Value: "dinner"}, nil)
-        
-	mockedBudgetExpenseRepository.On("FindByDateRange", &ctx, "A_USER_NAME", safeDateFor("01/04/2018"), safeDateFor("30/04/2018"), []string{"dinner", "super-market"}).
+
+	mockedBudgetExpenseRepository.On("FindByDateRange", &ctx, "A_USER_NAME", testutils.SafeDateFor("01/04/2018"), testutils.SafeDateFor("30/04/2018"), []string{"dinner", "super-market"}).
 		Return(&[]BudgetExpense{
-			{Id: "1", UserName: "A_USER_NAME", Date: safeDateFor("15/04/2018"), Amount: safeMoneyFor("10.00"), Note: "dinner", Tag: "dinner"},
-			{Id: "2", UserName: "A_USER_NAME", Date: safeDateFor("01/04/2018"), Amount: safeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
-			{Id: "3", UserName: "A_USER_NAME", Date: safeDateFor("05/04/2018"), Amount: safeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
-			{Id: "4", UserName: "A_USER_NAME", Date: safeDateFor("04/04/2018"), Amount: safeMoneyFor("20.00"), Note: "dinner", Tag: "dinner"},
-			{Id: "5", UserName: "A_USER_NAME", Date: safeDateFor("03/04/2018"), Amount: safeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
-			{Id: "6", UserName: "A_USER_NAME", Date: safeDateFor("02/04/2018"), Amount: safeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
-			{Id: "7", UserName: "A_USER_NAME", Date: safeDateFor("01/04/2018"), Amount: safeMoneyFor("15.00"), Note: "dinner", Tag: "dinner"},
+			{Id: "1", UserName: "A_USER_NAME", Date: testutils.SafeDateFor("15/04/2018"), Amount: testutils.SafeMoneyFor("10.00"), Note: "dinner", Tag: "dinner"},
+			{Id: "2", UserName: "A_USER_NAME", Date: testutils.SafeDateFor("01/04/2018"), Amount: testutils.SafeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
+			{Id: "3", UserName: "A_USER_NAME", Date: testutils.SafeDateFor("05/04/2018"), Amount: testutils.SafeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
+			{Id: "4", UserName: "A_USER_NAME", Date: testutils.SafeDateFor("04/04/2018"), Amount: testutils.SafeMoneyFor("20.00"), Note: "dinner", Tag: "dinner"},
+			{Id: "5", UserName: "A_USER_NAME", Date: testutils.SafeDateFor("03/04/2018"), Amount: testutils.SafeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
+			{Id: "6", UserName: "A_USER_NAME", Date: testutils.SafeDateFor("02/04/2018"), Amount: testutils.SafeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
+			{Id: "7", UserName: "A_USER_NAME", Date: testutils.SafeDateFor("01/04/2018"), Amount: testutils.SafeMoneyFor("15.00"), Note: "dinner", Tag: "dinner"},
 		}, nil)
 	actual, err := uut.Execute(&ctx, date.APRIL(), date.NewYear(2018), []string{"dinner", "super-market"})
 
@@ -38,11 +39,11 @@ func TestBudgetExpenseTotalBySearchTagsWithConstraints(t *testing.T) {
 
     mockedSearchTagRepository.AssertCalled(t, "GetTagBy", &ctx, "dinner")
 	mockedSearchTagRepository.AssertCalled(t, "GetTagBy", &ctx, "super-market")
-	mockedBudgetExpenseRepository.AssertCalled(t, "FindByDateRange", &ctx, "A_USER_NAME", safeDateFor("01/04/2018"), safeDateFor("30/04/2018"), []string{"dinner", "super-market"})
+	mockedBudgetExpenseRepository.AssertCalled(t, "FindByDateRange", &ctx, "A_USER_NAME", testutils.SafeDateFor("01/04/2018"), testutils.SafeDateFor("30/04/2018"), []string{"dinner", "super-market"})
 }
 
 func TestBudgetExpenseTotalBySearchTagsWithoutConstraints(t *testing.T) {
-		ctx := newUserContext()
+		ctx := testutils.NewUserContext()
 	mockedSearchTagRepository := new(SearchTagRepositoryMock)
 	mockedBudgetExpenseRepository := new(BudgetExpenseRepositoryMock)
 	uut := FindSpentBudget{
@@ -53,15 +54,15 @@ func TestBudgetExpenseTotalBySearchTagsWithoutConstraints(t *testing.T) {
 	mockedSearchTagRepository.On("GetTagBy", &ctx, "super-market").Return(&tags.SearchTag{Key: "super-market", Value: "super-market"}, nil)
         mockedSearchTagRepository.On("GetTagBy", &ctx, "dinner").Return(&tags.SearchTag{Key: "dinner", Value: "dinner"}, nil)
 
-	mockedBudgetExpenseRepository.On("FindByDateRange", &ctx, "A_USER_NAME", safeDateFor("01/04/2018"), safeDateFor("30/04/2018"), []string{}).
+	mockedBudgetExpenseRepository.On("FindByDateRange", &ctx, "A_USER_NAME", testutils.SafeDateFor("01/04/2018"), testutils.SafeDateFor("30/04/2018"), []string{}).
 		Return(&[]BudgetExpense{
-			{Id: "1", UserName: "A_USER_NAME", Date: safeDateFor("15/04/2018"), Amount: safeMoneyFor("10.00"), Note: "dinner", Tag: "dinner"},
-			{Id: "2", UserName: "A_USER_NAME", Date: safeDateFor("01/04/2018"), Amount: safeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
-			{Id: "3", UserName: "A_USER_NAME", Date: safeDateFor("05/04/2018"), Amount: safeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
-			{Id: "4", UserName: "A_USER_NAME", Date: safeDateFor("04/04/2018"), Amount: safeMoneyFor("20.00"), Note: "dinner", Tag: "dinner"},
-			{Id: "5", UserName: "A_USER_NAME", Date: safeDateFor("03/04/2018"), Amount: safeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
-			{Id: "6", UserName: "A_USER_NAME", Date: safeDateFor("02/04/2018"), Amount: safeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
-			{Id: "7", UserName: "A_USER_NAME", Date: safeDateFor("01/04/2018"), Amount: safeMoneyFor("15.00"), Note: "dinner", Tag: "dinner"},
+			{Id: "1", UserName: "A_USER_NAME", Date: testutils.SafeDateFor("15/04/2018"), Amount: testutils.SafeMoneyFor("10.00"), Note: "dinner", Tag: "dinner"},
+			{Id: "2", UserName: "A_USER_NAME", Date: testutils.SafeDateFor("01/04/2018"), Amount: testutils.SafeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
+			{Id: "3", UserName: "A_USER_NAME", Date: testutils.SafeDateFor("05/04/2018"), Amount: testutils.SafeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
+			{Id: "4", UserName: "A_USER_NAME", Date: testutils.SafeDateFor("04/04/2018"), Amount: testutils.SafeMoneyFor("20.00"), Note: "dinner", Tag: "dinner"},
+			{Id: "5", UserName: "A_USER_NAME", Date: testutils.SafeDateFor("03/04/2018"), Amount: testutils.SafeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
+			{Id: "6", UserName: "A_USER_NAME", Date: testutils.SafeDateFor("02/04/2018"), Amount: testutils.SafeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
+			{Id: "7", UserName: "A_USER_NAME", Date: testutils.SafeDateFor("01/04/2018"), Amount: testutils.SafeMoneyFor("15.00"), Note: "dinner", Tag: "dinner"},
 		}, nil)
 	actual, err := uut.Execute(&ctx, date.APRIL(), date.NewYear(2018), []string{})
 
@@ -70,5 +71,5 @@ func TestBudgetExpenseTotalBySearchTagsWithoutConstraints(t *testing.T) {
 
     mockedSearchTagRepository.AssertCalled(t, "GetTagBy", &ctx, "dinner")
 	mockedSearchTagRepository.AssertCalled(t, "GetTagBy", &ctx, "super-market")
-	mockedBudgetExpenseRepository.AssertCalled(t, "FindByDateRange", &ctx, "A_USER_NAME", safeDateFor("01/04/2018"), safeDateFor("30/04/2018"), []string{})
+	mockedBudgetExpenseRepository.AssertCalled(t, "FindByDateRange", &ctx, "A_USER_NAME", testutils.SafeDateFor("01/04/2018"), testutils.SafeDateFor("30/04/2018"), []string{})
 }

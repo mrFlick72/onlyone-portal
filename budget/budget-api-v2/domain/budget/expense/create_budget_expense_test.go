@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/assert/v2"
 	"github.com/mrflick72/budget/budget-api/domain/money"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
+	"github.com/mrflick72/budget/budget-api/internal/testutils"
 )
 
 func TestWhenANewBudgetExpenseISCreated(t *testing.T) {
@@ -25,7 +26,7 @@ func TestWhenANewBudgetExpenseISCreated(t *testing.T) {
 		Tag:    "super-market",
 	}
 
-	ctx := newUserContext()
+	ctx := testutils.NewUserContext()
 
 	mockedRepository.On("Save", &ctx, &aBudgetExpense).Return(nil)
 
@@ -53,7 +54,7 @@ func TestWhenANewBudgetExpenseCreationFails(t *testing.T) {
 		Tag:    "super-market",
 	}
 
-	ctx := newUserContext()
+	ctx := testutils.NewUserContext()
 
 	saveError := errors.New("Budget Expense Save operation fails")
 	mockedRepository.On("Save", &ctx, &aBudgetExpense).Return(saveError)

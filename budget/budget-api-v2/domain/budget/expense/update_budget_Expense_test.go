@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/assert/v2"
 	"github.com/mrflick72/budget/budget-api/domain/money"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
+	"github.com/mrflick72/budget/budget-api/internal/testutils"
 )
 
 /*
@@ -44,7 +45,7 @@ func TestWhenABudgetExpenseUpdateSucceed(t *testing.T) {
 		Tag:      "super-market",
 	}
 
-	ctx := newUserContext()
+	ctx := testutils.NewUserContext()
 
 
 	foundBudgetExpense := &BudgetExpense{
@@ -79,7 +80,7 @@ func TestWhenABudgetExpenseUpdateDoesDoneNothingBecauseTheBudgetExpenseDoesNotEx
 		Tag:      "super-market",
 	}
 
-	ctx := newUserContext()
+	ctx := testutils.NewUserContext()
 
 	mockedRepository.On("FindFor", &ctx, "A_BUDGET_ID").Return(nil, fmt.Errorf("budget expense with the id %s was not found", "A_BUDGET_ID"))
 
@@ -109,7 +110,7 @@ func TestWhenABudgetExpenseUpdateFails(t *testing.T) {
 		Tag:      "super-market",
 	}
 
-	ctx := newUserContext()
+	ctx := testutils.NewUserContext()
 
 	foundBudgetExpense := &BudgetExpense{
 		Id:       "A_BUDGET_ID",
@@ -133,7 +134,7 @@ func TestWhenABudgetExpenseUpdateFailsBecauseUserOwnership(t *testing.T) {
 		repository: mockedRepository,
 	}
 
-	ctx := newUserContext()
+	ctx := testutils.NewUserContext()
 	foundBudgetExpense := &BudgetExpense{
 		Id:       "A_BUDGET_ID",
 		UserName: "A_DIFFERENT_USER_NAME",
