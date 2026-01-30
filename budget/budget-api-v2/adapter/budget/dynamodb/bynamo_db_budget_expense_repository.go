@@ -60,7 +60,6 @@ func (repository *DynamoDbBudgetExpenseRepository) Save(ctx *context.Context, bu
 	return err
 }
 
-// todo cover the case that the user name is not the same as the one in the context
 func (repository *DynamoDbBudgetExpenseRepository) Delete(ctx *context.Context, idBudgetExpense expense.BudgetExpenseId) error {
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
@@ -94,6 +93,11 @@ func (repository *DynamoDbBudgetExpenseRepository) Delete(ctx *context.Context, 
 }
 
 func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx *context.Context, budgetExpenseId expense.BudgetExpenseId) (*expense.BudgetExpense, error) {
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	pk, range_key := dynamoDbKeysFrom(budgetExpenseId)
 
 	input := &dynamodb.QueryInput{
@@ -101,8 +105,11 @@ func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx *context.Context,
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":pk":        &types.AttributeValueMemberS{Value: pk},
 			":range_key": &types.AttributeValueMemberS{Value: range_key},
+			":user_name": &types.AttributeValueMemberS{Value: *user.UserName},
+
 		},
 		KeyConditionExpression: aws.String("pk =:pk AND range_key =:range_key"),
+		FilterExpression:       aws.String("user_name = :user_name"),
 	}
 	result, err := repository.Client.Query(context.TODO(), input)
 	if err != nil {
