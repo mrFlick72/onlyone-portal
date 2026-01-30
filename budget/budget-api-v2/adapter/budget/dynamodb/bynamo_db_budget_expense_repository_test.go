@@ -3,7 +3,6 @@ package dynamodb
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"testing"
 
@@ -159,18 +158,6 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// @Test
-// public void saveAnewBudgetExpense() {
-//     BudgetExpenseId id = new BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU");
-//     BudgetExpense expected = new BudgetExpense(id, new UserName("USER"), DATE, Money.moneyFor("10.50"), "NOTE", "TAG");
-
-//     BudgetExpense actual = budgetExpenseRepository.save(expected);
-
-//     Assertions.assertEquals(expected, actual);
-//     BudgetExpense retrievedBudgetExpense = budgetExpenseRepository.findFor(expected.id()).get();
-//     Assertions.assertEquals(expected, retrievedBudgetExpense);
-// }
-
 func TestSaveANewBudgetExpense(t *testing.T) {
 	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
 	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
@@ -198,7 +185,6 @@ func TestSaveANewBudgetExpense(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error retrieving budget expense: %v", err)
 	}
-	fmt.Println("Expected:", expected.Amount.StringifyAmount())
-	fmt.Println("Retrieved:", retrievedBudgetExpense.Amount.StringifyAmount())
+
 	assert.Equal(t, expected, retrievedBudgetExpense)
 }
