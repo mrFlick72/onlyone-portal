@@ -3,7 +3,6 @@ package dynamodb
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -27,10 +26,10 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.
 	return nil, nil
 }
 
-// todo cover the case that the user name is not the same as the one in the context
 func (repository *DynamoDbBudgetExpenseRepository) Save(ctx *context.Context, budgetExpense *expense.BudgetExpense) error {
+	isNew := false
 	if budgetExpense.Id == "" {
-		fmt.Println("Generating new Id for budget expense")
+		isNew = true
 		budgetExpense.Id = repository.BudgetExpenseIdProvider.GenerateIdFor(budgetExpense)
 	}
 	pk, range_key := dynamoDbKeysFrom(budgetExpense.Id)
@@ -41,9 +40,9 @@ func (repository *DynamoDbBudgetExpenseRepository) Save(ctx *context.Context, bu
 	}
 	budgetExpense.UserName = *user.UserName
 
-	_, err = repository.Client.PutItem(*ctx, &dynamodb.PutItemInput{
+	queryInput := &dynamodb.PutItemInput{
 		TableName: &repository.TableName,
-		// Additional parameters to map budgetExpense fields to DynamoDB item attributes
+
 		Item: map[string]types.AttributeValue{
 			"pk":               &types.AttributeValueMemberS{Value: pk},
 			"range_key":        &types.AttributeValueMemberS{Value: range_key},
@@ -54,7 +53,16 @@ func (repository *DynamoDbBudgetExpenseRepository) Save(ctx *context.Context, bu
 			"note":             &types.AttributeValueMemberS{Value: budgetExpense.Note},
 			"tag":              &types.AttributeValueMemberS{Value: budgetExpense.Tag},
 		},
-	})
+	}
+
+	if !isNew {
+// to update, we need to make sure that the user name matches
+		queryInput.ConditionExpression = aws.String("user_name = :user_name")
+		queryInput.ExpressionAttributeValues = map[string]types.AttributeValue{
+			":user_name": &types.AttributeValueMemberS{Value: budgetExpense.UserName},
+		}	} 
+
+	_, err = repository.Client.PutItem(*ctx, queryInput)
 
 	// Implementation to save a budget expense to DynamoDB
 	return err
@@ -106,7 +114,6 @@ func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx *context.Context,
 			":pk":        &types.AttributeValueMemberS{Value: pk},
 			":range_key": &types.AttributeValueMemberS{Value: range_key},
 			":user_name": &types.AttributeValueMemberS{Value: *user.UserName},
-
 		},
 		KeyConditionExpression: aws.String("pk =:pk AND range_key =:range_key"),
 		FilterExpression:       aws.String("user_name = :user_name"),

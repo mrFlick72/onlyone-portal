@@ -215,6 +215,26 @@ func TestUpdateABudgetExpense(t *testing.T) {
 	assert.Equal(t, expected, retrievedBudgetExpense)
 }
 
+func TestUpdateABudgetExpenseFailsWhenTheBudgetExpenseDoesNotBelongsToTheUserInTheContext(t *testing.T) {
+	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
+	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
+
+	// Implement the test logic here
+	expected := expense.BudgetExpense{
+		Id:       expense.BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU"),
+		UserName: "testuser",
+		Date:     testutils.SafeDateFor("01/01/2024"),
+		Amount:   testutils.SafeMoneyFor("10.50"),
+		Note:     "NOTE",
+		Tag:      "TAG",
+	}
+
+	err := repo.Save(ctxAnotherUser, &expected)
+
+	mockedBudgetExpenseIdProvider.AssertNotCalled(t, "GenerateIdFor", &expected)
+	assert.NotEqual(t, nil, err	)
+}
+
 func TestDeleteBudgetExpense(t *testing.T) {
 	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
 	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
