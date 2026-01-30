@@ -15,6 +15,7 @@ func MoneyFor(amount string) (*Money, error) {
 	if err != nil {
 		return nil, err
 	}
+	result = result.Round(2)
 	return &Money{
 		content: result,
 	}, nil
