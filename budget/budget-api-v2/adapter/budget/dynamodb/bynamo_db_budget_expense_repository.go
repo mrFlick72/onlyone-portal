@@ -3,6 +3,7 @@ package dynamodb
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -26,8 +27,10 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.
 	return nil, nil
 }
 
+// todo cover the case that the user name is not the same as the one in the context
 func (repository *DynamoDbBudgetExpenseRepository) Save(ctx *context.Context, budgetExpense *expense.BudgetExpense) error {
 	if budgetExpense.Id == "" {
+		fmt.Println("Generating new Id for budget expense")
 		budgetExpense.Id = repository.BudgetExpenseIdProvider.GenerateIdFor(budgetExpense)
 	}
 	pk, range_key := dynamoDbKeysFrom(budgetExpense.Id)
@@ -57,9 +60,37 @@ func (repository *DynamoDbBudgetExpenseRepository) Save(ctx *context.Context, bu
 	return err
 }
 
+// todo cover the case that the user name is not the same as the one in the context
 func (repository *DynamoDbBudgetExpenseRepository) Delete(ctx *context.Context, idBudgetExpense expense.BudgetExpenseId) error {
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Implementation to delete a budget expense from DynamoDB
-	return nil
+	pk, range_key := dynamoDbKeysFrom(idBudgetExpense)
+
+	_, err = repository.Client.DeleteItem(*ctx, &dynamodb.DeleteItemInput{
+		TableName: &repository.TableName,
+		Key: map[string]types.AttributeValue{
+			"pk":        &types.AttributeValueMemberS{Value: pk},
+			"range_key": &types.AttributeValueMemberS{Value: range_key},
+		},
+		ConditionExpression: aws.String("user_name = :user_name"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":user_name": &types.AttributeValueMemberS{Value: *user.UserName},
+		},
+	})
+
+	if err != nil {
+		var conditionalCheckFailedException *types.ConditionalCheckFailedException
+		if errors.As(err, &conditionalCheckFailedException) {
+			return errors.New("user name does not match")
+		} else {
+			return errors.New("unexpected error deleting budget expense")
+		}
+	}
+	return err
 }
 
 func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx *context.Context, budgetExpenseId expense.BudgetExpenseId) (*expense.BudgetExpense, error) {
