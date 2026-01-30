@@ -18,68 +18,10 @@ import (
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
 
-// @Test
-// public void saveAnewBudgetExpense() {
-//     BudgetExpenseId id = new BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU");
-//     BudgetExpense expected = new BudgetExpense(id, new UserName("USER"), DATE, Money.moneyFor("10.50"), "NOTE", "TAG");
-
-//     BudgetExpense actual = budgetExpenseRepository.save(expected);
-
-//     Assertions.assertEquals(expected, actual);
-//     BudgetExpense retrievedBudgetExpense = budgetExpenseRepository.findFor(expected.id()).get();
-//     Assertions.assertEquals(expected, retrievedBudgetExpense);
-// }
-
-// @Test
-// public void findByDateRange() {
-//     budgetExpenseRepository.save(new BudgetExpense(null, new UserName("USER"), Date.dateFor("06/05/2018"), Money.moneyFor("17.50"), "Lanch", "lanch"));
-//     List<BudgetExpense> actualRange = budgetExpenseRepository.findByDateRange(new UserName("USER"), Date.dateFor("01/01/2018"), Date.dateFor("05/05/2018"));
-//     List<BudgetExpense> expectedRange =
-//             asList(
-//                     new BudgetExpense(null, new UserName("USER"), Date.dateFor("06/01/2018"), Money.moneyFor("17.50"), "Lanch", "lanch"),
-//                     new BudgetExpense(null, new UserName("USER"), Date.dateFor("12/02/2018"), Money.moneyFor("10.50"), "Super Market", "super-market"),
-//                     new BudgetExpense(null, new UserName("USER"), Date.dateFor("13/02/2018"), Money.moneyFor("17.50"), "Dinner", "dinner"),
-//                     new BudgetExpense(null, new UserName("USER"), Date.dateFor("22/02/2018"), Money.moneyFor("17.50"), "Super Market", "super-market"),
-//                     new BudgetExpense(null, new UserName("USER"), Date.dateFor("05/05/2018"), Money.moneyFor("17.50"), "Lanch", "lanch")
-//             );
-
-//     Assertions.assertEquals(expectedRange.size(), actualRange.size());
-// }
-
-// @Test
-// public void findByDateRangeAndSearchTags() {
-//     List<BudgetExpense> actualRange = budgetExpenseRepository.findByDateRange(new UserName("USER"), Date.dateFor("01/01/2018"), Date.dateFor("05/05/2018"), "super-market", "dinner");
-//     List<BudgetExpense> expectedRange =
-//             asList(new BudgetExpense(new BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU"), new UserName("USER"), Date.dateFor("12/02/2018"), Money.moneyFor("10.50"), "Super Market", "super-market"),
-//                     new BudgetExpense(new BudgetExpenseId("MjAxOF8yX1VTRVI=-MTNfQV9TQUxU"), new UserName("USER"), Date.dateFor("13/02/2018"), Money.moneyFor("17.50"), "Dinner", "dinner"),
-//                     new BudgetExpense(new BudgetExpenseId("MjAxOF8yX1VTRVI=-MjJfQV9TQUxU"), new UserName("USER"), Date.dateFor("22/02/2018"), Money.moneyFor("17.50"), "Super Market", "super-market"));
-
-//     Assertions.assertTrue(expectedRange.containsAll(actualRange) );
-// }
-// @Test
-// public void deleteBudgetExpense() {
-//     BudgetExpenseId id = new BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU");
-//     BudgetExpense expected = new BudgetExpense(id, new UserName("USER"), DATE, Money.moneyFor("10.50"), "NOTE", "TAG");
-
-//     budgetExpenseRepository.save(expected);
-
-//     budgetExpenseRepository.delete(id);
-//     Optional<BudgetExpense> actual = budgetExpenseRepository.findFor(id);
-
-//     Assertions.assertThrows(Exception.class, actual::orElseThrow);
-// }
-
 var TableName = "BUDGET_EXPENSE_TABLE_NAME_STAGING"
 var client, _ = newDynamoDBClient()
-
-func newStubbedContext() *context.Context {
-	ctx := context.Background()
-	userName := security.UserName("testuser")
-	user := security.User{UserName: &userName}
-	newCtx := context.WithValue(ctx, "user", user)
-
-	return &newCtx
-}
+var ctx = newStubbedContextWith(security.UserName("testuser"))
+var ctxAnotherUser = newStubbedContextWith(security.UserName("anotheruser"))
 
 func newStubbedContextWith(userName security.UserName) *context.Context {
 	ctx := context.Background()
@@ -167,10 +109,45 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func TestFindBudgetExpenseOfOtherPersonISNotAllowed(t *testing.T) {
+	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
+	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
+
+	// Implement the test logic here
+	input := expense.BudgetExpense{
+		UserName: "testuser",
+		Date:     testutils.SafeDateFor("01/01/2024"),
+		Amount:   testutils.SafeMoneyFor("10.50"),
+		Note:     "NOTE",
+		Tag:      "TAG",
+	}
+
+	// Implement the test logic here
+	expected := expense.BudgetExpense{
+		Id:       expense.BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU"),
+		UserName: "testuser",
+		Date:     testutils.SafeDateFor("01/01/2024"),
+		Amount:   testutils.SafeMoneyFor("10.50"),
+		Note:     "NOTE",
+		Tag:      "TAG",
+	}
+
+	mockedBudgetExpenseIdProvider.On("GenerateIdFor", &input).Return("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU")
+
+	err := repo.Save(newStubbedContextWith("another User"), &input)
+
+	if err != nil {
+		t.Errorf("Expected nil error, got %v", err)
+	}
+
+	retrievedBudgetExpense, err := repo.FindFor(ctxAnotherUser, expected.Id)
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, nil, retrievedBudgetExpense)
+}
+
 func TestSaveANewBudgetExpense(t *testing.T) {
 	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
 	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
-	ctx := newStubbedContext()
 
 	// Implement the test logic here
 	input := expense.BudgetExpense{
@@ -212,7 +189,6 @@ func TestSaveANewBudgetExpense(t *testing.T) {
 func TestUpdateABudgetExpense(t *testing.T) {
 	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
 	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
-	ctx := newStubbedContext()
 
 	// Implement the test logic here
 	expected := expense.BudgetExpense{
@@ -242,7 +218,6 @@ func TestUpdateABudgetExpense(t *testing.T) {
 func TestDeleteBudgetExpense(t *testing.T) {
 	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
 	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
-	ctx := newStubbedContext()
 
 	// Implement the test logic here
 	budgetExpense := expense.BudgetExpense{
@@ -270,11 +245,10 @@ func TestDeleteBudgetExpense(t *testing.T) {
 		t.Errorf("Expected error retrieving deleted budget expense, got nil")
 	}
 }
+
 func TestDeleteBudgetExpenseFailsWhenTheBudgetExpenseDoesNotBelongsToTheUserInTheContext(t *testing.T) {
 	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
 	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
-	ctx := newStubbedContextWith(security.UserName("testuser"))
-	ctxAnotherUser := newStubbedContextWith(security.UserName("anotheruser"))
 
 	// Implement the test logic here
 	testUserBudgetExpense := expense.BudgetExpense{
@@ -303,7 +277,7 @@ func TestDeleteBudgetExpenseFailsWhenTheBudgetExpenseDoesNotBelongsToTheUserInTh
 	assert.NotEqual(t, nil, err)
 
 	// verify that the another user's budget expense is still there
-	expected, err := repo.FindFor(ctx, anotherUserBudgetExpense.Id)
+	expected, err := repo.FindFor(ctxAnotherUser, anotherUserBudgetExpense.Id)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, anotherUserBudgetExpense, expected)
 }
