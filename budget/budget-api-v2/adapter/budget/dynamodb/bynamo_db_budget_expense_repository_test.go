@@ -3,6 +3,7 @@ package dynamodb
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"testing"
 
@@ -74,6 +75,14 @@ var client, _ = newDynamoDBClient()
 func newStubbedContext() *context.Context {
 	ctx := context.Background()
 	userName := security.UserName("testuser")
+	user := security.User{UserName: &userName}
+	newCtx := context.WithValue(ctx, "user", user)
+
+	return &newCtx
+}
+
+func newStubbedContextWith(userName security.UserName) *context.Context {
+	ctx := context.Background()
 	user := security.User{UserName: &userName}
 	newCtx := context.WithValue(ctx, "user", user)
 
@@ -164,6 +173,16 @@ func TestSaveANewBudgetExpense(t *testing.T) {
 	ctx := newStubbedContext()
 
 	// Implement the test logic here
+	input := expense.BudgetExpense{
+		UserName: "testuser",
+		Date:     testutils.SafeDateFor("01/01/2024"),
+		Amount:   testutils.SafeMoneyFor("10.50"),
+		Note:     "NOTE",
+		Tag:      "TAG",
+	}
+
+	fmt.Println("Input Id:", input.Id)
+	// Implement the test logic here
 	expected := expense.BudgetExpense{
 		Id:       expense.BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU"),
 		UserName: "testuser",
@@ -173,7 +192,37 @@ func TestSaveANewBudgetExpense(t *testing.T) {
 		Tag:      "TAG",
 	}
 
-	mockedBudgetExpenseIdProvider.On("GenerateIdFor", &expected).Return("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU")
+	mockedBudgetExpenseIdProvider.On("GenerateIdFor", &input).Return("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU")
+
+	err := repo.Save(ctx, &input)
+
+	if err != nil {
+		t.Errorf("Expected nil error, got %v", err)
+	}
+
+	retrievedBudgetExpense, err := repo.FindFor(ctx, expected.Id)
+	if err != nil {
+		t.Errorf("Error retrieving budget expense: %v", err)
+	}
+
+	mockedBudgetExpenseIdProvider.AssertCalled(t, "GenerateIdFor", &input)
+	assert.Equal(t, expected, retrievedBudgetExpense)
+}
+
+func TestUpdateABudgetExpense(t *testing.T) {
+	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
+	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
+	ctx := newStubbedContext()
+
+	// Implement the test logic here
+	expected := expense.BudgetExpense{
+		Id:       expense.BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU"),
+		UserName: "testuser",
+		Date:     testutils.SafeDateFor("01/01/2024"),
+		Amount:   testutils.SafeMoneyFor("10.50"),
+		Note:     "NOTE",
+		Tag:      "TAG",
+	}
 
 	err := repo.Save(ctx, &expected)
 
@@ -186,5 +235,75 @@ func TestSaveANewBudgetExpense(t *testing.T) {
 		t.Errorf("Error retrieving budget expense: %v", err)
 	}
 
+	mockedBudgetExpenseIdProvider.AssertNotCalled(t, "GenerateIdFor", &expected)
 	assert.Equal(t, expected, retrievedBudgetExpense)
+}
+
+func TestDeleteBudgetExpense(t *testing.T) {
+	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
+	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
+	ctx := newStubbedContext()
+
+	// Implement the test logic here
+	budgetExpense := expense.BudgetExpense{
+		Id:       expense.BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU"),
+		UserName: "testuser",
+		Date:     testutils.SafeDateFor("01/01/2024"),
+		Amount:   testutils.SafeMoneyFor("10.50"),
+		Note:     "NOTE",
+		Tag:      "TAG",
+	}
+
+	err := repo.Save(ctx, &budgetExpense)
+
+	if err != nil {
+		t.Errorf("Expected nil error, got %v", err)
+	}
+
+	err = repo.Delete(ctx, budgetExpense.Id)
+	if err != nil {
+		t.Errorf("Expected nil error on delete, got %v", err)
+	}
+
+	_, err = repo.FindFor(ctx, budgetExpense.Id)
+	if err == nil {
+		t.Errorf("Expected error retrieving deleted budget expense, got nil")
+	}
+}
+func TestDeleteBudgetExpenseFailsWhenTheBudgetExpenseDoesNotBelongsToTheUserInTheContext(t *testing.T) {
+	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
+	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
+	ctx := newStubbedContextWith(security.UserName("testuser"))
+	ctxAnotherUser := newStubbedContextWith(security.UserName("anotheruser"))
+
+	// Implement the test logic here
+	testUserBudgetExpense := expense.BudgetExpense{
+		Id:       expense.BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU"),
+		UserName: "testuser",
+		Date:     testutils.SafeDateFor("01/01/2024"),
+		Amount:   testutils.SafeMoneyFor("10.50"),
+		Note:     "NOTE",
+		Tag:      "TAG",
+	}
+	_ = repo.Save(ctx, &testUserBudgetExpense)
+
+	// Implement the test logic here
+	anotherUserBudgetExpense := expense.BudgetExpense{
+		Id:       expense.BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU"),
+		UserName: "anotheruser",
+		Date:     testutils.SafeDateFor("01/01/2024"),
+		Amount:   testutils.SafeMoneyFor("10.50"),
+		Note:     "NOTE",
+		Tag:      "TAG",
+	}
+	_ = repo.Save(ctxAnotherUser, &anotherUserBudgetExpense)
+
+	// the user in the context is "testuser", but we try to delete another user's budget expense
+	err := repo.Delete(ctx, anotherUserBudgetExpense.Id)
+	assert.NotEqual(t, nil, err)
+
+	// verify that the another user's budget expense is still there
+	expected, err := repo.FindFor(ctx, anotherUserBudgetExpense.Id)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, anotherUserBudgetExpense, expected)
 }
