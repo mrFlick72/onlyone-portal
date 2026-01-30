@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/domain"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/web/server"
 )
@@ -34,6 +35,9 @@ func RegisterEndpoints(r *gin.Engine, repository domain.TagRepository) *gin.Engi
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
+		tag.Key = uuid.New().String() // Assign a new UUID as the key
+		log.Println("Saving tag:", tag)
 
 		ctx := server.CopyGinKeysToRequestContext(c)
 		if err := repository.SaveTag(ctx, &tag); err != nil {

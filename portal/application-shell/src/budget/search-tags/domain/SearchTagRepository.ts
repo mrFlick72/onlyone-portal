@@ -27,7 +27,7 @@ export async function saveSearchTag(searchTag: SearchTag): Promise<void> {
     await fetch(`${baseUrl}/api/tags`, {
         method: "PUT",
         credentials: "same-origin",
-        body: JSON.stringify({ "search_tag_key": searchTag.key, "search_tag_value": searchTag.value }),
+        body: JSON.stringify({ "key": searchTag.key, "value": searchTag.value }),
         headers: {
             Authorization: `Bearer ${window.sessionStorage.getItem("ACCESS_TOKEN")}`,
             "Content-Type": "application/json",
