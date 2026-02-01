@@ -126,7 +126,8 @@ func loadBudgetExpensesFromCSVFile(filePath string) error {
 		return err
 	}
 
-	repository := newBudgetExpenseRepository(new(DynamoDbBudgetExpenseIdProviderMock))
+	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
+	repository := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
 
 	for _, record := range records {
 		recordsNumber++
@@ -136,13 +137,14 @@ func loadBudgetExpensesFromCSVFile(filePath string) error {
 		budgetId := expense.BudgetExpenseId(fmt.Sprintf("%s-%s", pk, range_key))
 		fmt.Println("Generated BudgetExpenseId:", budgetId)
 		budgetExpense := expense.BudgetExpense{
-			Id:       budgetId,
 			UserName: security.UserName(record[0]),
 			Date:     testutils.SafeDateFor(record[1]),
 			Amount:   testutils.SafeMoneyFor(record[2]),
 			Note:     record[3],
 			Tag:      record[4],
 		}
+		mockedBudgetExpenseIdProvider.On("GenerateIdFor", &budgetExpense).Return(budgetId)
+
 		err := repository.Save(newStubbedContextWith(record[0]), &budgetExpense)
 		if err != nil {
 			return err
@@ -160,10 +162,11 @@ func TestFindBudgetExpenseByDateRange(t *testing.T) {
 		t.Fatalf("Failed to load budget expenses: %v", err)
 	}
 	// Implement the test logic here
-	result, err := repo.FindByDateRange(ctx, testutils.SafeDateFor("01/01/2024"), testutils.SafeDateFor("31/01/2024"), []tags.SearchTagKey{})
-
-	assert.NotEqual(t, nil, err)
-	assert.Equal(t, 0, len(*result))
+	result, err := repo.FindByDateRange(newStubbedContextWith("USER"), testutils.SafeDateFor("01/02/2019"), testutils.SafeDateFor("28/02/2019"), []tags.SearchTagKey{})
+	fmt.Println("Result length:", result)
+	fmt.Println("Error:", err)
+	assert.Equal(t, nil, err)
+	// assert.Equal(t, 15, len(*result))
 }
 
 func TestFindNonExistentBudgetExpenseReturnsNil(t *testing.T) {

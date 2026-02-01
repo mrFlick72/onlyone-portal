@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/mrflick72/budget/budget-api/domain/money"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
@@ -17,6 +18,7 @@ func NewUserContext() context.Context {
 func SafeDateFor(dateStr string) date.Date {
 	d, err := date.DateFor(dateStr)
 	if err != nil {
+		fmt.Printf("Error during date parsing data input is: %s", dateStr)
 		panic(err)
 	}
 	return *d
@@ -25,6 +27,7 @@ func SafeDateFor(dateStr string) date.Date {
 func SafeMoneyFor(moneyStr string) money.Money {
 	m, err := money.MoneyFor(moneyStr)
 	if err != nil {
+		fmt.Printf("Error during date parsing data input is: %s", moneyStr)
 		panic(err)
 	}
 	return *m

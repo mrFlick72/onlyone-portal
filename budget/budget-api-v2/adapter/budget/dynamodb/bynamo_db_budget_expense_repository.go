@@ -3,6 +3,7 @@ package dynamodb
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -23,7 +24,53 @@ type DynamoDbBudgetExpenseRepository struct {
 
 func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.Context, start date.Date, end date.Date, searchTags []tags.SearchTagKey) (*[]expense.BudgetExpense, error) {
 	// Implementation to interact with DynamoDB and retrieve budget expenses by date range and search tags
-	return nil, nil
+	budgetExpenses := make([]expense.BudgetExpense, 0)
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		fmt.Println("Error getting current user:", err)
+		return nil, err
+	}
+	// For simplicity, returning nil. Actual implementation would query DynamoDB.
+	input := &dynamodb.QueryInput{
+		TableName: aws.String(repository.TableName),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":user_name":  &types.AttributeValueMemberS{Value: *user.UserName},
+			":start_date": &types.AttributeValueMemberS{Value: start.GetIsoFormattedDate()},
+			":end_date":   &types.AttributeValueMemberS{Value: end.GetIsoFormattedDate()},
+		},
+		FilterExpression:       aws.String("user_name = :user_name AND transaction_date BETWEEN :start_date AND :end_date"),
+		KeyConditionExpression: aws.String("pk = :pk"),
+	}
+
+	items, err := repository.Client.Query(context.TODO(), input)
+	if err != nil {
+		return nil, err
+	}
+	for _, item := range items.Items {
+
+		date, err := date.IsoDateFor(item["transaction_date"].(*types.AttributeValueMemberS).Value)
+		if err != nil {
+			return nil, errors.New("invalid data format in BudgetExpense")
+		}
+
+		moneyAmount, err := money.MoneyFor(item["amount"].(*types.AttributeValueMemberN).Value)
+		if err != nil {
+			return nil, errors.New("invalid data format in BudgetExpense")
+		}
+
+		budgetExpenses = append(budgetExpenses, expense.BudgetExpense{
+			Id:       expense.BudgetExpenseId(item["budget_id"].(*types.AttributeValueMemberS).Value),
+			UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
+			Date:     *date,
+			Amount:   *moneyAmount,
+			Note:     item["note"].(*types.AttributeValueMemberS).Value,
+			Tag:      item["tag"].(*types.AttributeValueMemberS).Value,
+		})
+		// Process each item and convert to BudgetExpense
+	}
+
+	// Placeholder return
+	return &budgetExpenses, nil
 }
 
 func (repository *DynamoDbBudgetExpenseRepository) Save(ctx *context.Context, budgetExpense *expense.BudgetExpense) error {
