@@ -162,11 +162,11 @@ func TestFindBudgetExpenseByDateRange(t *testing.T) {
 		t.Fatalf("Failed to load budget expenses: %v", err)
 	}
 	// Implement the test logic here
-	result, err := repo.FindByDateRange(newStubbedContextWith("USER"), testutils.SafeDateFor("01/02/2019"), testutils.SafeDateFor("28/02/2019"), []tags.SearchTagKey{})
+	result, err := repo.FindByDateRange(newStubbedContextWith("USER"), testutils.SafeDateFor("01/02/2018"), testutils.SafeDateFor("28/02/2019"), []tags.SearchTagKey{})
 	fmt.Println("Result length:", result)
 	fmt.Println("Error:", err)
 	assert.Equal(t, nil, err)
-	// assert.Equal(t, 15, len(*result))
+	assert.Equal(t, 6, len(*result))
 }
 
 func TestFindNonExistentBudgetExpenseReturnsNil(t *testing.T) {

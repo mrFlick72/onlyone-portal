@@ -30,6 +30,9 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.
 		fmt.Println("Error getting current user:", err)
 		return nil, err
 	}
+	// ensure provider implements DynamoDbBudgetExpenseIdProvider when needed
+	idProvider, _ := repository.BudgetExpenseIdProvider.(*DynamoDbBudgetExpenseIdProvider)
+	pk := idProvider.partitionKeyFrom(start, *user.UserName)
 	// For simplicity, returning nil. Actual implementation would query DynamoDB.
 	input := &dynamodb.QueryInput{
 		TableName: aws.String(repository.TableName),
@@ -37,6 +40,7 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.
 			":user_name":  &types.AttributeValueMemberS{Value: *user.UserName},
 			":start_date": &types.AttributeValueMemberS{Value: start.GetIsoFormattedDate()},
 			":end_date":   &types.AttributeValueMemberS{Value: end.GetIsoFormattedDate()},
+			":pk":         &types.AttributeValueMemberS{Value: pk},
 		},
 		FilterExpression:       aws.String("user_name = :user_name AND transaction_date BETWEEN :start_date AND :end_date"),
 		KeyConditionExpression: aws.String("pk = :pk"),

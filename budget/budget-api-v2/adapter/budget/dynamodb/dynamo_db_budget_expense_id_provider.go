@@ -14,7 +14,7 @@ type DynamoDbBudgetExpenseIdProvider struct {
 	saltGenerator func() string
 }
 
-func (provider *DynamoDbBudgetExpenseIdProvider) GenerateIdFor(budgetExpense expense.BudgetExpense) expense.BudgetExpenseId {
+func (provider *DynamoDbBudgetExpenseIdProvider) GenerateIdFor(budgetExpense *expense.BudgetExpense) expense.BudgetExpenseId {
 	return fmt.Sprintf("%s-%s", provider.partitionKeyFrom(budgetExpense.Date, budgetExpense.UserName), provider.rangeKeyFrom(budgetExpense))
 }
 
@@ -26,7 +26,7 @@ func (provider *DynamoDbBudgetExpenseIdProvider) partitionKeyFrom(date date.Date
 	return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%d_%d_%s", budgetExpenseYear, budgetExpenseMonth, userName)))
 }
 
-func (provider *DynamoDbBudgetExpenseIdProvider) rangeKeyFrom(budgetExpense expense.BudgetExpense) string {
+func (provider *DynamoDbBudgetExpenseIdProvider) rangeKeyFrom(budgetExpense *expense.BudgetExpense) string {
 	isoDate := budgetExpense.Date.GetIsoFormattedDate()
 	budgetExpenseDay, _ := strconv.Atoi(isoDate[8:10])
 	rangeKey := fmt.Sprintf("%d_%s", budgetExpenseDay, provider.saltGenerator())
