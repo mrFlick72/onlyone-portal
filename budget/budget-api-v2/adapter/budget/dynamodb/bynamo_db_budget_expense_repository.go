@@ -21,7 +21,7 @@ type DynamoDbBudgetExpenseRepository struct {
 	BudgetExpenseIdProvider expense.BudgetExpenseIdProvider
 }
 
-func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.Context, userName security.UserName, start date.Date, end date.Date, searchTags []tags.SearchTagKey) (*[]expense.BudgetExpense, error) {
+func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.Context, start date.Date, end date.Date, searchTags []tags.SearchTagKey) (*[]expense.BudgetExpense, error) {
 	// Implementation to interact with DynamoDB and retrieve budget expenses by date range and search tags
 	return nil, nil
 }
@@ -32,7 +32,10 @@ func (repository *DynamoDbBudgetExpenseRepository) Save(ctx *context.Context, bu
 		isNew = true
 		budgetExpense.Id = repository.BudgetExpenseIdProvider.GenerateIdFor(budgetExpense)
 	}
-	pk, range_key := dynamoDbKeysFrom(budgetExpense.Id)
+	pk, range_key, err := dynamoDbKeysFrom(budgetExpense.Id)
+	if err != nil {
+		return err
+	}
 
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
@@ -56,11 +59,12 @@ func (repository *DynamoDbBudgetExpenseRepository) Save(ctx *context.Context, bu
 	}
 
 	if !isNew {
-// to update, we need to make sure that the user name matches
+		// to update, we need to make sure that the user name matches
 		queryInput.ConditionExpression = aws.String("user_name = :user_name")
 		queryInput.ExpressionAttributeValues = map[string]types.AttributeValue{
 			":user_name": &types.AttributeValueMemberS{Value: budgetExpense.UserName},
-		}	} 
+		}
+	}
 
 	_, err = repository.Client.PutItem(*ctx, queryInput)
 
@@ -75,7 +79,10 @@ func (repository *DynamoDbBudgetExpenseRepository) Delete(ctx *context.Context, 
 	}
 
 	// Implementation to delete a budget expense from DynamoDB
-	pk, range_key := dynamoDbKeysFrom(idBudgetExpense)
+	pk, range_key, err := dynamoDbKeysFrom(idBudgetExpense)
+	if err != nil {
+		return err
+	}
 
 	_, err = repository.Client.DeleteItem(*ctx, &dynamodb.DeleteItemInput{
 		TableName: &repository.TableName,
@@ -106,7 +113,10 @@ func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx *context.Context,
 		return nil, err
 	}
 
-	pk, range_key := dynamoDbKeysFrom(budgetExpenseId)
+	pk, range_key, err := dynamoDbKeysFrom(budgetExpenseId)
+	if err != nil {
+		return nil, err
+	}
 
 	input := &dynamodb.QueryInput{
 		TableName: aws.String(repository.TableName),
@@ -149,9 +159,13 @@ func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx *context.Context,
 	}, nil
 }
 
-func dynamoDbKeysFrom(budgetExpenseId expense.BudgetExpenseId) (string, string) {
-	pk := strings.Split(string(budgetExpenseId), "-")[0]
-	range_key := strings.Split(string(budgetExpenseId), "-")[1]
+func dynamoDbKeysFrom(budgetExpenseId expense.BudgetExpenseId) (string, string, error) {
+	kyes := strings.Split(string(budgetExpenseId), "-")
+	if len(kyes) != 2 {
+		return "", "", errors.New("invalid budget expense id format: " + string(budgetExpenseId))
+	}
+	pk := kyes[0]
+	range_key := kyes[1]
 
-	return pk, range_key
+	return pk, range_key, nil
 }

@@ -2,6 +2,8 @@ package dynamodb
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/csv"
 	"errors"
 	"fmt"
 	"os"
@@ -13,7 +15,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/go-playground/assert/v2"
+	"github.com/google/uuid"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
+	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/internal/testutils"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
@@ -107,6 +111,72 @@ func TestMain(m *testing.M) {
 
 	teardownTestDynamoDBTable()
 	os.Exit(code)
+}
+
+func loadBudgetExpensesFromCSVFile(filePath string) error {
+	recordsNumber := 0
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	records, err := csv.NewReader(file).ReadAll()
+	if err != nil {
+		return err
+	}
+
+	repository := newBudgetExpenseRepository(new(DynamoDbBudgetExpenseIdProviderMock))
+
+	for _, record := range records {
+		recordsNumber++
+
+		pk := base64.StdEncoding.EncodeToString([]byte(uuid.New().String()))
+		range_key := base64.StdEncoding.EncodeToString([]byte(uuid.New().String()))
+		budgetId := expense.BudgetExpenseId(fmt.Sprintf("%s-%s", pk, range_key))
+		fmt.Println("Generated BudgetExpenseId:", budgetId)
+		budgetExpense := expense.BudgetExpense{
+			Id:       budgetId,
+			UserName: security.UserName(record[0]),
+			Date:     testutils.SafeDateFor(record[1]),
+			Amount:   testutils.SafeMoneyFor(record[2]),
+			Note:     record[3],
+			Tag:      record[4],
+		}
+		err := repository.Save(newStubbedContextWith(record[0]), &budgetExpense)
+		if err != nil {
+			return err
+		}
+	}
+
+	fmt.Printf("Loaded %d budget expenses from %s\n", recordsNumber, filePath)
+	return nil
+}
+func TestFindBudgetExpenseByDateRange(t *testing.T) {
+	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
+	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
+	err := loadBudgetExpensesFromCSVFile("find-by-date-range-data-set.csv")
+	if err != nil {
+		t.Fatalf("Failed to load budget expenses: %v", err)
+	}
+	// Implement the test logic here
+	result, err := repo.FindByDateRange(ctx, testutils.SafeDateFor("01/01/2024"), testutils.SafeDateFor("31/01/2024"), []tags.SearchTagKey{})
+
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, 0, len(*result))
+}
+
+func TestFindNonExistentBudgetExpenseReturnsNil(t *testing.T) {
+	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
+	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
+
+	// Implement the test logic here
+	nonExistentBudgetExpenseId := expense.BudgetExpenseId("dyghtq4hrbg-MTJfQV9TQUxU")
+
+	result, err := repo.FindFor(ctx, nonExistentBudgetExpenseId)
+
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, nil, result)
 }
 
 func TestFindBudgetExpenseOfOtherPersonISNotAllowed(t *testing.T) {
@@ -232,7 +302,7 @@ func TestUpdateABudgetExpenseFailsWhenTheBudgetExpenseDoesNotBelongsToTheUserInT
 	err := repo.Save(ctxAnotherUser, &expected)
 
 	mockedBudgetExpenseIdProvider.AssertNotCalled(t, "GenerateIdFor", &expected)
-	assert.NotEqual(t, nil, err	)
+	assert.NotEqual(t, nil, err)
 }
 
 func TestDeleteBudgetExpense(t *testing.T) {
