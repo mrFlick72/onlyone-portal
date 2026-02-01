@@ -20,6 +20,6 @@ func TestANewBudgetIdCreation(t *testing.T) {
 		Tag:      "",
 	}
 
-	id := provider.GenerateIdFor(budgetExpense)
+	id := provider.GenerateIdFor(&budgetExpense)
 	assert.Equal(t, "MjAxOF8xX1VTRVI=-MV9BX1NBTFQ=", id)
 }
