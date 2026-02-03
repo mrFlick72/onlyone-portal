@@ -32,6 +32,11 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.
 	}
 	// ensure provider implements DynamoDbBudgetExpenseIdProvider when needed
 	idProvider, _ := repository.BudgetExpenseIdProvider.(*DynamoDbBudgetExpenseIdProvider)
+	// generate partition key for the query
+
+	partitionKeys := repository.partitionKeysForDateRangeAndUser(idProvider, start, end, *user.UserName)
+	_ = partitionKeys
+
 	pk := idProvider.partitionKeyFrom(start, *user.UserName)
 	// For simplicity, returning nil. Actual implementation would query DynamoDB.
 	input := &dynamodb.QueryInput{
@@ -75,6 +80,17 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.
 
 	// Placeholder return
 	return &budgetExpenses, nil
+}
+
+func (repository *DynamoDbBudgetExpenseRepository) partitionKeysForDateRangeAndUser(idProvider *DynamoDbBudgetExpenseIdProvider, start, end date.Date, user security.UserName) []string {
+	// Generate partition keys for each month in the date range
+	var partitionKeys []string
+	current := start
+	for current.Before(end) || current.Equal(end) {
+		partitionKeys = append(partitionKeys, idProvider.partitionKeyFrom(current, user))
+		current = *date.DateFor(current.NextMonth())
+	}
+	return partitionKeys
 }
 
 func (repository *DynamoDbBudgetExpenseRepository) Save(ctx *context.Context, budgetExpense *expense.BudgetExpense) error {
