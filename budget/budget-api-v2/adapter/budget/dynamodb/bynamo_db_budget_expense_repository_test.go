@@ -2,7 +2,6 @@ package dynamodb
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -113,7 +112,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func loadBudgetExpensesFromCSVFile(filePath string) error {
+func loadBudgetExpensesFromCSVFile(filePath string, mockedBudgetExpenseIdProvider *DynamoDbBudgetExpenseIdProvider) error {
 	recordsNumber := 0
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -126,16 +125,11 @@ func loadBudgetExpensesFromCSVFile(filePath string) error {
 		return err
 	}
 
-	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
 	repository := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
 
 	for _, record := range records {
 		recordsNumber++
 
-		pk := base64.StdEncoding.EncodeToString([]byte(uuid.New().String()))
-		range_key := base64.StdEncoding.EncodeToString([]byte(uuid.New().String()))
-		budgetId := expense.BudgetExpenseId(fmt.Sprintf("%s-%s", pk, range_key))
-		fmt.Println("Generated BudgetExpenseId:", budgetId)
 		budgetExpense := expense.BudgetExpense{
 			UserName: security.UserName(record[0]),
 			Date:     testutils.SafeDateFor(record[1]),
@@ -143,9 +137,9 @@ func loadBudgetExpensesFromCSVFile(filePath string) error {
 			Note:     record[3],
 			Tag:      record[4],
 		}
-		mockedBudgetExpenseIdProvider.On("GenerateIdFor", &budgetExpense).Return(budgetId)
 
 		err := repository.Save(newStubbedContextWith(record[0]), &budgetExpense)
+		fmt.Printf("Loaded budget expense id: %+v\n", budgetExpense.Id)
 		if err != nil {
 			return err
 		}
@@ -154,10 +148,13 @@ func loadBudgetExpensesFromCSVFile(filePath string) error {
 	fmt.Printf("Loaded %d budget expenses from %s\n", recordsNumber, filePath)
 	return nil
 }
+
 func TestFindBudgetExpenseByDateRange(t *testing.T) {
-	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
+	mockedBudgetExpenseIdProvider := &DynamoDbBudgetExpenseIdProvider{
+		saltGenerator: func() string { return uuid.New().String() },
+	}
 	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
-	err := loadBudgetExpensesFromCSVFile("find-by-date-range-data-set.csv")
+	err := loadBudgetExpensesFromCSVFile("find-by-date-range-data-set.csv", mockedBudgetExpenseIdProvider)
 	if err != nil {
 		t.Fatalf("Failed to load budget expenses: %v", err)
 	}
@@ -166,7 +163,7 @@ func TestFindBudgetExpenseByDateRange(t *testing.T) {
 	fmt.Println("Result length:", result)
 	fmt.Println("Error:", err)
 	assert.Equal(t, nil, err)
-	assert.Equal(t, 6, len(*result))
+	assert.Equal(t, 11, len(*result))
 }
 
 func TestFindNonExistentBudgetExpenseReturnsNil(t *testing.T) {
@@ -263,6 +260,18 @@ func TestUpdateABudgetExpense(t *testing.T) {
 	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
 	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
 
+	//	Implement the test logic here
+	input := expense.BudgetExpense{
+		UserName: "testuser",
+		Date:     testutils.SafeDateFor("01/01/2024"),
+		Amount:   testutils.SafeMoneyFor("10.50"),
+		Note:     "NOTE",
+		Tag:      "TAG",
+	}
+	mockedBudgetExpenseIdProvider.On("GenerateIdFor", &input).Return("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU")
+
+	repo.Save(ctx, &input)
+
 	// Implement the test logic here
 	expected := expense.BudgetExpense{
 		Id:       expense.BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU"),
@@ -284,13 +293,25 @@ func TestUpdateABudgetExpense(t *testing.T) {
 		t.Errorf("Error retrieving budget expense: %v", err)
 	}
 
-	mockedBudgetExpenseIdProvider.AssertNotCalled(t, "GenerateIdFor", &expected)
 	assert.Equal(t, expected, retrievedBudgetExpense)
+	mockedBudgetExpenseIdProvider.AssertNumberOfCalls(t, "GenerateIdFor", 1)
 }
 
 func TestUpdateABudgetExpenseFailsWhenTheBudgetExpenseDoesNotBelongsToTheUserInTheContext(t *testing.T) {
 	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
 	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
+
+	//	Implement the test logic here
+	input := expense.BudgetExpense{
+		UserName: "testuser",
+		Date:     testutils.SafeDateFor("01/01/2024"),
+		Amount:   testutils.SafeMoneyFor("10.50"),
+		Note:     "NOTE",
+		Tag:      "TAG",
+	}
+	mockedBudgetExpenseIdProvider.On("GenerateIdFor", &input).Return("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU")
+
+	repo.Save(ctx, &input)
 
 	// Implement the test logic here
 	expected := expense.BudgetExpense{
@@ -305,6 +326,7 @@ func TestUpdateABudgetExpenseFailsWhenTheBudgetExpenseDoesNotBelongsToTheUserInT
 	err := repo.Save(ctxAnotherUser, &expected)
 
 	mockedBudgetExpenseIdProvider.AssertNotCalled(t, "GenerateIdFor", &expected)
+	fmt.Print(err)
 	assert.NotEqual(t, nil, err)
 }
 
@@ -345,24 +367,25 @@ func TestDeleteBudgetExpenseFailsWhenTheBudgetExpenseDoesNotBelongsToTheUserInTh
 
 	// Implement the test logic here
 	testUserBudgetExpense := expense.BudgetExpense{
-		Id:       expense.BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU"),
 		UserName: "testuser",
 		Date:     testutils.SafeDateFor("01/01/2024"),
 		Amount:   testutils.SafeMoneyFor("10.50"),
 		Note:     "NOTE",
 		Tag:      "TAG",
 	}
+	mockedBudgetExpenseIdProvider.On("GenerateIdFor", &testUserBudgetExpense).Return("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU")
+
 	_ = repo.Save(ctx, &testUserBudgetExpense)
 
 	// Implement the test logic here
 	anotherUserBudgetExpense := expense.BudgetExpense{
-		Id:       expense.BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU"),
 		UserName: "anotheruser",
 		Date:     testutils.SafeDateFor("01/01/2024"),
 		Amount:   testutils.SafeMoneyFor("10.50"),
 		Note:     "NOTE",
 		Tag:      "TAG",
 	}
+	mockedBudgetExpenseIdProvider.On("GenerateIdFor", &anotherUserBudgetExpense).Return("MjAxOF8yX1VTRVI=-MjAxOF8yX1VTRVI")
 	_ = repo.Save(ctxAnotherUser, &anotherUserBudgetExpense)
 
 	// the user in the context is "testuser", but we try to delete another user's budget expense

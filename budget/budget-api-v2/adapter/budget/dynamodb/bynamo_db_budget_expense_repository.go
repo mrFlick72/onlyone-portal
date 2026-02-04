@@ -22,6 +22,58 @@ type DynamoDbBudgetExpenseRepository struct {
 	BudgetExpenseIdProvider expense.BudgetExpenseIdProvider
 }
 
+func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx *context.Context, budgetExpenseId expense.BudgetExpenseId) (*expense.BudgetExpense, error) {
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	pk, range_key, err := dynamoDbKeysFrom(budgetExpenseId)
+	if err != nil {
+		return nil, err
+	}
+
+	input := &dynamodb.QueryInput{
+		TableName: aws.String(repository.TableName),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":pk":        &types.AttributeValueMemberS{Value: pk},
+			":range_key": &types.AttributeValueMemberS{Value: range_key},
+			":user_name": &types.AttributeValueMemberS{Value: *user.UserName},
+		},
+		KeyConditionExpression: aws.String("pk =:pk AND range_key =:range_key"),
+		FilterExpression:       aws.String("user_name = :user_name"),
+	}
+	result, err := repository.Client.Query(context.TODO(), input)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(result.Items) == 0 {
+		return nil, errors.New("BudgetExpense not found")
+	}
+
+	item := result.Items[0]
+
+	date, err := date.IsoDateFor(item["transaction_date"].(*types.AttributeValueMemberS).Value)
+	if err != nil {
+		return nil, errors.New("invalid data format in BudgetExpense")
+	}
+
+	moneyAmount, err := money.MoneyFor(item["amount"].(*types.AttributeValueMemberN).Value)
+	if err != nil {
+		return nil, errors.New("invalid data format in BudgetExpense")
+	}
+
+	return &expense.BudgetExpense{
+		Id:       expense.BudgetExpenseId(item["budget_id"].(*types.AttributeValueMemberS).Value),
+		UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
+		Date:     *date,
+		Amount:   *moneyAmount,
+		Note:     item["note"].(*types.AttributeValueMemberS).Value,
+		Tag:      item["tag"].(*types.AttributeValueMemberS).Value,
+	}, nil
+}
+
 func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.Context, start date.Date, end date.Date, searchTags []tags.SearchTagKey) (*[]expense.BudgetExpense, error) {
 	// Implementation to interact with DynamoDB and retrieve budget expenses by date range and search tags
 	budgetExpenses := make([]expense.BudgetExpense, 0)
@@ -35,46 +87,47 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.
 	// generate partition key for the query
 
 	partitionKeys := repository.partitionKeysForDateRangeAndUser(idProvider, start, end, *user.UserName)
-	_ = partitionKeys
-
-	pk := idProvider.partitionKeyFrom(start, *user.UserName)
-	// For simplicity, returning nil. Actual implementation would query DynamoDB.
-	input := &dynamodb.QueryInput{
-		TableName: aws.String(repository.TableName),
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":user_name":  &types.AttributeValueMemberS{Value: *user.UserName},
-			":start_date": &types.AttributeValueMemberS{Value: start.GetIsoFormattedDate()},
-			":end_date":   &types.AttributeValueMemberS{Value: end.GetIsoFormattedDate()},
-			":pk":         &types.AttributeValueMemberS{Value: pk},
-		},
-		FilterExpression:       aws.String("user_name = :user_name AND transaction_date BETWEEN :start_date AND :end_date"),
-		KeyConditionExpression: aws.String("pk = :pk"),
-	}
-
-	items, err := repository.Client.Query(context.TODO(), input)
-	if err != nil {
-		return nil, err
-	}
-	for _, item := range items.Items {
-
-		date, err := date.IsoDateFor(item["transaction_date"].(*types.AttributeValueMemberS).Value)
-		if err != nil {
-			return nil, errors.New("invalid data format in BudgetExpense")
+	fmt.Println("Partition keys to query:", partitionKeys)
+	for _, pk := range partitionKeys {
+		// For simplicity, returning nil. Actual implementation would query DynamoDB.
+		input := &dynamodb.QueryInput{
+			TableName: aws.String(repository.TableName),
+			ExpressionAttributeValues: map[string]types.AttributeValue{
+				":user_name":  &types.AttributeValueMemberS{Value: *user.UserName},
+				":start_date": &types.AttributeValueMemberS{Value: start.GetIsoFormattedDate()},
+				":end_date":   &types.AttributeValueMemberS{Value: end.GetIsoFormattedDate()},
+				":pk":         &types.AttributeValueMemberS{Value: pk},
+			},
+			FilterExpression:       aws.String("user_name = :user_name AND transaction_date BETWEEN :start_date AND :end_date"),
+			KeyConditionExpression: aws.String("pk = :pk"),
 		}
 
-		moneyAmount, err := money.MoneyFor(item["amount"].(*types.AttributeValueMemberN).Value)
+		items, err := repository.Client.Query(context.TODO(), input)
 		if err != nil {
-			return nil, errors.New("invalid data format in BudgetExpense")
+			return nil, err
+		}
+		for _, item := range items.Items {
+
+			date, err := date.IsoDateFor(item["transaction_date"].(*types.AttributeValueMemberS).Value)
+			if err != nil {
+				return nil, errors.New("invalid data format in BudgetExpense")
+			}
+
+			moneyAmount, err := money.MoneyFor(item["amount"].(*types.AttributeValueMemberN).Value)
+			if err != nil {
+				return nil, errors.New("invalid data format in BudgetExpense")
+			}
+
+			budgetExpenses = append(budgetExpenses, expense.BudgetExpense{
+				Id:       expense.BudgetExpenseId(item["budget_id"].(*types.AttributeValueMemberS).Value),
+				UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
+				Date:     *date,
+				Amount:   *moneyAmount,
+				Note:     item["note"].(*types.AttributeValueMemberS).Value,
+				Tag:      item["tag"].(*types.AttributeValueMemberS).Value,
+			})
 		}
 
-		budgetExpenses = append(budgetExpenses, expense.BudgetExpense{
-			Id:       expense.BudgetExpenseId(item["budget_id"].(*types.AttributeValueMemberS).Value),
-			UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
-			Date:     *date,
-			Amount:   *moneyAmount,
-			Note:     item["note"].(*types.AttributeValueMemberS).Value,
-			Tag:      item["tag"].(*types.AttributeValueMemberS).Value,
-		})
 		// Process each item and convert to BudgetExpense
 	}
 
@@ -82,13 +135,20 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.
 	return &budgetExpenses, nil
 }
 
-func (repository *DynamoDbBudgetExpenseRepository) partitionKeysForDateRangeAndUser(idProvider *DynamoDbBudgetExpenseIdProvider, start, end date.Date, user security.UserName) []string {
+func (repository *DynamoDbBudgetExpenseRepository) partitionKeysForDateRangeAndUser(idProvider *DynamoDbBudgetExpenseIdProvider, start, end date.Date, userName security.UserName) []string {
 	// Generate partition keys for each month in the date range
 	var partitionKeys []string
-	current := start
-	for current.Before(end) || current.Equal(end) {
-		partitionKeys = append(partitionKeys, idProvider.partitionKeyFrom(current, user))
-		current = *date.DateFor(current.NextMonth())
+	currentMonth := start.GetMonth()
+	currentYear := start.GetYear()
+	lastMonth := end.GetMonth()
+	lastYear := end.GetYear()
+	for currentMonth < lastMonth || currentYear <= lastYear {
+		partitionKeys = append(partitionKeys, idProvider.partitionKeyFrom(currentYear, currentMonth, userName))
+		currentMonth++
+		if currentMonth > 12 {
+			currentMonth = 1
+			currentYear++
+		}
 	}
 	return partitionKeys
 }
@@ -172,58 +232,6 @@ func (repository *DynamoDbBudgetExpenseRepository) Delete(ctx *context.Context, 
 		}
 	}
 	return err
-}
-
-func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx *context.Context, budgetExpenseId expense.BudgetExpenseId) (*expense.BudgetExpense, error) {
-	user, err := security.GetCurrentUser(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	pk, range_key, err := dynamoDbKeysFrom(budgetExpenseId)
-	if err != nil {
-		return nil, err
-	}
-
-	input := &dynamodb.QueryInput{
-		TableName: aws.String(repository.TableName),
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":pk":        &types.AttributeValueMemberS{Value: pk},
-			":range_key": &types.AttributeValueMemberS{Value: range_key},
-			":user_name": &types.AttributeValueMemberS{Value: *user.UserName},
-		},
-		KeyConditionExpression: aws.String("pk =:pk AND range_key =:range_key"),
-		FilterExpression:       aws.String("user_name = :user_name"),
-	}
-	result, err := repository.Client.Query(context.TODO(), input)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(result.Items) == 0 {
-		return nil, errors.New("BudgetExpense not found")
-	}
-
-	item := result.Items[0]
-
-	date, err := date.IsoDateFor(item["transaction_date"].(*types.AttributeValueMemberS).Value)
-	if err != nil {
-		return nil, errors.New("invalid data format in BudgetExpense")
-	}
-
-	moneyAmount, err := money.MoneyFor(item["amount"].(*types.AttributeValueMemberN).Value)
-	if err != nil {
-		return nil, errors.New("invalid data format in BudgetExpense")
-	}
-
-	return &expense.BudgetExpense{
-		Id:       expense.BudgetExpenseId(item["budget_id"].(*types.AttributeValueMemberS).Value),
-		UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
-		Date:     *date,
-		Amount:   *moneyAmount,
-		Note:     item["note"].(*types.AttributeValueMemberS).Value,
-		Tag:      item["tag"].(*types.AttributeValueMemberS).Value,
-	}, nil
 }
 
 func dynamoDbKeysFrom(budgetExpenseId expense.BudgetExpenseId) (string, string, error) {

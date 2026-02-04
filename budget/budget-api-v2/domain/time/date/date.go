@@ -17,6 +17,19 @@ func (d *Date) GetIsoFormattedDate() string {
 	return d.t.Format("2006-01-02")
 }
 
+func (d *Date) GetYear() int {
+	return d.t.Year()
+}
+
+func (d *Date) GetMonth() int {
+	nextMonth := d.t.Month()
+	return int(nextMonth)
+}
+
+func (d *Date) GetDay() int {
+	return d.t.Day()
+}
+
 func FirstDateOfMonth(month Month, year Year) (*Date, error) {
 	if month.Content < 1 || month.Content > 12 {
 		return nil, errors.New("invalid month value")
