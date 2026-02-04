@@ -46,26 +46,7 @@ func (action *FindSpentBudget) Execute(ctx *context.Context, month date.Month, y
 	if err != nil {
 		return nil, err
 	}
-	/*   private String[] searchTags(List<String> searchTagList) {
-	    return Optional.ofNullable(searchTagList)
-	            .map(searchTagListAux -> searchTagListAux.stream()
-	                    .filter(tag -> !"".equals(tag.trim()))
-	                    .collect(toList()))
-	            .map(tags -> tags.toArray(new String[tags.size()]))
-	            .orElse(new String[0]);
-	}
 
-	private List<BudgetExpense> orderByDate(List<BudgetExpense> budgetExpenseListFromRepository) {
-	    return budgetExpenseListFromRepository.stream()
-	            .sorted(Comparator.comparing(BudgetExpense::date))
-	            .collect(toList());
-	}
-
-	private List<SearchTag> getAllSearchTagFor(List<BudgetExpense> budgetExpenses) {
-	    return budgetExpenses.stream().map(BudgetExpense::tag)
-	            .distinct().map(searchTagRepository::findSearchTagBy)
-	            .collect(toList());
-	} */
 	searchTags, err := action.getAllSearchTagFor(ctx, budgetByDateRange)
 	return &SpentBudget{BudgetExpenseList: budgetByDateRange, SearchTags: searchTags}, err
 }
