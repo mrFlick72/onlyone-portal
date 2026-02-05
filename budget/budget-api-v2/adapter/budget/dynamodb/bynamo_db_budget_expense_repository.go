@@ -64,14 +64,16 @@ func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx *context.Context,
 		return nil, errors.New("invalid data format in BudgetExpense")
 	}
 
-	return &expense.BudgetExpense{
+	budgetExpense := &expense.BudgetExpense{
 		Id:       expense.BudgetExpenseId(item["budget_id"].(*types.AttributeValueMemberS).Value),
 		UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
 		Date:     *date,
 		Amount:   *moneyAmount,
 		Note:     item["note"].(*types.AttributeValueMemberS).Value,
 		Tag:      item["tag"].(*types.AttributeValueMemberS).Value,
-	}, nil
+	}
+
+	return budgetExpense, nil
 }
 
 func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.Context, start date.Date, end date.Date, searchTags []tags.SearchTagKey) (*[]expense.BudgetExpense, error) {
