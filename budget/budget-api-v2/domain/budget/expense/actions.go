@@ -10,6 +10,20 @@ import (
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
 
+type BudgetExpenseActions interface {
+	CreateBudgetExpense(ctx *context.Context, budgetExpense *BudgetExpense) error
+	UpdateBudgetExpense(ctx *context.Context, budgetExpense *BudgetExpense) error
+	FindSpentBudget(ctx *context.Context, month date.Month, year date.Year, searchTagKeys []tags.SearchTagKey) (*SpentBudget, error) 
+	DeleteBudgetExpense(ctx *context.Context, id BudgetExpenseId) error
+}	
+
+type BudgetExpenseActionsFacade struct {
+	CreateBudgetExpense *CreateBudgetExpense
+	UpdateBudgetExpense *UpdateBudgetExpense
+	FindSpentBudget     *FindSpentBudget
+	DeleteBudgetExpense *DeleteBudgetExpense
+}
+
 type CreateBudgetExpense struct {
 	repository BudgetExpenseRepository
 }

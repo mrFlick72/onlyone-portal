@@ -13,8 +13,11 @@ import (
 	"github.com/mrflick72/budget/budget-api/domain/money"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
+
+var logger = logging.GetLoggerInstance()
 
 type DynamoDbBudgetExpenseRepository struct {
 	TableName               string
@@ -25,11 +28,13 @@ type DynamoDbBudgetExpenseRepository struct {
 func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx *context.Context, budgetExpenseId expense.BudgetExpenseId) (*expense.BudgetExpense, error) {
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
+		logger.LogErrorfFor("Error to get a valid user in the context: %v", err)
 		return nil, err
 	}
 
 	pk, range_key, err := dynamoDbKeysFrom(budgetExpenseId)
 	if err != nil {
+		logger.LogErrorfFor("Error dynamodb key generation: %v", err)
 		return nil, err
 	}
 
@@ -45,22 +50,30 @@ func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx *context.Context,
 	}
 	result, err := repository.Client.Query(context.TODO(), input)
 	if err != nil {
+		logger.LogErrorfFor("Error querying DynamoDB: %v", err)
 		return nil, err
 	}
 
 	if len(result.Items) == 0 {
+		logger.LogErrorfFor("No budget expense found for id: %s", budgetExpenseId)
 		return nil, errors.New("BudgetExpense not found")
 	}
 
 	item := result.Items[0]
 
+	return repository.fromDynamo(ctx, item)
+}
+
+func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx *context.Context, item map[string]types.AttributeValue) (*expense.BudgetExpense, error) {
 	date, err := date.IsoDateFor(item["transaction_date"].(*types.AttributeValueMemberS).Value)
 	if err != nil {
+		logger.LogErrorfFor("Error parsing transaction_date: %v", err)
 		return nil, errors.New("invalid data format in BudgetExpense")
 	}
 
 	moneyAmount, err := money.MoneyFor(item["amount"].(*types.AttributeValueMemberN).Value)
 	if err != nil {
+		logger.LogErrorfFor("invalid data format in BudgetExpense: %v", err)
 		return nil, errors.New("invalid data format in BudgetExpense")
 	}
 
@@ -72,7 +85,6 @@ func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx *context.Context,
 		Note:     item["note"].(*types.AttributeValueMemberS).Value,
 		Tag:      item["tag"].(*types.AttributeValueMemberS).Value,
 	}
-
 	return budgetExpense, nil
 }
 
@@ -109,28 +121,13 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.
 			return nil, err
 		}
 		for _, item := range items.Items {
-
-			date, err := date.IsoDateFor(item["transaction_date"].(*types.AttributeValueMemberS).Value)
+			budgetExpense, err := repository.fromDynamo(ctx, item)
 			if err != nil {
-				return nil, errors.New("invalid data format in BudgetExpense")
+				logger.LogErrorfFor("Error processing item in FindByDateRange: %v", err)
+			} else {
+				budgetExpenses = append(budgetExpenses, *budgetExpense)
 			}
-
-			moneyAmount, err := money.MoneyFor(item["amount"].(*types.AttributeValueMemberN).Value)
-			if err != nil {
-				return nil, errors.New("invalid data format in BudgetExpense")
-			}
-
-			budgetExpenses = append(budgetExpenses, expense.BudgetExpense{
-				Id:       expense.BudgetExpenseId(item["budget_id"].(*types.AttributeValueMemberS).Value),
-				UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
-				Date:     *date,
-				Amount:   *moneyAmount,
-				Note:     item["note"].(*types.AttributeValueMemberS).Value,
-				Tag:      item["tag"].(*types.AttributeValueMemberS).Value,
-			})
 		}
-
-		// Process each item and convert to BudgetExpense
 	}
 
 	// Placeholder return

@@ -1,8 +1,14 @@
 package web
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
+)
 
-func RegisterEndpoints(r *gin.Engine) *gin.Engine {
+func RegisterEndpoints(
+	r *gin.Engine,
+	facade expense.BudgetExpenseActions,
+) *gin.Engine {
 
 	/*
 			@GetMapping

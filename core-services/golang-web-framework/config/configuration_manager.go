@@ -30,7 +30,7 @@ func GetConfigurationManagerInstance() *ConfigurationManager {
 func initViperInstance() *viper.Viper {
 	CONFIG_FILE_LOCATION := os.Getenv("CONFIG_FILE_LOCATION")
 	var viperInstance = viper.New()
-	fmt.Printf("Start to laod configs from %s", CONFIG_FILE_LOCATION)
+	fmt.Printf("Start to load configs from %s", CONFIG_FILE_LOCATION)
 
 	viperInstance.SetConfigFile(CONFIG_FILE_LOCATION)
 	viperInstance.SetConfigType("yaml")
