@@ -39,10 +39,19 @@ func logInit(f *os.File) *zap.SugaredLogger {
 
 	level := zap.InfoLevel
 
-	core := zapcore.NewTee(
-		zapcore.NewCore(fileEncoder, zapcore.AddSync(f), level),
-		zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), level),
-	)
+	var core zapcore.Core
+	if f == nil {
+		core = zapcore.NewTee(
+			zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), level),
+		)
+
+	} else {
+		core = zapcore.NewTee(
+			zapcore.NewCore(fileEncoder, zapcore.AddSync(f), level),
+			zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), level),
+		)
+
+	}
 
 	l := zap.New(core)
 
@@ -54,7 +63,7 @@ func new() *Logger {
 	var f *os.File
 	f, err := os.Create(fileName)
 	if err != nil {
-		panic("log file does not exist")
+		fmt.Println("log file does not exist")
 	}
 
 	return &Logger{
@@ -67,13 +76,26 @@ func (impl *Logger) LogErrorFor(message any) {
 	impl.logger.Error(str)
 }
 
+func (impl *Logger) LogErrorfFor(format string, a ...any) {
+	impl.logger.Errorf(format, a...)
+}
+
 func (impl *Logger) LogInfoFor(message any) {
 	str := fmt.Sprintf("%v", message)
 	impl.logger.Info(str)
 }
+
+func (impl *Logger) LogInfofFor(format string, a ...any) {
+	impl.logger.Infof(format, a...)
+}
+
 func (impl *Logger) LogDebugFor(message any) {
 	str := fmt.Sprintf("%v", message)
 	impl.logger.Debug(str)
+}
+
+func (impl *Logger) LogDebugfFor(format string, a ...any) {
+	impl.logger.Debugf(format, a...)
 }
 
 func Dispose() {
