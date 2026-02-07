@@ -11,6 +11,7 @@ import (
 
 func RegisterEndpoints(
 	r *gin.Engine,
+	ContextFactoryConverter server.ContextFactoryConverter,
 	facade expense.BudgetExpenseActions,
 ) *gin.Engine {
 
@@ -36,7 +37,7 @@ func RegisterEndpoints(
 	r.POST("/api/budget/expense", func(c *gin.Context) {
 		var representation BudgetExpenseRepresentation
 
-		ctx := server.CopyGinKeysToRequestContext(c)
+		ctx := ContextFactoryConverter.CreateContextFromGin(c)
 
 		if err := c.ShouldBindJSON(&representation); err != nil {
 			fmt.Printf("Error binding JSON: %v\n", err)
@@ -47,7 +48,7 @@ func RegisterEndpoints(
 		fmt.Printf("Received representation: %+v\n", representation)
 		domainModel := RepresentationModelToDomainModel(representation)
 		fmt.Printf("Received domain model: %+v\n", domainModel)
-		facade.CreateBudgetExpense(ctx, domainModel)
+		facade.CreateBudgetExpense(&ctx, domainModel)
 		c.Status(http.StatusCreated)
 	})
 	r.DELETE("/api/budget/expense/:id", func(c *gin.Context) {})
