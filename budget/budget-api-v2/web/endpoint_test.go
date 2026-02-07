@@ -22,8 +22,21 @@ func TestCreateANewBudgetExpense(t *testing.T) {
 	facade := new(BudgetExpenseActionsMock)
 	RegisterEndpoints(r, facade)
 
-	budgetExpense := expense.BudgetExpense{}
-	jsonValue, _ := json.Marshal(budgetExpense)
+	budgetExpense := expense.BudgetExpense{
+		Date:   testutils.SafeDateFor("01/01/2018"),
+		Amount: testutils.SafeMoneyFor("100.00"),
+		Note:   "Test note",
+		Tag:    "tagKey",
+	}
+
+	budgetExpenseRepresentation := BudgetExpenseRepresentation{
+		Date:     "01/01/2018",
+		Amount:   "100.00",
+		Note:     "Test note",
+		TagKey:   "tagKey",
+		TagValue: "tagValue",
+	}
+	jsonValue, _ := json.Marshal(budgetExpenseRepresentation)
 
 	ctx := testutils.NewStubbedContextWith("USER")
 	facade.On("CreateBudgetExpense", ctx, budgetExpense).Return(nil)
@@ -34,6 +47,6 @@ func TestCreateANewBudgetExpense(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	facade.AssertCalled(t, "CreateBudgetExpense", ctx, budgetExpense)
 	assert.Equal(t, http.StatusCreated, w.Code)
+	facade.AssertCalled(t, "CreateBudgetExpense", ctx, budgetExpense)
 }

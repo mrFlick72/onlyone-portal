@@ -3,7 +3,6 @@ package expense
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
@@ -54,8 +53,6 @@ func (action *FindSpentBudget) Execute(ctx *context.Context, month date.Month, y
 		return nil, err
 	}
 
-	fmt.Println("First Date:", firstDate.GetFormattedDate())
-	fmt.Println("Last Date:", lastDate.GetFormattedDate())	
 	budgetByDateRange, err := action.budgetExpenseRepository.FindByDateRange(ctx, *userName.UserName, *firstDate, *lastDate, searchTagKeys)
 	if err != nil {
 		return nil, err
