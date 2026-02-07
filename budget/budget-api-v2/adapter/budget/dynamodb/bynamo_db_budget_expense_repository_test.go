@@ -30,7 +30,7 @@ func TestFindBudgetExpenseByDateRange(t *testing.T) {
 		t.Fatalf("Failed to load budget expenses: %v", err)
 	}
 	// Implement the test logic here
-	result, err := repo.FindByDateRange(newStubbedContextWith("USER"), testutils.SafeDateFor("01/02/2018"), testutils.SafeDateFor("28/02/2019"), []tags.SearchTagKey{})
+	result, err := repo.FindByDateRange(testutils.NewStubbedContextWith("USER"), testutils.SafeDateFor("01/02/2018"), testutils.SafeDateFor("28/02/2019"), []tags.SearchTagKey{})
 	fmt.Println("Result length:", result)
 	fmt.Println("Error:", err)
 	assert.Equal(t, nil, err)
@@ -75,7 +75,7 @@ func TestFindBudgetExpenseOfOtherPersonISNotAllowed(t *testing.T) {
 
 	mockedBudgetExpenseIdProvider.On("GenerateIdFor", &input).Return("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU")
 
-	err := repo.Save(newStubbedContextWith("another User"), &input)
+	err := repo.Save(testutils.NewStubbedContextWith("another User"), &input)
 
 	if err != nil {
 		t.Errorf("Expected nil error, got %v", err)
