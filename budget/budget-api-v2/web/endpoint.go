@@ -1,8 +1,11 @@
 package web
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 )
 
 func RegisterEndpoints(
@@ -29,7 +32,18 @@ func RegisterEndpoints(
 	r.GET("/api/budget/expense", func(c *gin.Context) {})
 	r.PUT("/api/budget/expense/:id", func(c *gin.Context) {})
 	r.PUT("/api/budget/expense", func(c *gin.Context) {})
-	r.POST("/api/budget/expense", func(c *gin.Context) {})
+	r.POST("/api/budget/expense", func(c *gin.Context) {
+		var representation BudgetExpenseRepresentation
+
+		ctx := server.CopyGinKeysToRequestContext(c)
+
+		if err := c.ShouldBindJSON(&representation); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		facade.CreateBudgetExpense(ctx, &expense.BudgetExpense{})
+		c.Status(http.StatusCreated)
+	})
 	r.DELETE("/api/budget/expense/:id", func(c *gin.Context) {})
 
 	return r

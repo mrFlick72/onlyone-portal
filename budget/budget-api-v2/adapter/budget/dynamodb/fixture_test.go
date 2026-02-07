@@ -19,8 +19,8 @@ import (
 )
 
 var client, _ = newDynamoDBClient()
-var ctx = newStubbedContextWith(security.UserName("testuser"))
-var ctxAnotherUser = newStubbedContextWith(security.UserName("anotheruser"))
+var ctx = testutils.NewStubbedContextWith(security.UserName("testuser"))
+var ctxAnotherUser = testutils.NewStubbedContextWith(security.UserName("anotheruser"))
 
 type DynamoDbBudgetExpenseIdProviderMock struct {
 	mock.Mock
@@ -31,13 +31,6 @@ func (mock *DynamoDbBudgetExpenseIdProviderMock) GenerateIdFor(budgetExpense *ex
 	return args.String(0)
 }
 
-func newStubbedContextWith(userName security.UserName) *context.Context {
-	ctx := context.Background()
-	user := security.User{UserName: &userName}
-	newCtx := context.WithValue(ctx, "user", user)
-
-	return &newCtx
-}
 
 func newDynamoDBClient() (*dynamodb.Client, error) {
 
@@ -135,7 +128,7 @@ func loadBudgetExpensesFromCSVFile(filePath string, mockedBudgetExpenseIdProvide
 			Tag:      record[4],
 		}
 
-		err := repository.Save(newStubbedContextWith(record[0]), &budgetExpense)
+		err := repository.Save(testutils.NewStubbedContextWith(record[0]), &budgetExpense)
 		fmt.Printf("Loaded budget expense id: %+v\n", budgetExpense.Id)
 		if err != nil {
 			return err
