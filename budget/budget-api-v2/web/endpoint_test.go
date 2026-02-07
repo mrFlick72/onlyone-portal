@@ -3,6 +3,7 @@ package web
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	"github.com/go-playground/assert/v2"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
 	"github.com/mrflick72/budget/budget-api/internal/testutils"
+	"github.com/stretchr/testify/mock"
 )
 
 func SetUpRouter() *gin.Engine {
@@ -20,7 +22,8 @@ func SetUpRouter() *gin.Engine {
 func TestCreateANewBudgetExpense(t *testing.T) {
 	r := SetUpRouter()
 	facade := new(BudgetExpenseActionsMock)
-	RegisterEndpoints(r, facade)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterEndpoints(r, contextFactoryConverter, facade)
 
 	budgetExpense := expense.BudgetExpense{
 		Date:   testutils.SafeDateFor("01/01/2018"),
@@ -36,14 +39,20 @@ func TestCreateANewBudgetExpense(t *testing.T) {
 		TagKey:   "tagKey",
 		TagValue: "tagValue",
 	}
-	jsonValue, _ := json.Marshal(budgetExpenseRepresentation)
+	jsonValue, err := json.Marshal(budgetExpenseRepresentation)
+	if err != nil {
+		t.Fatalf("Error marshalling JSON: %v", err)
+	}
+
+	fmt.Printf("JSON value: %s\n", jsonValue)
 
 	ctx := testutils.NewStubbedContextWith("USER")
 	facade.On("CreateBudgetExpense", ctx, budgetExpense).Return(nil)
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
 
-	req, _ := http.NewRequest("POST", "/api/budget/expense", bytes.NewBuffer(jsonValue))
+	body := bytes.NewBuffer(jsonValue)
+	req, _ := http.NewRequest("POST", "/api/budget/expense", body)
 	req.Header.Set("Content-Type", "application/json")
-	req.Body = http.NoBody
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 

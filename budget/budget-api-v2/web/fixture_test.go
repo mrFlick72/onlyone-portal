@@ -3,6 +3,7 @@ package web
 import (
 	"context"
 
+	"github.com/gin-gonic/gin"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
@@ -31,4 +32,13 @@ func (mock *BudgetExpenseActionsMock) FindSpentBudget(ctx *context.Context, mont
 func (mock *BudgetExpenseActionsMock) DeleteBudgetExpense(ctx *context.Context, id expense.BudgetExpenseId) error {
 	args := mock.Called(ctx, id)
 	return args.Error(0)
+}	
+
+type ContextFactoryConverterMock struct {
+	mock.Mock
+}
+
+func (mock *ContextFactoryConverterMock) CreateContextFromGin(c *gin.Context) context.Context {
+	args := mock.Called(c)
+	return args.Get(0).(context.Context)
 }	
