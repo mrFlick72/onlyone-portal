@@ -47,7 +47,7 @@ func TestCreateANewBudgetExpense(t *testing.T) {
 	fmt.Printf("JSON value: %s\n", jsonValue)
 
 	ctx := testutils.NewStubbedContextWith("USER")
-	facade.On("CreateBudgetExpense", ctx, budgetExpense).Return(nil)
+	facade.On("CreateBudgetExpense", ctx, &budgetExpense).Return(nil)
 	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
 
 	body := bytes.NewBuffer(jsonValue)
@@ -57,5 +57,5 @@ func TestCreateANewBudgetExpense(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
-	facade.AssertCalled(t, "CreateBudgetExpense", ctx, budgetExpense)
+	facade.AssertCalled(t, "CreateBudgetExpense", ctx, &budgetExpense)
 }
