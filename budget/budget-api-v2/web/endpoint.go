@@ -39,6 +39,7 @@ func RegisterEndpoints(
 
 		ctx := ContextFactoryConverter.CreateContextFromGin(c)
 
+		fmt.Println(ctx)
 		if err := c.ShouldBindJSON(&representation); err != nil {
 			fmt.Printf("Error binding JSON: %v\n", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -48,7 +49,7 @@ func RegisterEndpoints(
 		fmt.Printf("Received representation: %+v\n", representation)
 		domainModel := RepresentationModelToDomainModel(representation)
 		fmt.Printf("Received domain model: %+v\n", domainModel)
-		facade.CreateBudgetExpense(&ctx, domainModel)
+		facade.CreateBudgetExpense(ctx, domainModel)
 		c.Status(http.StatusCreated)
 	})
 	r.DELETE("/api/budget/expense/:id", func(c *gin.Context) {})

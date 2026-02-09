@@ -38,7 +38,7 @@ type ContextFactoryConverterMock struct {
 	mock.Mock
 }
 
-func (mock *ContextFactoryConverterMock) CreateContextFromGin(c *gin.Context) context.Context {
+func (mock *ContextFactoryConverterMock) CreateContextFromGin(c *gin.Context) *context.Context {
 	args := mock.Called(c)
-	return args.Get(0).(context.Context)
+	return args.Get(0).(*context.Context)
 }	
