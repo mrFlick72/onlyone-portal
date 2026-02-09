@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 )
 
@@ -15,6 +16,7 @@ func RegisterEndpoints(
 	facade expense.BudgetExpenseActions,
 ) *gin.Engine {
 
+	var logger = logging.GetLoggerInstance()
 	/*
 			@GetMapping
 		    public ResponseEntity getBudgetExpenseList(@RequestParam("q") BudgetSearchCriteriaRepresentation budgetExpenseRequest)
@@ -32,23 +34,36 @@ func RegisterEndpoints(
 		    public ResponseEntity deleteBudgetExpense(@PathVariable("id") String id)
 	*/
 	r.GET("/api/budget/expense", func(c *gin.Context) {})
-	r.PUT("/api/budget/expense/:id", func(c *gin.Context) {})
-	r.PUT("/api/budget/expense", func(c *gin.Context) {})
-	r.POST("/api/budget/expense", func(c *gin.Context) {
+	r.PUT("/api/budget/expense/:id", func(c *gin.Context) {
 		var representation BudgetExpenseRepresentation
 
 		ctx := ContextFactoryConverter.CreateContextFromGin(c)
 
 		fmt.Println(ctx)
 		if err := c.ShouldBindJSON(&representation); err != nil {
-			fmt.Printf("Error binding JSON: %v\n", err)
+			logger.LogErrorfFor("Error binding JSON: %v\n", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		fmt.Printf("Received representation: %+v\n", representation)
 		domainModel := RepresentationModelToDomainModel(representation)
-		fmt.Printf("Received domain model: %+v\n", domainModel)
+		domainModel.Id = c.Param("id")
+		facade.UpdateBudgetExpense(ctx, domainModel)
+		c.Status(http.StatusNoContent)
+	})
+	r.PUT("/api/budget/expense", func(c *gin.Context) {})
+	r.POST("/api/budget/expense", func(c *gin.Context) {
+		var representation BudgetExpenseRepresentation
+
+		ctx := ContextFactoryConverter.CreateContextFromGin(c)
+
+		if err := c.ShouldBindJSON(&representation); err != nil {
+			logger.LogErrorfFor("Error binding JSON: %v\n", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		domainModel := RepresentationModelToDomainModel(representation)
 		facade.CreateBudgetExpense(ctx, domainModel)
 		c.Status(http.StatusCreated)
 	})
