@@ -96,3 +96,20 @@ func TestUpdateABudgetExpense(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, w.Code)
 	facade.AssertCalled(t, "UpdateBudgetExpense", ctx, &budgetExpense)
 }
+
+func TestDeleteABudgetExpense(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(BudgetExpenseActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterEndpoints(r, contextFactoryConverter, facade)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	facade.On("DeleteBudgetExpense", ctx, "123-456").Return(nil)
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+
+	req, _ := http.NewRequest("DELETE", "/api/budget/expense/123-456", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	facade.AssertCalled(t, "DeleteBudgetExpense", ctx, "123-456")
+}
