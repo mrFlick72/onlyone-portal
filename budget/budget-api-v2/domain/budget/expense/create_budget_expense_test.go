@@ -21,7 +21,7 @@ func TestWhenANewBudgetExpenseISCreated(t *testing.T) {
 	anAmount, _ := money.MoneyFor("1.00")
 	aBudgetExpense := BudgetExpense{
 		Date:   *aDate,
-		Amount: *anAmount,
+		Amount: anAmount,
 		Note:   "A_NOTE",
 		Tag:    "super-market",
 	}
@@ -49,7 +49,7 @@ func TestWhenANewBudgetExpenseCreationFails(t *testing.T) {
 	anAmount, _ := money.MoneyFor("1.00")
 	aBudgetExpense := BudgetExpense{
 		Date:   *aDate,
-		Amount: *anAmount,
+		Amount: anAmount,
 		Note:   "A_NOTE",
 		Tag:    "super-market",
 	}

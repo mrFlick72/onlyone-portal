@@ -30,7 +30,7 @@ func SafeMoneyFor(moneyStr string) money.Money {
 		fmt.Printf("Error during date parsing data input is: %s", moneyStr)
 		panic(err)
 	}
-	return *m
+	return m
 }
 
 func NewStubbedContextWith(userName security.UserName) *context.Context {

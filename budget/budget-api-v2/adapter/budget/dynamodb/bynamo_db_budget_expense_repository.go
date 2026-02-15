@@ -81,7 +81,7 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx *context.Conte
 		Id:       expense.BudgetExpenseId(item["budget_id"].(*types.AttributeValueMemberS).Value),
 		UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
 		Date:     *date,
-		Amount:   *moneyAmount,
+		Amount:   moneyAmount,
 		Note:     item["note"].(*types.AttributeValueMemberS).Value,
 		Tag:      item["tag"].(*types.AttributeValueMemberS).Value,
 	}

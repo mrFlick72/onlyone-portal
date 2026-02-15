@@ -10,21 +10,29 @@ type Money struct {
 	content decimal.Decimal
 }
 
-func MoneyFor(amount string) (*Money, error) {
+func MoneyFor(amount string) (Money, error) {
 	var result, err = decimal.NewFromString(amount)
 	if err != nil {
-		return nil, err
+		return Money{}, err
 	}
 	result = result.Round(2)
-	return &Money{
+	return Money{
 		content: result,
 	}, nil
 }
 
-func (m *Money) Plus(money *Money) *Money {
-	return &Money{content: m.content.Add(money.content)}
+func (m Money) Plus(money Money) Money {
+	return Money{content: m.content.Add(money.content)}
 }
 
-func (m *Money) StringifyAmount() string {
+func (m Money) StringifyAmount() string {
 	return m.content.StringFixed(2)
+}
+
+func Zero() Money {
+	return ZERO
+}
+
+func One() Money {
+	return ONE
 }
