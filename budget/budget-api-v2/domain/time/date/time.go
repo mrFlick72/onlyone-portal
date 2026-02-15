@@ -1,5 +1,7 @@
 package date
 
+import "strconv"
+
 type Month struct {
 	Content int8
 }
@@ -76,6 +78,13 @@ func DECEMBER() Month {
 	}
 }
 
+func NewMonthFor(monthString string) Month {
+	result, _ := strconv.Atoi(monthString)
+	return Month{
+		Content: int8(result),
+	}
+}
+
 type Year struct {
 	Content int16
 }
@@ -83,5 +92,12 @@ type Year struct {
 func NewYear(year int16) Year {
 	return Year{
 		Content: year,
+	}
+}
+
+func NewYearFor(yearString string) Year {
+	result, _ := strconv.Atoi(yearString)
+	return Year{
+		Content: int16(result),
 	}
 }

@@ -1,9 +1,11 @@
 package web
 
+import "github.com/mrflick72/budget/budget-api/domain/tags"
+
 type BudgetSearchCriteriaRepresentation struct {
 	Month         string
-	Year          int8
-	SearchTagList []string
+	Year          string
+	SearchTagList []tags.SearchTagKey
 }
 
 type BudgetExpenseRepresentation struct {

@@ -10,6 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/assert/v2"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
+	"github.com/mrflick72/budget/budget-api/domain/tags"
+	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/budget/budget-api/internal/testutils"
 	"github.com/stretchr/testify/mock"
 )
@@ -112,4 +114,67 @@ func TestDeleteABudgetExpense(t *testing.T) {
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusNoContent, w.Code)
 	facade.AssertCalled(t, "DeleteBudgetExpense", ctx, "123-456")
+}
+
+func TestFindBudgetExpensesByTimeRange(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(BudgetExpenseActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterEndpoints(r, contextFactoryConverter, facade)
+
+	budgetExpenses := []expense.BudgetExpense{
+		expense.BudgetExpense{
+			Id:     "123-456",
+			Date:   testutils.SafeDateFor("01/01/2018"),
+			Amount: testutils.SafeMoneyFor("100.00"),
+			Note:   "Test note",
+			Tag:    "tagKey",
+		},
+		expense.BudgetExpense{
+			Id:     "123-789",
+			Date:   testutils.SafeDateFor("05/01/2018"),
+			Amount: testutils.SafeMoneyFor("100.00"),
+			Note:   "Test note",
+			Tag:    "tagKey",
+		},
+	}
+	expexted := &expense.SpentBudget{
+		BudgetExpenseList: &budgetExpenses,
+		SearchTags: &[]tags.SearchTag{
+			tags.SearchTag{
+				Key:   "tagKey",
+				Value: "tagValue",
+			},
+		},
+	}
+
+	budgetSearchCriteriaRepresentation := BudgetSearchCriteriaRepresentation{
+		Year:          "2018",
+		Month:         "01",
+		SearchTagList: []tags.SearchTagKey{"tagKey"},
+	}
+
+	jsonValue, err := json.Marshal(budgetSearchCriteriaRepresentation)
+	if err != nil {
+		t.Fatalf("Error marshalling JSON: %v", err)
+	}
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	facade.On("FindSpentBudget", ctx,
+		date.NewMonthFor(budgetSearchCriteriaRepresentation.Month),
+		date.NewYearFor(budgetSearchCriteriaRepresentation.Year),
+		budgetSearchCriteriaRepresentation.SearchTagList).Return(expexted, nil)
+
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+
+	body := bytes.NewBuffer(jsonValue)
+	req, _ := http.NewRequest("PUT", "/api/budget/expense", body)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	facade.AssertCalled(t, "FindSpentBudget", ctx, date.NewMonthFor(budgetSearchCriteriaRepresentation.Month),
+		date.NewYearFor(budgetSearchCriteriaRepresentation.Year),
+		budgetSearchCriteriaRepresentation.SearchTagList)
 }

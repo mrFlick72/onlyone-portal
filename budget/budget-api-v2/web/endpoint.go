@@ -1,11 +1,11 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
+	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 )
@@ -33,13 +33,23 @@ func RegisterEndpoints(
 		    @DeleteMapping("/{id}")
 		    public ResponseEntity deleteBudgetExpense(@PathVariable("id") String id)
 	*/
-	r.GET("/api/budget/expense", func(c *gin.Context) {})
+	r.PUT("/api/budget/expense", func(c *gin.Context) {
+		var representation BudgetSearchCriteriaRepresentation
+
+		if err := c.ShouldBindJSON(&representation); err != nil {
+			logger.LogErrorfFor("Error binding JSON: %v\n", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		ctx := ContextFactoryConverter.CreateContextFromGin(c)
+		facade.FindSpentBudget(ctx, date.NewMonthFor(representation.Month), date.NewYearFor(representation.Year), representation.SearchTagList)
+		c.Status(http.StatusOK)
+	})
 	r.PUT("/api/budget/expense/:id", func(c *gin.Context) {
 		var representation BudgetExpenseRepresentation
 
 		ctx := ContextFactoryConverter.CreateContextFromGin(c)
-
-		fmt.Println(ctx)
 		if err := c.ShouldBindJSON(&representation); err != nil {
 			logger.LogErrorfFor("Error binding JSON: %v\n", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

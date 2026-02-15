@@ -6,13 +6,14 @@ import (
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 )
 
-//    public BudgetExpense representationModelToDomainModel(BudgetExpenseRepresentation budgetExpenseRepresentation) {
-//         return new BudgetExpense(new BudgetExpenseId(budgetExpenseRepresentation.id()),
-//                 userRepository.currentLoggedUserName(),
-//                 Date.dateFor(budgetExpenseRepresentation.date()),
-//                 Money.moneyFor(budgetExpenseRepresentation.amount()),
-//                 budgetExpenseRepresentation.note(), budgetExpenseRepresentation.tagKey());
-//     }
+//	public BudgetExpense representationModelToDomainModel(BudgetExpenseRepresentation budgetExpenseRepresentation) {
+//	     return new BudgetExpense(new BudgetExpenseId(budgetExpenseRepresentation.id()),
+//	             userRepository.currentLoggedUserName(),
+//	             Date.dateFor(budgetExpenseRepresentation.date()),
+//	             Money.moneyFor(budgetExpenseRepresentation.amount()),
+//	             budgetExpenseRepresentation.note(), budgetExpenseRepresentation.tagKey());
+//	 }
+//
 // todo to be tested
 func RepresentationModelToDomainModel(budgetExpenseRepresentation BudgetExpenseRepresentation) *expense.BudgetExpense {
 	date, _ := date.DateFor(budgetExpenseRepresentation.Date)
