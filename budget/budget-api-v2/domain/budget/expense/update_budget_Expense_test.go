@@ -40,7 +40,7 @@ func TestWhenABudgetExpenseUpdateSucceed(t *testing.T) {
 		Id:       "A_BUDGET_ID",
 		UserName: "A_USER_NAME",
 		Date:     *aDate,
-		Amount:   *anAmount,
+		Amount:   anAmount,
 		Note:     "A_NOTE",
 		Tag:      "super-market",
 	}
@@ -75,7 +75,7 @@ func TestWhenABudgetExpenseUpdateDoesDoneNothingBecauseTheBudgetExpenseDoesNotEx
 		Id:       "A_BUDGET_ID",
 		UserName: "A_USER_NAME",
 		Date:     *aDate,
-		Amount:   *anAmount,
+		Amount:   anAmount,
 		Note:     "A_NOTE",
 		Tag:      "super-market",
 	}
@@ -105,7 +105,7 @@ func TestWhenABudgetExpenseUpdateFails(t *testing.T) {
 		Id:       "A_BUDGET_ID",
 		UserName: "A_USER_NAME",
 		Date:     *aDate,
-		Amount:   *anAmount,
+		Amount:   anAmount,
 		Note:     "A_NOTE",
 		Tag:      "super-market",
 	}

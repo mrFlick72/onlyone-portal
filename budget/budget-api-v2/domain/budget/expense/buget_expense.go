@@ -18,43 +18,16 @@ import (
 	        this.searchTags = adaptSearchTag(searchTags);
 	    }
 
-	    public Money total() {
+	    public Money total() { // todo dote
 	        return budgetExpenseList.stream()
 	                .map(BudgetExpense::amount)
 	                .reduce(Money.ZERO, Money::plus);
 	    }
 
-	    public Map<SearchTag, Money> totalForSearchTags() {
-	        return budgetExpenseList.stream()
-	                .collect(groupingBy(classifier -> findSearchTagFor(classifier.userName(), classifier.tag()),
-	                        Collectors.mapping(BudgetExpense::amount, Collectors.reducing(Money.ZERO, Money::plus))));
-	    }
-
-	    public List<DailyBudgetExpense> dailyBudgetExpenseList() {
-	        LinkedHashMap<Date, List<BudgetExpense>> result = new LinkedHashMap<>();
-	        for (BudgetExpense budgetExpense : budgetExpenseList) {
-	            Date key = budgetExpense.date();
-	            List<BudgetExpense> value = result.getOrDefault(key, new ArrayList<>());
-	            value.add(budgetExpense);
-	            result.put(key, value);
-	        }
-	        return result.entrySet().stream()
-	                .map(entry -> new DailyBudgetExpense(entry.getValue(), entry.getKey(),
-	                        entry.getValue()
-	                                .stream().map(BudgetExpense::amount)
-	                                .reduce(Money::plus)
-	                                .orElse(Money.ZERO)))
-	                .collect(toList());
-	    }
 
 
-	    private SearchTag findSearchTagFor(UserName userName, String searchTag) {
-	        return Optional.ofNullable(this.searchTags.get(searchTag))
-	                .map(searchTagValue -> new SearchTag(searchTag, searchTagValue))
-	                .orElse(null);
-	    }
 
-	    private Map adaptSearchTag(List<SearchTag> searchTags) {
+	    private Map adaptSearchTag(List<SearchTag> searchTags) {  // todo
 	        return Optional.ofNullable(searchTags)
 	                .map(tags ->
 	                        tags.stream()
@@ -81,12 +54,93 @@ import (
 	    @Override
 	    public int hashCode() {
 	        return Objects.hash(budgetExpenseList, searchTags);
-	    }
+	    }git 
 	}
 */
 type SpentBudget struct {
 	BudgetExpenseList *[]BudgetExpense
 	SearchTags        *[]tags.SearchTag
+}
+
+func (spentBudget *SpentBudget) Total() money.Money {
+	total := money.Zero()
+	for _, budgetExpense := range *spentBudget.BudgetExpenseList {
+		total = total.Plus(budgetExpense.Amount)
+	}
+	return total
+}
+
+/*
+public Map<SearchTag, Money> totalForSearchTags() { // todo done
+
+	    return budgetExpenseList.stream()
+	            .collect(groupingBy(classifier -> findSearchTagFor(classifier.userName(), classifier.tag()),
+	                    Collectors.mapping(BudgetExpense::amount, Collectors.reducing(Money.ZERO, Money::plus))));
+	}
+*/
+
+func (spentBudget *SpentBudget) TotalForSearchTags() map[tags.SearchTag]money.Money {
+	result := make(map[tags.SearchTag]money.Money)
+	for _, budgetExpense := range *spentBudget.BudgetExpenseList {
+		searchTag := spentBudget.findSearchTagFor(budgetExpense.UserName, budgetExpense.Tag)
+		if searchTag != nil {
+			currentTotal, exists := result[*searchTag]
+			if !exists {
+				currentTotal = money.Zero()
+			}
+			result[*searchTag] = currentTotal.Plus(budgetExpense.Amount)
+		}
+	}
+	return result
+}
+
+/*
+private SearchTag findSearchTagFor(UserName userName, String searchTag) {  // todo done
+
+	    return Optional.ofNullable(this.searchTags.get(searchTag))
+	            .map(searchTagValue -> new SearchTag(searchTag, searchTagValue))
+	            .orElse(null);
+	}
+*/
+func (spentBudget *SpentBudget) findSearchTagFor(userName UserName, searchTagKey string) *tags.SearchTag {
+	for _, searchTag := range *spentBudget.SearchTags {
+		if searchTag.Key == searchTagKey {
+			return &searchTag
+		}
+	}
+	return nil
+}
+
+/*
+public List<DailyBudgetExpense> dailyBudgetExpenseList() {  // todo done
+
+	    LinkedHashMap<Date, List<BudgetExpense>> result = new LinkedHashMap<>();
+	    for (BudgetExpense budgetExpense : budgetExpenseList) {
+	        Date key = budgetExpense.date();
+	        List<BudgetExpense> value = result.getOrDefault(key, new ArrayList<>());
+	        value.add(budgetExpense);
+	        result.put(key, value);
+	    }
+	    return result.entrySet().stream()
+	            .map(entry -> new DailyBudgetExpense(entry.getValue(), entry.getKey(),
+	                    entry.getValue()
+	                            .stream().map(BudgetExpense::amount)
+	                            .reduce(Money::plus)
+	                            .orElse(Money.ZERO)))
+	            .collect(toList());
+	}
+*/
+func (spentBudget *SpentBudget) DailyBudgetExpenseList() map[date.Date][]BudgetExpense {
+	result := make(map[date.Date][]BudgetExpense)
+	for _, budgetExpense := range *spentBudget.BudgetExpenseList {
+		key := budgetExpense.Date
+		value, exists := result[key]
+		if !exists {
+			value = []BudgetExpense{}
+		}
+		result[key] = append(value, budgetExpense)
+	}
+	return result
 }
 
 type BudgetExpense struct {
@@ -103,4 +157,4 @@ type UserName = string
 
 type BudgetExpenseIdProvider interface {
 	GenerateIdFor(budgetExpense *BudgetExpense) BudgetExpenseId
-}	
+}
