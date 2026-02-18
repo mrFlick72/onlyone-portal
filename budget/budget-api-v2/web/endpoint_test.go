@@ -20,6 +20,7 @@ func SetUpRouter() *gin.Engine {
 	router := gin.Default()
 	return router
 }
+
 func TestCreateANewBudgetExpense(t *testing.T) {
 	r := SetUpRouter()
 	facade := new(BudgetExpenseActionsMock)
@@ -171,7 +172,13 @@ func TestFindBudgetExpensesByTimeRange(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
+	var actualBudgetSpent expense.SpentBudget
+	err = json.Unmarshal(w.Body.Bytes(), &actualBudgetSpent)
+	if err != nil {
+		t.Fatalf("Error unmarshalling JSON: %v", err)
+	}
 	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, expexted, &actualBudgetSpent)
 	facade.AssertCalled(t, "FindSpentBudget", ctx, date.NewMonthFor(budgetSearchCriteriaRepresentation.Month),
 		date.NewYearFor(budgetSearchCriteriaRepresentation.Year),
 		budgetSearchCriteriaRepresentation.SearchTagList)
