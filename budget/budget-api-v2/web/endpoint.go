@@ -43,8 +43,13 @@ func RegisterEndpoints(
 		}
 
 		ctx := ContextFactoryConverter.CreateContextFromGin(c)
-		facade.FindSpentBudget(ctx, date.NewMonthFor(representation.Month), date.NewYearFor(representation.Year), representation.SearchTagList)
-		c.Status(http.StatusOK)
+		spentBudget, err := facade.FindSpentBudget(ctx, date.NewMonthFor(representation.Month), date.NewYearFor(representation.Year), representation.SearchTagList)
+		if err != nil {
+			logger.LogErrorfFor("Error finding spent budget: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, spentBudget)
 	})
 	r.PUT("/api/budget/expense/:id", func(c *gin.Context) {
 		var representation BudgetExpenseRepresentation
