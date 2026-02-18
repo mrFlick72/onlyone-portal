@@ -12,9 +12,9 @@ import (
 type BudgetExpenseActions interface {
 	CreateBudgetExpense(ctx *context.Context, budgetExpense *BudgetExpense) error
 	UpdateBudgetExpense(ctx *context.Context, budgetExpense *BudgetExpense) error
-	FindSpentBudget(ctx *context.Context, month date.Month, year date.Year, searchTagKeys []tags.SearchTagKey) (*SpentBudget, error) 
+	FindSpentBudget(ctx *context.Context, month date.Month, year date.Year, searchTagKeys []tags.SearchTagKey) (*SpentBudget, error)
 	DeleteBudgetExpense(ctx *context.Context, id BudgetExpenseId) error
-}	
+}
 
 type BudgetExpenseActionsFacade struct {
 	CreateBudgetExpense *CreateBudgetExpense
@@ -59,7 +59,7 @@ func (action *FindSpentBudget) Execute(ctx *context.Context, month date.Month, y
 	}
 
 	searchTags, err := action.getAllSearchTagFor(ctx, budgetByDateRange)
-	return &SpentBudget{BudgetExpenseList: budgetByDateRange, SearchTags: searchTags}, err
+	return NewSpentBudget(budgetByDateRange, searchTags), err
 }
 
 func (action *FindSpentBudget) getAllSearchTagFor(ctx *context.Context, budgetExpenses *[]BudgetExpense) (*[]tags.SearchTag, error) {

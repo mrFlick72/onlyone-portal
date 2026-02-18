@@ -140,11 +140,9 @@ func TestFindBudgetExpensesByTimeRange(t *testing.T) {
 	}
 	expexted := &expense.SpentBudget{
 		BudgetExpenseList: &budgetExpenses,
-		SearchTags: &[]tags.SearchTag{
-			tags.SearchTag{
-				Key:   "tagKey",
-				Value: "tagValue",
-			},
+
+		SearchTags: &map[tags.SearchTagKey]tags.SearchTagValue{
+			"tagKek": "TagValue",
 		},
 	}
 
