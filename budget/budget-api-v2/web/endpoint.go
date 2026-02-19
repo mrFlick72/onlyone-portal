@@ -51,6 +51,7 @@ func RegisterEndpoints(
 		}
 		c.JSON(http.StatusOK, SpentBudgetDomainToRepresentationModel(spentBudget))
 	})
+
 	r.PUT("/api/budget/expense/:id", func(c *gin.Context) {
 		var representation BudgetExpenseRepresentation
 
@@ -66,6 +67,7 @@ func RegisterEndpoints(
 		facade.UpdateBudgetExpense(ctx, domainModel)
 		c.Status(http.StatusNoContent)
 	})
+
 	r.POST("/api/budget/expense", func(c *gin.Context) {
 		var representation BudgetExpenseRepresentation
 
@@ -81,6 +83,7 @@ func RegisterEndpoints(
 		facade.CreateBudgetExpense(ctx, domainModel)
 		c.Status(http.StatusCreated)
 	})
+
 	r.DELETE("/api/budget/expense/:id", func(c *gin.Context) {
 		ctx := ContextFactoryConverter.CreateContextFromGin(c)
 		facade.DeleteBudgetExpense(ctx, c.Param("id"))
