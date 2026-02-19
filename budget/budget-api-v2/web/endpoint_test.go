@@ -3,6 +3,7 @@ package web
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -180,6 +181,7 @@ func TestFindBudgetExpensesByTimeRange(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, *SpentBudgetDomainToRepresentationModel(expected), actualBudgetSpent)
+
 	facade.AssertCalled(t, "FindSpentBudget", ctx, date.NewMonthFor(budgetSearchCriteriaRepresentation.Month),
 		date.NewYearFor(budgetSearchCriteriaRepresentation.Year),
 		budgetSearchCriteriaRepresentation.SearchTagList)

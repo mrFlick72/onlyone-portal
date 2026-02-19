@@ -34,7 +34,6 @@ func RepresentationModelToDomainModel(budgetExpenseRepresentation BudgetExpenseR
 //                         .collect(toList()));
 //     }
 
-
 func SpentBudgetDomainToRepresentationModel(spentBudget *expense.SpentBudget) *SpentBudgetRepresentation {
 
 	dailyBudgetExpenseRepresentations := make([]DailyBudgetExpenseRepresentation, 0)
@@ -47,19 +46,29 @@ func SpentBudgetDomainToRepresentationModel(spentBudget *expense.SpentBudget) *S
 		dailyBudgetExpenseRepresentations = append(dailyBudgetExpenseRepresentations, dailyBudgetExpenseRepresentation)
 	}
 
+	totalBySearchTagDetails := make([]TotalBySearchTagDetail, 0)
+	for totalBySearchTag, amount := range spentBudget.TotalForSearchTags() {
+		totalBySearchTagDetails = append(totalBySearchTagDetails, TotalBySearchTagDetail{
+			SearchTagKey:   totalBySearchTag.Key,
+			SearchTagValue: totalBySearchTag.Value,
+			Total:          amount.StringifyAmount(),
+		})
+
+	}
+
 	result := &SpentBudgetRepresentation{
 		Total:                            spentBudget.Total().StringifyAmount(),
 		DailyBudgetExpenseRepresentation: dailyBudgetExpenseRepresentations,
-		TotalDetailList:                  nil,
+		TotalDetailList:                  totalBySearchTagDetails,
 	}
 	return result
 }
 
-    // private List<BudgetExpenseRepresentation> budgetExpenseRepresentationList(DailyBudgetExpense dailyBudgetExpense) {
-    //     return dailyBudgetExpense.budgetExpenseList().stream()
-    //             .map(budgetExpenseConverter::domainToRepresentationModel)
-    //             .collect(toList());
-    // }
+// private List<BudgetExpenseRepresentation> budgetExpenseRepresentationList(DailyBudgetExpense dailyBudgetExpense) {
+//     return dailyBudgetExpense.budgetExpenseList().stream()
+//             .map(budgetExpenseConverter::domainToRepresentationModel)
+//             .collect(toList());
+// }
 
 func budgetExpenseRepresentationList(dailyBudgetExpense *expense.DailyBudgetExpense) []BudgetExpenseRepresentation {
 	budgetExpenseRepresentationList := make([]BudgetExpenseRepresentation, 0)
@@ -74,4 +83,4 @@ func budgetExpenseRepresentationList(dailyBudgetExpense *expense.DailyBudgetExpe
 		})
 	}
 	return budgetExpenseRepresentationList
-}	
+}
