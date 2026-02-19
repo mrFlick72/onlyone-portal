@@ -49,7 +49,7 @@ func RegisterEndpoints(
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusOK, spentBudget)
+		c.JSON(http.StatusOK, SpentBudgetDomainToRepresentationModel(spentBudget))
 	})
 	r.PUT("/api/budget/expense/:id", func(c *gin.Context) {
 		var representation BudgetExpenseRepresentation
