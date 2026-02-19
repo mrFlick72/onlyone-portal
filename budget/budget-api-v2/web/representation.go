@@ -19,8 +19,8 @@ type BudgetExpenseRepresentation struct {
 
 type SpentBudgetRepresentation struct {
 	Total                            string
-	DailyBudgetExpenseRepresentation DailyBudgetExpenseRepresentation
-	totalDetailList                  []TotalBySearchTagDetail
+	DailyBudgetExpenseRepresentation []DailyBudgetExpenseRepresentation
+	TotalDetailList                  []TotalBySearchTagDetail
 }
 
 type DailyBudgetExpenseRepresentation struct {
