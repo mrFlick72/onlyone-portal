@@ -154,7 +154,7 @@ public List<DailyBudgetExpense> dailyBudgetExpenseList() {  // todo done
 	            .collect(toList());
 	}
 */
-func (spentBudget *SpentBudget) DailyBudgetExpenseList() map[date.Date][]BudgetExpense {
+func (spentBudget *SpentBudget) DailyBudgetExpenseList() []DailyBudgetExpense {
 	result := make(map[date.Date][]BudgetExpense)
 	for _, budgetExpense := range *spentBudget.BudgetExpenseList {
 		key := budgetExpense.Date
@@ -164,7 +164,19 @@ func (spentBudget *SpentBudget) DailyBudgetExpenseList() map[date.Date][]BudgetE
 		}
 		result[key] = append(value, budgetExpense)
 	}
-	return result
+	resultList := make([]DailyBudgetExpense, 0)
+	for key, value := range result {
+		total := money.Zero()
+		for _, budgetExpense := range value {
+			total = total.Plus(budgetExpense.Amount)
+		}
+		resultList = append(resultList, DailyBudgetExpense{
+			BudgetExpenseList: &value,
+			Date:              key,
+			Total:             total,
+		})
+	}
+	return resultList
 }
 
 type BudgetExpense struct {
@@ -182,3 +194,22 @@ type UserName = string
 type BudgetExpenseIdProvider interface {
 	GenerateIdFor(budgetExpense *BudgetExpense) BudgetExpenseId
 }
+
+
+// public record DailyBudgetExpense(List<BudgetExpense> budgetExpenseList, Date date, Money total) {
+
+//     @Override
+//     public boolean equals(Object o) {
+//         if (this == o) return true;
+//         if (o == null || getClass() != o.getClass()) return false;
+//         DailyBudgetExpense that = (DailyBudgetExpense) o;
+//         return Objects.equals(budgetExpenseList, that.budgetExpenseList) && Objects.equals(date, that.date) && Objects.equals(total, that.total);
+//     }
+
+// }
+
+type DailyBudgetExpense struct {
+	BudgetExpenseList *[]BudgetExpense
+	Date              date.Date
+	Total             money.Money
+}	
