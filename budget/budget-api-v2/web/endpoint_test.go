@@ -3,7 +3,6 @@ package web
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -124,24 +123,25 @@ func TestFindBudgetExpensesByTimeRange(t *testing.T) {
 	contextFactoryConverter := new(ContextFactoryConverterMock)
 	RegisterEndpoints(r, contextFactoryConverter, facade)
 
-	budgetExpenses := []expense.BudgetExpense{
-		{
-			Id:     "123-456",
-			Date:   testutils.SafeDateFor("01/01/2018"),
-			Amount: testutils.SafeMoneyFor("100.00"),
-			Note:   "Test note",
-			Tag:    "tagKey",
-		},
-		{
-			Id:     "123-789",
-			Date:   testutils.SafeDateFor("05/01/2018"),
-			Amount: testutils.SafeMoneyFor("100.00"),
-			Note:   "Test note",
-			Tag:    "tagKey",
-		},
-	}
 	expected := &expense.SpentBudget{
-		BudgetExpenseList: &budgetExpenses,
+		BudgetExpenseList: &[]expense.BudgetExpense{
+			{
+				Id:       "123-456",
+				UserName: "USER",
+				Date:     testutils.SafeDateFor("01/01/2018"),
+				Amount:   testutils.SafeMoneyFor("100.00"),
+				Note:     "Test note",
+				Tag:      "tagKey",
+			},
+			{
+				Id:       "123-789",
+				UserName: "USER",
+				Date:     testutils.SafeDateFor("05/01/2018"),
+				Amount:   testutils.SafeMoneyFor("100.00"),
+				Note:     "Test note",
+				Tag:      "tagKey",
+			},
+		},
 
 		SearchTags: &map[tags.SearchTagKey]tags.SearchTagValue{
 			"tagKey": "tagValue",
@@ -154,18 +154,17 @@ func TestFindBudgetExpensesByTimeRange(t *testing.T) {
 		SearchTagList: []tags.SearchTagKey{"tagKey"},
 	}
 
-	jsonValue, err := json.Marshal(budgetSearchCriteriaRepresentation)
-	if err != nil {
-		t.Fatalf("Error marshalling JSON: %v", err)
-	}
-
 	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
 	facade.On("FindSpentBudget", ctx,
 		date.NewMonthFor(budgetSearchCriteriaRepresentation.Month),
 		date.NewYearFor(budgetSearchCriteriaRepresentation.Year),
 		budgetSearchCriteriaRepresentation.SearchTagList).Return(expected, nil)
 
-	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+	jsonValue, err := json.Marshal(budgetSearchCriteriaRepresentation)
+	if err != nil {
+		t.Fatalf("Error marshalling JSON: %v", err)
+	}
 
 	body := bytes.NewBuffer(jsonValue)
 	req, _ := http.NewRequest("PUT", "/api/budget/expense", body)
@@ -173,16 +172,14 @@ func TestFindBudgetExpensesByTimeRange(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	var actualBudgetSpent expense.SpentBudget
+	var actualBudgetSpent SpentBudgetRepresentation
 	err = json.Unmarshal(w.Body.Bytes(), &actualBudgetSpent)
 	if err != nil {
 		t.Fatalf("Error unmarshalling JSON: %v", err)
 	}
-	fmt.Printf("Actual: %+v\n", actualBudgetSpent)
-	fmt.Printf("Expected: %+v\n", expected)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	// assert.Equal(t, expected, actualBudgetSpent)
+	assert.Equal(t, *SpentBudgetDomainToRepresentationModel(expected), actualBudgetSpent)
 	facade.AssertCalled(t, "FindSpentBudget", ctx, date.NewMonthFor(budgetSearchCriteriaRepresentation.Month),
 		date.NewYearFor(budgetSearchCriteriaRepresentation.Year),
 		budgetSearchCriteriaRepresentation.SearchTagList)
