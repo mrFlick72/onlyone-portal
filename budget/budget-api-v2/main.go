@@ -1,16 +1,20 @@
 package main
 
-import "github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
+import (
+	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
+	"github.com/mrflick72/budget/budget-api/web"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
+)
 
 func main() {
-	
+
 	// Entry point for the budget API v2 service
 	// Create a Gin router with default middleware (logger and recovery)
 	engine := server.WebServerProvisioner{}
 
-	engine.ConfigureEngine()
-	
+	ginEngine := engine.ConfigureEngine()
+	GinContextToPlainContextFactory := &server.GinContextToPlainContextFactory{}
+	web.RegisterEndpoints(ginEngine, GinContextToPlainContextFactory, expense.NewBudgetExpenseActionsFacade())
 
 	engine.StartEngine()
 }
-
