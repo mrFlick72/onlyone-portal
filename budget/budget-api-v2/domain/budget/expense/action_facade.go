@@ -3,15 +3,27 @@ package expense
 import (
 	"context"
 
+	"github.com/mrflick72/budget/budget-api/adapter/tags/rest"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 )
 
 func NewBudgetExpenseActionsFacade() BudgetExpenseActions {
-	createBudgetExpense := &CreateBudgetExpense{}
-	updateBudgetExpense := &UpdateBudgetExpense{}
-	findSpentBudget := &FindSpentBudget{}
-	deleteBudgetExpense := &DeleteBudgetExpense{}
+	budgetExpenseRepository := NewBudgetExpenseRepository()
+	searchTagRepository := rest.NewSearchTagRepository()
+	createBudgetExpense := &CreateBudgetExpense{
+		repository: budgetExpenseRepository,
+	}
+	updateBudgetExpense := &UpdateBudgetExpense{
+		repository: budgetExpenseRepository,
+	}
+	findSpentBudget := &FindSpentBudget{
+		budgetExpenseRepository: budgetExpenseRepository,
+		searchTagRepository:     searchTagRepository,
+	}
+	deleteBudgetExpense := &DeleteBudgetExpense{
+		repository: budgetExpenseRepository,
+	}
 
 	return &BudgetExpenseActionsFacade{
 		CreateBudgetExpenseAction: createBudgetExpense,
@@ -19,6 +31,10 @@ func NewBudgetExpenseActionsFacade() BudgetExpenseActions {
 		FindSpentBudgetAction:     findSpentBudget,
 		DeleteBudgetExpenseAction: deleteBudgetExpense,
 	}
+}
+
+func NewBudgetExpenseRepository() BudgetExpenseRepository {
+	panic("unimplemented")
 }
 
 type BudgetExpenseActions interface {
