@@ -13,3 +13,6 @@ user:
 
 logger:
   file-name: logs.log
+
+tag-api:
+  base-url: http://local.tag-api.onlyone-portal.com:8000
