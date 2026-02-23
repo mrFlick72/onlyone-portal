@@ -31,7 +31,7 @@ func TestWhenABudgetExpenseUpdateSucceed(t *testing.T) {
 
 	mockedRepository := new(BudgetExpenseRepositoryMock)
 	uut := UpdateBudgetExpense{
-		repository: mockedRepository,
+		Repository: mockedRepository,
 	}
 
 	aDate, _ := date.IsoDateFor("2018-01-01")
@@ -66,7 +66,7 @@ func TestWhenABudgetExpenseUpdateDoesDoneNothingBecauseTheBudgetExpenseDoesNotEx
 
 	mockedRepository := new(BudgetExpenseRepositoryMock)
 	uut := UpdateBudgetExpense{
-		repository: mockedRepository,
+		Repository: mockedRepository,
 	}
 
 	aDate, _ := date.IsoDateFor("2018-01-01")
@@ -96,7 +96,7 @@ func TestWhenABudgetExpenseUpdateFails(t *testing.T) {
 
 	mockedRepository := new(BudgetExpenseRepositoryMock)
 	uut := UpdateBudgetExpense{
-		repository: mockedRepository,
+		Repository: mockedRepository,
 	}
 
 	aDate, _ := date.IsoDateFor("2018-01-01")
@@ -131,7 +131,7 @@ func TestWhenABudgetExpenseUpdateFails(t *testing.T) {
 func TestWhenABudgetExpenseUpdateFailsBecauseUserOwnership(t *testing.T) {
 	mockedRepository := new(BudgetExpenseRepositoryMock)
 	uut := UpdateBudgetExpense{
-		repository: mockedRepository,
+		Repository: mockedRepository,
 	}
 
 	ctx := testutils.NewUserContext()

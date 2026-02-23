@@ -11,26 +11,21 @@ import (
 
 
 type CreateBudgetExpense struct {
-	repository BudgetExpenseRepository
+	Repository BudgetExpenseRepository
 }
 
 func (action *CreateBudgetExpense) Execute(ctx *context.Context, budgetExpense *BudgetExpense) error {
 	user, _ := security.GetCurrentUser(ctx)
 	budgetExpense.UserName = *user.UserName
-	return action.repository.Save(ctx, budgetExpense)
+	return action.Repository.Save(ctx, budgetExpense)
 }
 
 type FindSpentBudget struct {
-	budgetExpenseRepository BudgetExpenseRepository
-	searchTagRepository     tags.SearchTagRepository
+	BudgetExpenseRepository BudgetExpenseRepository
+	SearchTagRepository     tags.SearchTagRepository
 }
 
 func (action *FindSpentBudget) Execute(ctx *context.Context, month date.Month, year date.Year, searchTagKeys []tags.SearchTagKey) (*SpentBudget, error) {
-	userName, err := security.GetCurrentUser(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	firstDate, err := date.FirstDateOfMonth(month, year)
 	if err != nil {
 		return nil, err
@@ -40,7 +35,7 @@ func (action *FindSpentBudget) Execute(ctx *context.Context, month date.Month, y
 		return nil, err
 	}
 
-	budgetByDateRange, err := action.budgetExpenseRepository.FindByDateRange(ctx, *userName.UserName, *firstDate, *lastDate, searchTagKeys)
+	budgetByDateRange, err := action.BudgetExpenseRepository.FindByDateRange(ctx, *firstDate, *lastDate, searchTagKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +50,7 @@ func (action *FindSpentBudget) getAllSearchTagFor(ctx *context.Context, budgetEx
 	for _, expense := range *budgetExpenses {
 		if !seen[expense.Tag] {
 			seen[expense.Tag] = true
-			searchTag, err := action.searchTagRepository.GetTagBy(ctx, expense.Tag)
+			searchTag, err := action.SearchTagRepository.GetTagBy(ctx, expense.Tag)
 			if err != nil {
 				return nil, err
 			}
@@ -66,7 +61,7 @@ func (action *FindSpentBudget) getAllSearchTagFor(ctx *context.Context, budgetEx
 }
 
 type UpdateBudgetExpense struct {
-	repository BudgetExpenseRepository
+	Repository BudgetExpenseRepository
 }
 
 func (action *UpdateBudgetExpense) Execute(ctx *context.Context, budgetExpense *BudgetExpense) error {
@@ -75,18 +70,18 @@ func (action *UpdateBudgetExpense) Execute(ctx *context.Context, budgetExpense *
 		return err
 	}
 
-	existingBudgetExpense, err := action.repository.FindFor(ctx, budgetExpense.Id)
+	existingBudgetExpense, err := action.Repository.FindFor(ctx, budgetExpense.Id)
 	if err != nil {
 		return err
 	}
 	if existingBudgetExpense != nil && existingBudgetExpense.UserName == *userName.UserName {
-		return action.repository.Save(ctx, budgetExpense)
+		return action.Repository.Save(ctx, budgetExpense)
 	}
-	return errors.New("budget expense not found or user not authorized to delete it")
+	return errors.New("budget expense not found or user not authorized to update it")
 }
 
 type DeleteBudgetExpense struct {
-	repository BudgetExpenseRepository
+	Repository BudgetExpenseRepository
 }
 
 func (action *DeleteBudgetExpense) Execute(ctx *context.Context, id BudgetExpenseId) error {
@@ -95,13 +90,13 @@ func (action *DeleteBudgetExpense) Execute(ctx *context.Context, id BudgetExpens
 		return err
 	}
 
-	existingBudgetExpense, err := action.repository.FindFor(ctx, id)
+	existingBudgetExpense, err := action.Repository.FindFor(ctx, id)
 	if err != nil {
 		return err
 	}
 
 	if existingBudgetExpense != nil && existingBudgetExpense.UserName == *userName.UserName {
-		return action.repository.Delete(ctx, id)
+		return action.Repository.Delete(ctx, id)
 	}
 	return errors.New("budget expense not found or user not authorized to delete it")
 }

@@ -19,6 +19,7 @@ import (
 
 var logger = logging.GetLoggerInstance()
 
+
 type DynamoDbBudgetExpenseRepository struct {
 	TableName               string
 	Client                  *dynamodb.Client

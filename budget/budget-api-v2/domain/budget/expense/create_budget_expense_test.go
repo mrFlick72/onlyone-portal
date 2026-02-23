@@ -14,7 +14,7 @@ func TestWhenANewBudgetExpenseISCreated(t *testing.T) {
 
 	mockedRepository := new(BudgetExpenseRepositoryMock)
 	uut := CreateBudgetExpense{
-		repository: mockedRepository,
+		Repository: mockedRepository,
 	}
 
 	aDate, _ := date.IsoDateFor("2018-01-01")
@@ -42,7 +42,7 @@ func TestWhenANewBudgetExpenseCreationFails(t *testing.T) {
 
 	mockedRepository := new(BudgetExpenseRepositoryMock)
 	uut := CreateBudgetExpense{
-		repository: mockedRepository,
+		Repository: mockedRepository,
 	}
 
 	aDate, _ := date.IsoDateFor("2018-01-01")
