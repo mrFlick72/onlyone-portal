@@ -3,39 +3,11 @@ package expense
 import (
 	"context"
 
-	"github.com/mrflick72/budget/budget-api/adapter/tags/rest"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 )
 
-func NewBudgetExpenseActionsFacade() BudgetExpenseActions {
-	budgetExpenseRepository := NewBudgetExpenseRepository()
-	searchTagRepository := rest.NewSearchTagRepository()
-	createBudgetExpense := &CreateBudgetExpense{
-		repository: budgetExpenseRepository,
-	}
-	updateBudgetExpense := &UpdateBudgetExpense{
-		repository: budgetExpenseRepository,
-	}
-	findSpentBudget := &FindSpentBudget{
-		budgetExpenseRepository: budgetExpenseRepository,
-		searchTagRepository:     searchTagRepository,
-	}
-	deleteBudgetExpense := &DeleteBudgetExpense{
-		repository: budgetExpenseRepository,
-	}
 
-	return &BudgetExpenseActionsFacade{
-		CreateBudgetExpenseAction: createBudgetExpense,
-		UpdateBudgetExpenseAction: updateBudgetExpense,
-		FindSpentBudgetAction:     findSpentBudget,
-		DeleteBudgetExpenseAction: deleteBudgetExpense,
-	}
-}
-
-func NewBudgetExpenseRepository() BudgetExpenseRepository {
-	panic("unimplemented")
-}
 
 type BudgetExpenseActions interface {
 	CreateBudgetExpense(ctx *context.Context, budgetExpense *BudgetExpense) error

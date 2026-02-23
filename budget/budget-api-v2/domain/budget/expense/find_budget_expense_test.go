@@ -15,8 +15,8 @@ func TestBudgetExpenseTotalBySearchTagsWithConstraints(t *testing.T) {
 	mockedSearchTagRepository := new(SearchTagRepositoryMock)
 	mockedBudgetExpenseRepository := new(BudgetExpenseRepositoryMock)
 	uut := FindSpentBudget{
-		budgetExpenseRepository: mockedBudgetExpenseRepository,
-		searchTagRepository:     mockedSearchTagRepository,
+		BudgetExpenseRepository: mockedBudgetExpenseRepository,
+		SearchTagRepository:     mockedSearchTagRepository,
 	}
 
 	mockedSearchTagRepository.On("GetTagBy", &ctx, "super-market").Return(&tags.SearchTag{Key: "super-market", Value: "super-market"}, nil)
@@ -47,8 +47,8 @@ func TestBudgetExpenseTotalBySearchTagsWithoutConstraints(t *testing.T) {
 	mockedSearchTagRepository := new(SearchTagRepositoryMock)
 	mockedBudgetExpenseRepository := new(BudgetExpenseRepositoryMock)
 	uut := FindSpentBudget{
-		budgetExpenseRepository: mockedBudgetExpenseRepository,
-		searchTagRepository:     mockedSearchTagRepository,
+		BudgetExpenseRepository: mockedBudgetExpenseRepository,
+		SearchTagRepository:     mockedSearchTagRepository,
 	}
 
 	mockedSearchTagRepository.On("GetTagBy", &ctx, "super-market").Return(&tags.SearchTag{Key: "super-market", Value: "super-market"}, nil)

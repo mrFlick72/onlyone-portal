@@ -9,7 +9,7 @@ import (
 type BudgetExpenseRepository interface {
 	FindFor(ctx *context.Context, budgetExpenseId BudgetExpenseId) (*BudgetExpense, error)
 
-	FindByDateRange(ctx *context.Context, userName UserName, star date.Date, end date.Date, searchTags []string) (*[]BudgetExpense, error)
+	FindByDateRange(ctx *context.Context, star date.Date, end date.Date, searchTags []string) (*[]BudgetExpense, error)
 
 	Save(ctx *context.Context, budgetExpense *BudgetExpense) error
 
