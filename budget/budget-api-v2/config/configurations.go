@@ -1,19 +1,36 @@
 package config
 
 import (
-	"github.com/aws/aws-sdk-go-v2/aws"
+	"context"
+
+	aws_config "github.com/aws/aws-sdk-go-v2/config"
 	aws_dynamodb "github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/mrflick72/budget/budget-api/adapter/budget/dynamodb"
 	"github.com/mrflick72/budget/budget-api/adapter/tags/rest"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 )
 
+var configurationManager = config.GetConfigurationManagerInstance()
+var logger = logging.GetLoggerInstance()
+
 func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
+	cfg, err := aws_config.LoadDefaultConfig(
+		context.TODO(),
+		aws_config.WithRegion("eu-central-1"),
+	)
+
+	if err != nil {
+		logger.LogErrorfFor("unable to load SDK config: %s", err.Error())
+		panic("unable to load SDK config, " + err.Error())
+	}
+
 	return &dynamodb.DynamoDbBudgetExpenseRepository{
-		TableName:               "budget-expenses",
-		Client:                  aws_dynamodb.NewFromConfig(aws.Config{}), // You should provide your AWS configuration here
+		TableName:               configurationManager.GetConfigFor("budget-api.dynamo-db.budget-expense.table-name"),
+		Client:                  aws_dynamodb.NewFromConfig(cfg),
 		BudgetExpenseIdProvider: &dynamodb.DynamoDbBudgetExpenseIdProvider{},
-	}	
+	}
 }
 
 func NewBudgetExpenseActionsFacade() expense.BudgetExpenseActions {
@@ -40,4 +57,3 @@ func NewBudgetExpenseActionsFacade() expense.BudgetExpenseActions {
 		DeleteBudgetExpenseAction: deleteBudgetExpense,
 	}
 }
-
