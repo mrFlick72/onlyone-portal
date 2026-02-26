@@ -84,6 +84,7 @@ func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string, ignored []stri
 		ctx.Set("user", User{
 			UserName:    userName,
 			Authorities: toStringSlice(*authorities),
+			AccessToken: &authorization,
 		})
 
 		log.Printf("authenticated user: %s\n", *userName)

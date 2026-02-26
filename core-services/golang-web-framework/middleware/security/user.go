@@ -11,6 +11,7 @@ type UserName = string
 type User struct {
 	UserName *UserName
 	Authorities *[]string
+	AccessToken *string
 }
 
 func GetCurrentUser(ctx *context.Context) (*User, error) {
