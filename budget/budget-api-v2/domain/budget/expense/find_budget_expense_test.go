@@ -54,7 +54,7 @@ func TestBudgetExpenseTotalBySearchTagsWithoutConstraints(t *testing.T) {
 	mockedSearchTagRepository.On("GetTagBy", &ctx, "super-market").Return(&tags.SearchTag{Key: "super-market", Value: "super-market"}, nil)
         mockedSearchTagRepository.On("GetTagBy", &ctx, "dinner").Return(&tags.SearchTag{Key: "dinner", Value: "dinner"}, nil)
 
-	mockedBudgetExpenseRepository.On("FindByDateRange", &ctx, "A_USER_NAME", testutils.SafeDateFor("01/04/2018"), testutils.SafeDateFor("30/04/2018"), []string{}).
+	mockedBudgetExpenseRepository.On("FindByDateRange", &ctx, testutils.SafeDateFor("01/04/2018"), testutils.SafeDateFor("30/04/2018"), []string{}).
 		Return(&[]BudgetExpense{
 			{Id: "1", UserName: "A_USER_NAME", Date: testutils.SafeDateFor("15/04/2018"), Amount: testutils.SafeMoneyFor("10.00"), Note: "dinner", Tag: "dinner"},
 			{Id: "2", UserName: "A_USER_NAME", Date: testutils.SafeDateFor("01/04/2018"), Amount: testutils.SafeMoneyFor("12.50"), Note: "super-market", Tag: "super-market"},
@@ -71,5 +71,5 @@ func TestBudgetExpenseTotalBySearchTagsWithoutConstraints(t *testing.T) {
 
     mockedSearchTagRepository.AssertCalled(t, "GetTagBy", &ctx, "dinner")
 	mockedSearchTagRepository.AssertCalled(t, "GetTagBy", &ctx, "super-market")
-	mockedBudgetExpenseRepository.AssertCalled(t, "FindByDateRange", &ctx, "A_USER_NAME", testutils.SafeDateFor("01/04/2018"), testutils.SafeDateFor("30/04/2018"), []string{})
+	mockedBudgetExpenseRepository.AssertCalled(t, "FindByDateRange", &ctx, testutils.SafeDateFor("01/04/2018"), testutils.SafeDateFor("30/04/2018"), []string{})
 }
