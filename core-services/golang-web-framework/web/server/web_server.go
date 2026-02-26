@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"log"
-	"os"
 	"strings"
 	"time"
 
@@ -31,7 +30,7 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     strings.Split(configurationManager.GetConfigFor("CORS_ALLOWED_ORIGINS"), ","),
+		AllowOrigins:     strings.Split(configurationManager.GetConfigFor("cors.allowed.origins"), ","),
 		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin","Authorization", "Content-Type", "Accept"},
 		AllowCredentials: true,
@@ -49,7 +48,7 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 }
 
 func (wsp *WebServerProvisioner) StartEngine() error {
-	port := os.Getenv("WEBSERVER_PORT")
+	port := configurationManager.GetConfigFor("server.port")
 	serverBinder := fmt.Sprintf("0.0.0.0:%s", port)
 	if err := wsp.router.Run(serverBinder); err != nil {
 		log.Fatalf("failed to run server: %v", err)
