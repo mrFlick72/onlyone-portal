@@ -20,7 +20,7 @@ func (mock *BudgetExpenseRepositoryMock) FindFor(ctx *context.Context, budgetExp
 	return args.Get(0).(*BudgetExpense), args.Error(1)
 }
 
-func (mock *BudgetExpenseRepositoryMock) FindByDateRange(ctx *context.Context,star date.Date, end date.Date, searchTags []string) (*[]BudgetExpense, error) {
+func (mock *BudgetExpenseRepositoryMock) FindByDateRange(ctx *context.Context, star date.Date, end date.Date, searchTags []string) (*[]BudgetExpense, error) {
 	argrs := mock.Called(ctx, star, end, searchTags)
 	if argrs.Get(0) != nil {
 		return argrs.Get(0).(*[]BudgetExpense), argrs.Error(1)
