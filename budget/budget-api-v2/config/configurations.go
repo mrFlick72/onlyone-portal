@@ -2,18 +2,29 @@ package config
 
 import (
 	"context"
+	"net/http"
 
 	aws_config "github.com/aws/aws-sdk-go-v2/config"
 	aws_dynamodb "github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/mrflick72/budget/budget-api/adapter/budget/dynamodb"
 	"github.com/mrflick72/budget/budget-api/adapter/tags/rest"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
+	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 )
 
 var configurationManager = config.GetConfigurationManagerInstance()
 var logger = logging.GetLoggerInstance()
+
+
+func NewSearchTagRepository() tags.SearchTagRepository {
+	return &rest.RestSearchTagRepository{
+		Client:  &http.Client{},
+		BaseURL: configurationManager.GetConfigFor("tag-api.base-url"),
+	}
+}
+
 
 func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
 	cfg, err := aws_config.LoadDefaultConfig(
@@ -35,7 +46,7 @@ func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
 
 func NewBudgetExpenseActionsFacade() expense.BudgetExpenseActions {
 	budgetExpenseRepository := NewBudgetExpenseRepository()
-	searchTagRepository := rest.NewSearchTagRepository()
+	searchTagRepository := NewSearchTagRepository()
 	createBudgetExpense := &expense.CreateBudgetExpense{
 		Repository: budgetExpenseRepository,
 	}

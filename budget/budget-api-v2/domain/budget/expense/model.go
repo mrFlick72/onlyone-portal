@@ -1,8 +1,6 @@
 package expense
 
 import (
-	"fmt"
-
 	"github.com/mrflick72/budget/budget-api/domain/money"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
@@ -130,9 +128,13 @@ private SearchTag findSearchTagFor(UserName userName, String searchTag) {  // to
 */
 func (spentBudget *SpentBudget) findSearchTagFor(searchTagKey string) *tags.SearchTag {
 	value, ok := (*spentBudget.SearchTags)[searchTagKey]
-	fmt.Print(value)
-	fmt.Print(ok)
-	return nil
+	if !ok {
+		return nil
+	}
+	return &tags.SearchTag{
+		Key:   searchTagKey,
+		Value: value,
+	}
 }
 
 /*
@@ -195,7 +197,6 @@ type BudgetExpenseIdProvider interface {
 	GenerateIdFor(budgetExpense *BudgetExpense) BudgetExpenseId
 }
 
-
 // public record DailyBudgetExpense(List<BudgetExpense> budgetExpenseList, Date date, Money total) {
 
 //     @Override
@@ -212,4 +213,4 @@ type DailyBudgetExpense struct {
 	BudgetExpenseList *[]BudgetExpense
 	Date              date.Date
 	Total             money.Money
-}	
+}

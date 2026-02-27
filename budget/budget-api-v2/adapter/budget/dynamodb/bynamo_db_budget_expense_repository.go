@@ -72,7 +72,7 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx *context.Conte
 		return nil, errors.New("invalid data format in BudgetExpense")
 	}
 
-	moneyAmount, err := money.MoneyFor(item["amount"].(*types.AttributeValueMemberN).Value)
+	moneyAmount, err := money.MoneyFor(item["amount"].(*types.AttributeValueMemberS).Value)
 	if err != nil {
 		logger.LogErrorfFor("invalid data format in BudgetExpense: %v", err)
 		return nil, errors.New("invalid data format in BudgetExpense")
@@ -179,7 +179,7 @@ func (repository *DynamoDbBudgetExpenseRepository) Save(ctx *context.Context, bu
 			"user_name":        &types.AttributeValueMemberS{Value: budgetExpense.UserName},
 			"budget_id":        &types.AttributeValueMemberS{Value: string(budgetExpense.Id)},
 			"transaction_date": &types.AttributeValueMemberS{Value: budgetExpense.Date.GetIsoFormattedDate()},
-			"amount":           &types.AttributeValueMemberN{Value: budgetExpense.Amount.StringifyAmount()},
+			"amount":           &types.AttributeValueMemberS{Value: budgetExpense.Amount.StringifyAmount()},
 			"note":             &types.AttributeValueMemberS{Value: budgetExpense.Note},
 			"tag":              &types.AttributeValueMemberS{Value: budgetExpense.Tag},
 		},
