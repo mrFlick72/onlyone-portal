@@ -2,13 +2,14 @@ package dynamodb
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/go-playground/assert/v2"
 	"github.com/google/uuid"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/internal/testutils"
-	"os"
-	"testing"
 )
 
 func TestMain(m *testing.M) {
@@ -20,26 +21,32 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestFindBudgetExpenseByDateRange(t *testing.T) {
+func TestFindBudgetExpenseByDateRange(t *testing.T) {	
 	mockedBudgetExpenseIdProvider := &DynamoDbBudgetExpenseIdProvider{
 		saltGenerator: func() string { return uuid.New().String() },
 	}
-	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
-	err := loadBudgetExpensesFromCSVFile("find-by-date-range-data-set.csv", mockedBudgetExpenseIdProvider)
+	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
+	searchTagMockRepositorySetup(ctxUser, mockSearchTagRepository)
+
+	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider, mockSearchTagRepository)
+	err := loadBudgetExpensesFromCSVFile("find-by-date-range-data-set.csv", mockedBudgetExpenseIdProvider, mockSearchTagRepository)
 	if err != nil {
 		t.Fatalf("Failed to load budget expenses: %v", err)
 	}
-	// Implement the test logic here
-	result, err := repo.FindByDateRange(testutils.NewStubbedContextWith("USER"), testutils.SafeDateFor("01/02/2018"), testutils.SafeDateFor("28/02/2019"), []tags.SearchTagKey{})
+
+	result, err := repo.FindByDateRange(ctxUser, testutils.SafeDateFor("01/02/2018"), testutils.SafeDateFor("28/02/2019"), []tags.SearchTagKey{})
 	fmt.Println("Result length:", result)
 	fmt.Println("Error:", err)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 11, len(*result))
 }
 
+
+
 func TestFindNonExistentBudgetExpenseReturnsNil(t *testing.T) {
 	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
-	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
+	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
+	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider, mockSearchTagRepository)
 
 	// Implement the test logic here
 	nonExistentBudgetExpenseId := expense.BudgetExpenseId("dyghtq4hrbg-MTJfQV9TQUxU")
@@ -52,7 +59,8 @@ func TestFindNonExistentBudgetExpenseReturnsNil(t *testing.T) {
 
 func TestFindBudgetExpenseOfOtherPersonISNotAllowed(t *testing.T) {
 	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
-	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
+	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
+	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider, mockSearchTagRepository)
 
 	// Implement the test logic here
 	input := expense.BudgetExpense{
@@ -88,7 +96,9 @@ func TestFindBudgetExpenseOfOtherPersonISNotAllowed(t *testing.T) {
 
 func TestSaveANewBudgetExpense(t *testing.T) {
 	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
-	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
+	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
+	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider, mockSearchTagRepository)
+	searchTagMockRepositorySetup(ctx, mockSearchTagRepository)
 
 	// Implement the test logic here
 	input := expense.BudgetExpense{
@@ -129,7 +139,9 @@ func TestSaveANewBudgetExpense(t *testing.T) {
 
 func TestUpdateABudgetExpense(t *testing.T) {
 	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
-	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
+	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
+	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider, mockSearchTagRepository)
+	searchTagMockRepositorySetup(ctx, mockSearchTagRepository)
 
 	//	Implement the test logic here
 	input := expense.BudgetExpense{
@@ -170,7 +182,9 @@ func TestUpdateABudgetExpense(t *testing.T) {
 
 func TestUpdateABudgetExpenseFailsWhenTheBudgetExpenseDoesNotBelongsToTheUserInTheContext(t *testing.T) {
 	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
-	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
+	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
+	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider, mockSearchTagRepository)
+	searchTagMockRepositorySetup(ctx, mockSearchTagRepository)
 
 	//	Implement the test logic here
 	input := expense.BudgetExpense{
@@ -203,17 +217,19 @@ func TestUpdateABudgetExpenseFailsWhenTheBudgetExpenseDoesNotBelongsToTheUserInT
 
 func TestDeleteBudgetExpense(t *testing.T) {
 	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
-	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
+	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
+	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider, mockSearchTagRepository)
+	searchTagMockRepositorySetup(ctx, mockSearchTagRepository)
 
 	// Implement the test logic here
 	budgetExpense := expense.BudgetExpense{
-		Id:       expense.BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU"),
 		UserName: "testuser",
 		Date:     testutils.SafeDateFor("01/01/2024"),
 		Amount:   testutils.SafeMoneyFor("10.50"),
 		Note:     "NOTE",
 		Tag:      tags.SearchTag{Key: "TAG", Value: "TAG"},
 	}
+	mockedBudgetExpenseIdProvider.On("GenerateIdFor", &budgetExpense).Return("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU")
 
 	err := repo.Save(ctx, &budgetExpense)
 
@@ -234,7 +250,9 @@ func TestDeleteBudgetExpense(t *testing.T) {
 
 func TestDeleteBudgetExpenseFailsWhenTheBudgetExpenseDoesNotBelongsToTheUserInTheContext(t *testing.T) {
 	mockedBudgetExpenseIdProvider := new(DynamoDbBudgetExpenseIdProviderMock)
-	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
+	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
+	repo := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider, mockSearchTagRepository)
+	searchTagMockRepositorySetup(ctxAnotherUser, mockSearchTagRepository)
 
 	// Implement the test logic here
 	testUserBudgetExpense := expense.BudgetExpense{
