@@ -22,6 +22,7 @@ import (
 var client, _ = newDynamoDBClient()
 var ctx = testutils.NewStubbedContextWith(security.UserName("testuser"))
 var ctxAnotherUser = testutils.NewStubbedContextWith(security.UserName("anotheruser"))
+var ctxUser = testutils.NewStubbedContextWith("USER")
 
 type DynamoDbBudgetExpenseIdProviderMock struct {
 	mock.Mock
@@ -31,7 +32,6 @@ func (mock *DynamoDbBudgetExpenseIdProviderMock) GenerateIdFor(budgetExpense *ex
 	args := mock.Called(budgetExpense)
 	return args.String(0)
 }
-
 
 func newDynamoDBClient() (*dynamodb.Client, error) {
 
@@ -50,12 +50,13 @@ func newDynamoDBClient() (*dynamodb.Client, error) {
 
 var TableName = "BUDGET_EXPENSE_TABLE_NAME_STAGING"
 
-func newBudgetExpenseRepository(budgetExpenseIdProvider expense.BudgetExpenseIdProvider) *DynamoDbBudgetExpenseRepository {
+func newBudgetExpenseRepository(budgetExpenseIdProvider expense.BudgetExpenseIdProvider, searchTagRepository tags.SearchTagRepository) *DynamoDbBudgetExpenseRepository {
 	return &DynamoDbBudgetExpenseRepository{
 		// Initialize with mock or test dependencies as needed
 		TableName:               TableName,
 		Client:                  client,
 		BudgetExpenseIdProvider: budgetExpenseIdProvider,
+		SearchTagRepository:     searchTagRepository,
 	}
 }
 func setupTestDynamoDBTable() error {
@@ -103,7 +104,7 @@ func teardownTestDynamoDBTable() error {
 	return err
 }
 
-func loadBudgetExpensesFromCSVFile(filePath string, mockedBudgetExpenseIdProvider *DynamoDbBudgetExpenseIdProvider) error {
+func loadBudgetExpensesFromCSVFile(filePath string, mockedBudgetExpenseIdProvider *DynamoDbBudgetExpenseIdProvider, searchTagRepository tags.SearchTagRepository) error {
 	recordsNumber := 0
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -116,7 +117,7 @@ func loadBudgetExpensesFromCSVFile(filePath string, mockedBudgetExpenseIdProvide
 		return err
 	}
 
-	repository := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider)
+	repository := newBudgetExpenseRepository(mockedBudgetExpenseIdProvider, searchTagRepository)
 
 	for _, record := range records {
 		recordsNumber++
@@ -126,7 +127,7 @@ func loadBudgetExpensesFromCSVFile(filePath string, mockedBudgetExpenseIdProvide
 			Date:     testutils.SafeDateFor(record[1]),
 			Amount:   testutils.SafeMoneyFor(record[2]),
 			Note:     record[3],
-			Tag:      tags.SearchTag{Key: record[4], Value: record[4]},
+			Tag:      tags.SearchTag{Key: record[4], Value: record[5]},
 		}
 
 		err := repository.Save(testutils.NewStubbedContextWith(record[0]), &budgetExpense)
@@ -138,4 +139,11 @@ func loadBudgetExpensesFromCSVFile(filePath string, mockedBudgetExpenseIdProvide
 
 	fmt.Printf("Loaded %d budget expenses from %s\n", recordsNumber, filePath)
 	return nil
+}
+
+func searchTagMockRepositorySetup(ctx *context.Context, mockSearchTagRepository *tags.SearchTagRepositoryMock) {
+	mockSearchTagRepository.On("GetTagBy", ctx, "super-market").Return(&tags.SearchTag{Key: "super-market", Value: "super-market"}, nil)
+	mockSearchTagRepository.On("GetTagBy", ctx, "dinner").Return(&tags.SearchTag{Key: "dinner", Value: "dinner"}, nil)
+	mockSearchTagRepository.On("GetTagBy", ctx, "lunch").Return(&tags.SearchTag{Key: "lunch", Value: "lunch"}, nil)
+	mockSearchTagRepository.On("GetTagBy", ctx, "TAG").Return(&tags.SearchTag{Key: "TAG", Value: "TAG"}, nil)
 }

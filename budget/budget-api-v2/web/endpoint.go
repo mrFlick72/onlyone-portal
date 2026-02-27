@@ -17,23 +17,8 @@ func RegisterEndpoints(
 ) *gin.Engine {
 
 	var logger = logging.GetLoggerInstance()
-	/*
-			@GetMapping
-		    public ResponseEntity getBudgetExpenseList(@RequestParam("q") BudgetSearchCriteriaRepresentation budgetExpenseRequest)
 
-		    @PutMapping
-		    public ResponseEntity getBudgetExpenseListBy(@RequestBody BudgetSearchCriteriaRepresentation budgetExpenseRequest)
-
-		    @PutMapping("/{id}")
-		    public ResponseEntity updateBudgetExpense(@PathVariable("id") String id, @RequestBody BudgetExpenseRepresentation request)
-
-		    @PostMapping
-		    public ResponseEntity newBudgetExpense(@RequestBody BudgetExpenseRepresentation budgetExpenseRepresentation)
-
-		    @DeleteMapping("/{id}")
-		    public ResponseEntity deleteBudgetExpense(@PathVariable("id") String id)
-	*/
-	r.PUT("/budget/expense", func(c *gin.Context) {
+	r.PUT("/api/budget/expense", func(c *gin.Context) {
 		var representation BudgetSearchCriteriaRepresentation
 
 		if err := c.ShouldBindJSON(&representation); err != nil {
@@ -52,7 +37,7 @@ func RegisterEndpoints(
 		c.JSON(http.StatusOK, SpentBudgetDomainToRepresentationModel(spentBudget))
 	})
 
-	r.PUT("/budget/expense/:id", func(c *gin.Context) {
+	r.PUT("/api/budget/expense/:id", func(c *gin.Context) {
 		var representation BudgetExpenseRepresentation
 
 		ctx := ContextFactoryConverter.CreateContextFromGin(c)
@@ -68,7 +53,7 @@ func RegisterEndpoints(
 		c.Status(http.StatusNoContent)
 	})
 
-	r.POST("/budget/expense", func(c *gin.Context) {
+	r.POST("/api/budget/expense", func(c *gin.Context) {
 		var representation BudgetExpenseRepresentation
 
 		ctx := ContextFactoryConverter.CreateContextFromGin(c)
@@ -84,7 +69,7 @@ func RegisterEndpoints(
 		c.Status(http.StatusCreated)
 	})
 
-	r.DELETE("/budget/expense/:id", func(c *gin.Context) {
+	r.DELETE("/api/budget/expense/:id", func(c *gin.Context) {
 		ctx := ContextFactoryConverter.CreateContextFromGin(c)
 		facade.DeleteBudgetExpense(ctx, c.Param("id"))
 		c.Status(http.StatusNoContent)
