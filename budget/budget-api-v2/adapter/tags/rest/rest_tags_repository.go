@@ -8,12 +8,10 @@ import (
 	"net/http"
 
 	"github.com/mrflick72/budget/budget-api/domain/tags"
-	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
 
-var configurationManager = config.GetConfigurationManagerInstance()
 var logger = logging.GetLoggerInstance()
 
 type RestSearchTagRepository struct {
@@ -22,7 +20,7 @@ type RestSearchTagRepository struct {
 }
 
 func (repository *RestSearchTagRepository) GetTagBy(ctx *context.Context, key string) (*tags.SearchTag, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/api/tags/%s", repository.BaseURL, key), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/api/tags", repository.BaseURL), nil)
 	if err != nil {
 		logger.LogErrorfFor("Error while calling tag API: %s", err)
 		return nil, err
@@ -49,9 +47,11 @@ func (repository *RestSearchTagRepository) GetTagBy(ctx *context.Context, key st
 	var searchTags []tags.SearchTag
 	err = json.Unmarshal(body, &searchTags)
 	if err != nil {
-		logger.LogErrorfFor("Error while unmarshalling tag API response: %s", err)
+		logger.LogErrorfFor("Error while un marshalling tag API response: %s", err)
 		return nil, err
 	}
+	// todo: this is not efficient, we should have an endpoint to get a tag by key
+	logger.LogInfofFor("Received search tags from tag API: %v", searchTags)
 	for _, searchTag := range searchTags {
 		if searchTag.Key == key {
 			return &searchTag, nil
@@ -59,11 +59,4 @@ func (repository *RestSearchTagRepository) GetTagBy(ctx *context.Context, key st
 	}
 	return nil, fmt.Errorf("tag with key '%s' not found", key)
 
-}
-
-func NewSearchTagRepository() tags.SearchTagRepository {
-	return &RestSearchTagRepository{
-		Client:  &http.Client{},
-		BaseURL: configurationManager.GetConfigFor("tag-api.base-url"),
-	}
 }

@@ -3,9 +3,9 @@ package web
 import "github.com/mrflick72/budget/budget-api/domain/tags"
 
 type BudgetSearchCriteriaRepresentation struct {
-	Month         string
-	Year          string
-	SearchTagList []tags.SearchTagKey
+	Month         string `json:"month"`
+	Year          string `json:"year"`
+	SearchTagList []tags.SearchTagKey `json:"searchTagList"`
 }
 
 type BudgetExpenseRepresentation struct {
@@ -18,19 +18,19 @@ type BudgetExpenseRepresentation struct {
 }
 
 type SpentBudgetRepresentation struct {
-	Total                            string
-	DailyBudgetExpenseRepresentation []DailyBudgetExpenseRepresentation
-	TotalDetailList                  []TotalBySearchTagDetail
+	Total                            string `json:"total"`
+	DailyBudgetExpenseRepresentation []DailyBudgetExpenseRepresentation `json:"dailyBudgetExpenseRepresentationList"`
+	TotalDetailList                  []TotalBySearchTagDetail `json:"totalDetailList"`
 }
 
 type DailyBudgetExpenseRepresentation struct {
-	BudgetExpenseRepresentationList []BudgetExpenseRepresentation
-	Date                            string
-	Total                           string
+	BudgetExpenseRepresentationList []BudgetExpenseRepresentation `json:"budgetExpenseRepresentationList"`
+	Date                            string `json:"date"`
+	Total                           string `json:"total"`
 }
 
 type TotalBySearchTagDetail struct {
-	SearchTagKey   string
-	SearchTagValue string
-	Total          string
+	SearchTagKey   string `json:"searchTagKey"`
+	SearchTagValue string `json:"searchTagValue"`
+	Total          string `json:"total"`
 }

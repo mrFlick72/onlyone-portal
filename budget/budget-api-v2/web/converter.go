@@ -79,7 +79,7 @@ func budgetExpenseRepresentationList(dailyBudgetExpense *expense.DailyBudgetExpe
 			Amount:   budgetExpense.Amount.StringifyAmount(),
 			Note:     budgetExpense.Note,
 			TagKey:   budgetExpense.Tag,
-			TagValue: "", // This will be set in the service layer using the current logged user
+			TagValue: "123", // This will be set in the service layer using the current logged user
 		})
 	}
 	return budgetExpenseRepresentationList
