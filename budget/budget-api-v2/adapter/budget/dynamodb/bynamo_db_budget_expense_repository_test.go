@@ -60,7 +60,7 @@ func TestFindBudgetExpenseOfOtherPersonISNotAllowed(t *testing.T) {
 		Date:     testutils.SafeDateFor("01/01/2024"),
 		Amount:   testutils.SafeMoneyFor("10.50"),
 		Note:     "NOTE",
-		Tag:      "TAG",
+		Tag:      tags.SearchTag{Key: "TAG", Value: "TAG"},
 	}
 
 	// Implement the test logic here
@@ -70,7 +70,7 @@ func TestFindBudgetExpenseOfOtherPersonISNotAllowed(t *testing.T) {
 		Date:     testutils.SafeDateFor("01/01/2024"),
 		Amount:   testutils.SafeMoneyFor("10.50"),
 		Note:     "NOTE",
-		Tag:      "TAG",
+		Tag:      tags.SearchTag{Key: "TAG", Value: "TAG"},
 	}
 
 	mockedBudgetExpenseIdProvider.On("GenerateIdFor", &input).Return("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU")
@@ -96,7 +96,7 @@ func TestSaveANewBudgetExpense(t *testing.T) {
 		Date:     testutils.SafeDateFor("01/01/2024"),
 		Amount:   testutils.SafeMoneyFor("10.50"),
 		Note:     "NOTE",
-		Tag:      "TAG",
+		Tag:      tags.SearchTag{Key: "TAG", Value: "TAG"},
 	}
 
 	fmt.Println("Input Id:", input.Id)
@@ -107,7 +107,7 @@ func TestSaveANewBudgetExpense(t *testing.T) {
 		Date:     testutils.SafeDateFor("01/01/2024"),
 		Amount:   testutils.SafeMoneyFor("10.50"),
 		Note:     "NOTE",
-		Tag:      "TAG",
+		Tag:      tags.SearchTag{Key: "TAG", Value: "TAG"},
 	}
 
 	mockedBudgetExpenseIdProvider.On("GenerateIdFor", &input).Return("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU")
@@ -137,7 +137,7 @@ func TestUpdateABudgetExpense(t *testing.T) {
 		Date:     testutils.SafeDateFor("01/01/2024"),
 		Amount:   testutils.SafeMoneyFor("10.50"),
 		Note:     "NOTE",
-		Tag:      "TAG",
+		Tag:      tags.SearchTag{Key: "TAG", Value: "TAG"},
 	}
 	mockedBudgetExpenseIdProvider.On("GenerateIdFor", &input).Return("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU")
 
@@ -150,7 +150,7 @@ func TestUpdateABudgetExpense(t *testing.T) {
 		Date:     testutils.SafeDateFor("01/01/2024"),
 		Amount:   testutils.SafeMoneyFor("10.50"),
 		Note:     "NOTE",
-		Tag:      "TAG",
+		Tag:      tags.SearchTag{Key: "TAG", Value: "TAG"},
 	}
 
 	err := repo.Save(ctx, &expected)
@@ -178,7 +178,7 @@ func TestUpdateABudgetExpenseFailsWhenTheBudgetExpenseDoesNotBelongsToTheUserInT
 		Date:     testutils.SafeDateFor("01/01/2024"),
 		Amount:   testutils.SafeMoneyFor("10.50"),
 		Note:     "NOTE",
-		Tag:      "TAG",
+		Tag:      tags.SearchTag{Key: "TAG", Value: "TAG"},
 	}
 	mockedBudgetExpenseIdProvider.On("GenerateIdFor", &input).Return("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU")
 
@@ -191,7 +191,7 @@ func TestUpdateABudgetExpenseFailsWhenTheBudgetExpenseDoesNotBelongsToTheUserInT
 		Date:     testutils.SafeDateFor("01/01/2024"),
 		Amount:   testutils.SafeMoneyFor("10.50"),
 		Note:     "NOTE",
-		Tag:      "TAG",
+		Tag:      tags.SearchTag{Key: "TAG", Value: "TAG"},
 	}
 
 	err := repo.Save(ctxAnotherUser, &expected)
@@ -212,7 +212,7 @@ func TestDeleteBudgetExpense(t *testing.T) {
 		Date:     testutils.SafeDateFor("01/01/2024"),
 		Amount:   testutils.SafeMoneyFor("10.50"),
 		Note:     "NOTE",
-		Tag:      "TAG",
+		Tag:      tags.SearchTag{Key: "TAG", Value: "TAG"},
 	}
 
 	err := repo.Save(ctx, &budgetExpense)
@@ -242,7 +242,7 @@ func TestDeleteBudgetExpenseFailsWhenTheBudgetExpenseDoesNotBelongsToTheUserInTh
 		Date:     testutils.SafeDateFor("01/01/2024"),
 		Amount:   testutils.SafeMoneyFor("10.50"),
 		Note:     "NOTE",
-		Tag:      "TAG",
+		Tag:      tags.SearchTag{Key: "TAG", Value: "TAG"},
 	}
 	mockedBudgetExpenseIdProvider.On("GenerateIdFor", &testUserBudgetExpense).Return("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU")
 
@@ -254,7 +254,7 @@ func TestDeleteBudgetExpenseFailsWhenTheBudgetExpenseDoesNotBelongsToTheUserInTh
 		Date:     testutils.SafeDateFor("01/01/2024"),
 		Amount:   testutils.SafeMoneyFor("10.50"),
 		Note:     "NOTE",
-		Tag:      "TAG",
+		Tag:      tags.SearchTag{Key: "TAG", Value: "TAG"},
 	}
 	mockedBudgetExpenseIdProvider.On("GenerateIdFor", &anotherUserBudgetExpense).Return("MjAxOF8yX1VTRVI=-MjAxOF8yX1VTRVI")
 	_ = repo.Save(ctxAnotherUser, &anotherUserBudgetExpense)

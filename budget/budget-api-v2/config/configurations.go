@@ -17,14 +17,12 @@ import (
 var configurationManager = config.GetConfigurationManagerInstance()
 var logger = logging.GetLoggerInstance()
 
-
 func NewSearchTagRepository() tags.SearchTagRepository {
 	return &rest.RestSearchTagRepository{
 		Client:  &http.Client{},
 		BaseURL: configurationManager.GetConfigFor("tag-api.base-url"),
 	}
 }
-
 
 func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
 	cfg, err := aws_config.LoadDefaultConfig(
@@ -41,6 +39,7 @@ func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
 		TableName:               configurationManager.GetConfigFor("budget-api.dynamo-db.budget-expense.table-name"),
 		Client:                  aws_dynamodb.NewFromConfig(cfg),
 		BudgetExpenseIdProvider: &dynamodb.DynamoDbBudgetExpenseIdProvider{},
+		SearchTagRepository:     NewSearchTagRepository(),
 	}
 }
 

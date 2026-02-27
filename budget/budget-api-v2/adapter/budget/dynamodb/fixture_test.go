@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
+	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/internal/testutils"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 	"github.com/stretchr/testify/mock"
@@ -125,7 +126,7 @@ func loadBudgetExpensesFromCSVFile(filePath string, mockedBudgetExpenseIdProvide
 			Date:     testutils.SafeDateFor(record[1]),
 			Amount:   testutils.SafeMoneyFor(record[2]),
 			Note:     record[3],
-			Tag:      record[4],
+			Tag:      tags.SearchTag{Key: record[4], Value: record[4]},
 		}
 
 		err := repository.Save(testutils.NewStubbedContextWith(record[0]), &budgetExpense)
