@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/assert/v2"
 	"github.com/mrflick72/budget/budget-api/domain/money"
+	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/budget/budget-api/internal/testutils"
 )
@@ -42,7 +43,7 @@ func TestWhenABudgetExpenseUpdateSucceed(t *testing.T) {
 		Date:     *aDate,
 		Amount:   anAmount,
 		Note:     "A_NOTE",
-		Tag:      "super-market",
+		Tag:      tags.SearchTag{Key: "super-market", Value: "super-market"},
 	}
 
 	ctx := testutils.NewUserContext()
@@ -77,7 +78,7 @@ func TestWhenABudgetExpenseUpdateDoesDoneNothingBecauseTheBudgetExpenseDoesNotEx
 		Date:     *aDate,
 		Amount:   anAmount,
 		Note:     "A_NOTE",
-		Tag:      "super-market",
+		Tag:      tags.SearchTag{Key: "super-market", Value: "super-market"},
 	}
 
 	ctx := testutils.NewUserContext()
@@ -107,7 +108,7 @@ func TestWhenABudgetExpenseUpdateFails(t *testing.T) {
 		Date:     *aDate,
 		Amount:   anAmount,
 		Note:     "A_NOTE",
-		Tag:      "super-market",
+		Tag:      tags.SearchTag{Key: "super-market", Value: "super-market"},
 	}
 
 	ctx := testutils.NewUserContext()

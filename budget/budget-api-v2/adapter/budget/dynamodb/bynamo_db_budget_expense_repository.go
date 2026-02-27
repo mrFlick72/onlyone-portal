@@ -19,11 +19,11 @@ import (
 
 var logger = logging.GetLoggerInstance()
 
-
 type DynamoDbBudgetExpenseRepository struct {
 	TableName               string
 	Client                  *dynamodb.Client
 	BudgetExpenseIdProvider expense.BudgetExpenseIdProvider
+	SearchTagRepository     tags.SearchTagRepository
 }
 
 func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx *context.Context, budgetExpenseId expense.BudgetExpenseId) (*expense.BudgetExpense, error) {
@@ -78,13 +78,20 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx *context.Conte
 		return nil, errors.New("invalid data format in BudgetExpense")
 	}
 
+	logger.LogInfofFor("Parsing tag key: %s", item["tag"].(*types.AttributeValueMemberS).Value)	
+
+	tag,err := repository.SearchTagRepository.GetTagBy(ctx, item["tag"].(*types.AttributeValueMemberS).Value)
+	if err != nil {
+		logger.LogErrorfFor("Error getting tag: %v", err)
+		return nil, errors.New("invalid tag in BudgetExpense")
+	}
 	budgetExpense := &expense.BudgetExpense{
 		Id:       expense.BudgetExpenseId(item["budget_id"].(*types.AttributeValueMemberS).Value),
 		UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
 		Date:     *date,
 		Amount:   moneyAmount,
 		Note:     item["note"].(*types.AttributeValueMemberS).Value,
-		Tag:      item["tag"].(*types.AttributeValueMemberS).Value,
+		Tag:      *tag,
 	}
 	return budgetExpense, nil
 }
@@ -181,7 +188,7 @@ func (repository *DynamoDbBudgetExpenseRepository) Save(ctx *context.Context, bu
 			"transaction_date": &types.AttributeValueMemberS{Value: budgetExpense.Date.GetIsoFormattedDate()},
 			"amount":           &types.AttributeValueMemberS{Value: budgetExpense.Amount.StringifyAmount()},
 			"note":             &types.AttributeValueMemberS{Value: budgetExpense.Note},
-			"tag":              &types.AttributeValueMemberS{Value: budgetExpense.Tag},
+			"tag":              &types.AttributeValueMemberS{Value: budgetExpense.Tag.Key},
 		},
 	}
 

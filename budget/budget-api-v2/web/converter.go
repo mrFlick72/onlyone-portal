@@ -3,6 +3,7 @@ package web
 import (
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
 	"github.com/mrflick72/budget/budget-api/domain/money"
+	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 )
 
@@ -16,7 +17,7 @@ func RepresentationModelToDomainModel(budgetExpenseRepresentation BudgetExpenseR
 		Date:     *date,
 		Amount:   money,
 		Note:     budgetExpenseRepresentation.Note,
-		Tag:      budgetExpenseRepresentation.TagKey,
+		Tag:      tags.SearchTag{Key: budgetExpenseRepresentation.TagKey, Value: budgetExpenseRepresentation.TagValue},
 	}
 }
 
@@ -78,8 +79,8 @@ func budgetExpenseRepresentationList(dailyBudgetExpense *expense.DailyBudgetExpe
 			Date:     budgetExpense.Date.GetFormattedDate(),
 			Amount:   budgetExpense.Amount.StringifyAmount(),
 			Note:     budgetExpense.Note,
-			TagKey:   budgetExpense.Tag,
-			TagValue: "123", // This will be set in the service layer using the current logged user
+			TagKey:   budgetExpense.Tag.Key,
+			TagValue: budgetExpense.Tag.Value,
 		})
 	}
 	return budgetExpenseRepresentationList

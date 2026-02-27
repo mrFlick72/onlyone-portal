@@ -33,7 +33,7 @@ func RegisterEndpoints(
 		    @DeleteMapping("/{id}")
 		    public ResponseEntity deleteBudgetExpense(@PathVariable("id") String id)
 	*/
-	r.PUT("/api/budget/expense", func(c *gin.Context) {
+	r.PUT("/budget/expense", func(c *gin.Context) {
 		var representation BudgetSearchCriteriaRepresentation
 
 		if err := c.ShouldBindJSON(&representation); err != nil {
@@ -52,7 +52,7 @@ func RegisterEndpoints(
 		c.JSON(http.StatusOK, SpentBudgetDomainToRepresentationModel(spentBudget))
 	})
 
-	r.PUT("/api/budget/expense/:id", func(c *gin.Context) {
+	r.PUT("/budget/expense/:id", func(c *gin.Context) {
 		var representation BudgetExpenseRepresentation
 
 		ctx := ContextFactoryConverter.CreateContextFromGin(c)
@@ -68,7 +68,7 @@ func RegisterEndpoints(
 		c.Status(http.StatusNoContent)
 	})
 
-	r.POST("/api/budget/expense", func(c *gin.Context) {
+	r.POST("/budget/expense", func(c *gin.Context) {
 		var representation BudgetExpenseRepresentation
 
 		ctx := ContextFactoryConverter.CreateContextFromGin(c)
@@ -84,7 +84,7 @@ func RegisterEndpoints(
 		c.Status(http.StatusCreated)
 	})
 
-	r.DELETE("/api/budget/expense/:id", func(c *gin.Context) {
+	r.DELETE("/budget/expense/:id", func(c *gin.Context) {
 		ctx := ContextFactoryConverter.CreateContextFromGin(c)
 		facade.DeleteBudgetExpense(ctx, c.Param("id"))
 		c.Status(http.StatusNoContent)
