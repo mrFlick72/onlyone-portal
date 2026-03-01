@@ -6,6 +6,7 @@ import (
 
 	aws_config "github.com/aws/aws-sdk-go-v2/config"
 	aws_dynamodb "github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/google/uuid"
 	"github.com/mrflick72/budget/budget-api/adapter/budget/dynamodb"
 	"github.com/mrflick72/budget/budget-api/adapter/tags/rest"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
@@ -36,10 +37,12 @@ func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
 	}
 
 	return &dynamodb.DynamoDbBudgetExpenseRepository{
-		TableName:               configurationManager.GetConfigFor("budget-api.dynamo-db.budget-expense.table-name"),
-		Client:                  aws_dynamodb.NewFromConfig(cfg),
-		BudgetExpenseIdProvider: &dynamodb.DynamoDbBudgetExpenseIdProvider{},
-		SearchTagRepository:     NewSearchTagRepository(),
+		TableName: configurationManager.GetConfigFor("budget-api.dynamo-db.budget-expense.table-name"),
+		Client:    aws_dynamodb.NewFromConfig(cfg),
+		BudgetExpenseIdProvider: &dynamodb.DynamoDbBudgetExpenseIdProvider{
+			SaltGenerator: func() string { return uuid.New().String() },
+		},
+		SearchTagRepository: NewSearchTagRepository(),
 	}
 }
 

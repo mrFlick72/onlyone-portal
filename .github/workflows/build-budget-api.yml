@@ -1,0 +1,28 @@
+name: build Budget API V2 (GoLang Version)
+
+on:
+  push: { }
+  workflow_dispatch: {}
+
+jobs:
+  build-tag-api:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: budget/budget-api
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      
+      - name: Set up Golang
+        uses: actions/setup-go@v6
+        with:
+          go-version: 1.25.1
+
+      - name: Build budget-api package
+        run: |
+          go build -o budget-api .
+
+      - name: Run tests
+        run: |
+          go test -tags test ./...

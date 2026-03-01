@@ -9,6 +9,10 @@ type Date struct {
 	t time.Time
 }
 
+func (d *Date) GetTime() time.Time {
+	return d.t
+}
+
 func (d *Date) GetFormattedDate() string {
 	return d.t.Format("02/01/2006")
 }

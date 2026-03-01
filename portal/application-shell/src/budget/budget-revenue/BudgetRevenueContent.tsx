@@ -1,7 +1,7 @@
 import React from "react";
 import BudgetRevenueRow from "./BudgetRevenueRow";
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
-import BudgetRevenue from "./domain/BudbetRevenue";
+import BudgetRevenue from "./domain/BudgetRevenue";
 
 interface BudgetRevenueTableProps {
     revenues: BudgetRevenue[];

@@ -7,8 +7,7 @@ import moment from "moment/moment";
 import FormDatePicker, { FormDateFormatPattern } from "../../components/form/FormDatePicker";
 import FormMoneyFormat from "../../components/form/FormMoneyFormat";
 import FormTextArea from "../../components/form/FormTextArea";
-import { B } from "react-router/dist/development/route-data-Cw8htKcF";
-import BudgetRevenue from "./domain/BudbetRevenue";
+import BudgetRevenue from "./domain/BudgetRevenue";
 
 interface BudgetRevenueFormProps {
     budgetRevenueData: BudgetRevenue;

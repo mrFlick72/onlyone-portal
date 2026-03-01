@@ -9,7 +9,8 @@ import (
 )
 
 type DynamoDbBudgetExpenseIdProvider struct {
-	saltGenerator func() string
+	SaltGenerator func() string 
+	
 }
 
 func (provider *DynamoDbBudgetExpenseIdProvider) GenerateIdFor(budgetExpense *expense.BudgetExpense) expense.BudgetExpenseId {
@@ -23,6 +24,6 @@ func (provider *DynamoDbBudgetExpenseIdProvider) partitionKeyFrom(year, month in
 }
 
 func (provider *DynamoDbBudgetExpenseIdProvider) rangeKeyFrom(day int) string {
-	rangeKey := fmt.Sprintf("%d_%s", day, provider.saltGenerator())
+	rangeKey := fmt.Sprintf("%d_%s", day, provider.SaltGenerator())
 	return base64.StdEncoding.EncodeToString([]byte(rangeKey))
 }

@@ -2,9 +2,8 @@ import React from "react"
 import { commonStyle } from "../../theme/ThemeProvider";
 
 
-import Select from "react-select";
+import Select, { GroupBase, OptionsOrGroups } from "react-select";
 import { Grid2, InputLabel } from "@mui/material";
-import { GroupBase, OptionsOrGroups } from "react-select/dist/declarations/src/types";
 
 export interface SelectOption {
     value: string
