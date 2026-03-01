@@ -3,6 +3,7 @@ package logging
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"sync"
 
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
@@ -28,13 +29,29 @@ func GetLoggerInstance() *Logger {
 
 	return loggerManager
 }
+
+func GetLoggerInstanceForComponentByTypeName(className string) *Logger {
+	manager = config.GetConfigurationManagerInstance()
+	return &Logger{
+		logger: new().logger.With("component", className),
+	}
+}
+
+func GetLoggerInstanceForComponentByType(obj any) *Logger {
+	manager = config.GetConfigurationManagerInstance()
+	typeName := reflect.TypeOf(obj).Elem().Name()
+
+	return &Logger{
+		logger: new().logger.With("component", typeName),
+	}
+}
+
 func logInit(f *os.File) *zap.SugaredLogger {
 
 	pe := zap.NewProductionEncoderConfig()
+	pe.EncodeTime = zapcore.ISO8601TimeEncoder
 
 	fileEncoder := zapcore.NewJSONEncoder(pe)
-
-	pe.EncodeTime = zapcore.ISO8601TimeEncoder
 	consoleEncoder := zapcore.NewConsoleEncoder(pe)
 
 	level := zap.InfoLevel
@@ -53,7 +70,10 @@ func logInit(f *os.File) *zap.SugaredLogger {
 
 	}
 
-	l := zap.New(core)
+	l := zap.New(core,
+		zap.AddCaller(),
+		zap.AddCallerSkip(1),
+	)
 
 	return l.Sugar()
 }
@@ -61,7 +81,7 @@ func logInit(f *os.File) *zap.SugaredLogger {
 func new() *Logger {
 	fileName := manager.GetConfigFor("logger.file-name")
 	var f *os.File
-	f, err := os.Create(fileName)
+	f, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		fmt.Println("log file does not exist")
 	}
@@ -99,5 +119,7 @@ func (impl *Logger) LogDebugfFor(format string, a ...any) {
 }
 
 func Dispose() {
-	panic("TODO it have to be implemented")
+	if loggerManager != nil {
+		loggerManager.logger.Sync()
+	}
 }

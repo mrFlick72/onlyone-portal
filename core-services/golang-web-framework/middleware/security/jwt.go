@@ -1,7 +1,6 @@
 package security
 
 import (
-	"log"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +18,7 @@ func SetUpOAuth2() gin.HandlerFunc {
 	}
 	role := configurationManager.GetConfigFor("user.required-role")
 	sets, _ := jwk.JwkSets()
-	log.Println("OAuth2 middleware set up with role:", role)
+	jwt_logger.LogInfofFor("OAuth2 middleware set up with role: %s", role)
 	return NewOAuth2Middleware(sets, role, []string{"/management/*"})
 }
 
@@ -30,22 +29,22 @@ func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string, ignored []stri
 			m := wild.MustCompile(path, wild.Extended())
 
 			if m.Match(ctx.FullPath()) {
-				log.Printf("skipping oauth2 evaluation for path: %s\n", path)
+				jwt_logger.LogInfofFor("skipping oauth2 evaluation for path: %s\n", path)
 				ctx.Next()
 				return
 			}
 		}
 		if ctx.Request.Method == "OPTIONS" {
-			log.Printf("skipping oauth2 evaluation for OPTIONS request\n")
+			jwt_logger.LogInfofFor("skipping oauth2 evaluation for OPTIONS request\n")
 			ctx.Next()
 			return
 		}
 
 		authorization := authorizationHeaderFor(ctx)
-		log.Printf("verifying token: %s\n", authorization)
+		jwt_logger.LogDebugfFor("verifying token: %s\n", authorization)
 		jwt, err := jwt.Parse([]byte(authorization), jwt.WithVerify(false))
 		if err != nil {
-			log.Printf("failed to parse jwt token: %v\n", err)
+			jwt_logger.LogErrorfFor("failed to parse jwt token: %v\n", err)
 			ctx.Status(401)
 			ctx.Abort()
 			return
@@ -53,32 +52,32 @@ func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string, ignored []stri
 
 		exp, ok := jwt.Expiration()
 		if !ok {
-			log.Printf("failed to fetch exp from token: %v\n", err)
+			jwt_logger.LogErrorfFor("failed to fetch exp from token: %v\n", err)
 			ctx.Status(401)
 			ctx.Abort()
 			return
 		}
 
 		if time.Now().After(exp) {
-			log.Printf("token is expired: %v\n", err)
+			jwt_logger.LogErrorfFor("token is expired: %v\n", err)
 			ctx.Status(401)
 			ctx.Abort()
 			return
 		}
 
 		userName := getClaimFromToken(jwt, "user_name")
-		log.Printf("authenticating user: %s\n", *userName)
+		jwt_logger.LogInfofFor("authenticating user: %s\n", *userName)
 
 		authorities := getClaimListFromToken(jwt, "authorities")
-		log.Printf("user %s has those authority %s\n", *userName, *authorities)
+		jwt_logger.LogInfofFor("user %s has those authority %s\n", *userName, *authorities)
 
 		if ok := contains(toStringSlice(*authorities), allowedAuthority); !ok {
-			log.Printf("user %s does not have required authority: %s\n", *userName, allowedAuthority)
+			jwt_logger.LogErrorfFor("user %s does not have required authority: %s\n", *userName, allowedAuthority)
 			ctx.Status(403)
 			ctx.Abort()
 			return
 		} else {
-			log.Printf("user %s has required authority: %s\nThe user has %s", *userName, allowedAuthority, *authorities)
+			jwt_logger.LogInfofFor("user %s has required authority: %s\nThe user has %s", *userName, allowedAuthority, *authorities)
 		}
 
 		ctx.Set("user", User{
@@ -87,7 +86,7 @@ func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string, ignored []stri
 			AccessToken: &authorization,
 		})
 
-		log.Printf("authenticated user: %s\n", *userName)
+		jwt_logger.LogInfofFor("authenticated user: %s\n", *userName)
 		ctx.Next()
 	}
 
@@ -96,7 +95,7 @@ func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string, ignored []stri
 func getClaimFromToken(token jwt.Token, claimName string) *string {
 	var claim string
 	if err := token.Get(claimName, &claim); err != nil {
-		log.Printf("failed to fetch private claim\n")
+		jwt_logger.LogErrorfFor("failed to fetch private claim: %v\n", err)
 		return nil
 	}
 	return &claim
@@ -105,7 +104,7 @@ func getClaimFromToken(token jwt.Token, claimName string) *string {
 func getClaimListFromToken(token jwt.Token, claimName string) *[]string {
 	var raw []interface{}
 	if err := token.Get(claimName, &raw); err != nil {
-		log.Println("failed to fetch claim authorities:", err)
+		jwt_logger.LogErrorfFor("failed to fetch claim authorities: %v\n", err)
 		return nil
 	}
 
@@ -113,7 +112,7 @@ func getClaimListFromToken(token jwt.Token, claimName string) *[]string {
 	for _, v := range raw {
 		s, ok := v.(string)
 		if !ok {
-			log.Println("element is not a string")
+			jwt_logger.LogErrorfFor("element is not a string")
 			return nil
 		}
 		roles = append(roles, s)
