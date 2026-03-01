@@ -19,10 +19,10 @@ var configurationManager = config.GetConfigurationManagerInstance()
 var logger = logging.GetLoggerInstance()
 
 func NewSearchTagRepository() tags.SearchTagRepository {
-	return &rest.RestSearchTagRepository{
-		Client:  &http.Client{},
-		BaseURL: configurationManager.GetConfigFor("tag-api.base-url"),
-	}
+	return rest.NewRestSearchTagRepository(
+		&http.Client{},
+		configurationManager.GetConfigFor("tag-api.base-url"),
+	)
 }
 
 func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
@@ -36,14 +36,14 @@ func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
 		panic("unable to load SDK config, " + err.Error())
 	}
 
-	return  &dynamodb.DynamoDbBudgetExpenseRepository{
-		TableName: configurationManager.GetConfigFor("budget-api.dynamo-db.budget-expense.table-name"),
-		Client:    aws_dynamodb.NewFromConfig(cfg),
-		BudgetExpenseIdProvider: &dynamodb.DynamoDbBudgetExpenseIdProvider{
+	return dynamodb.NewDynamoDbBudgetExpenseRepository(
+		configurationManager.GetConfigFor("budget-api.dynamo-db.budget-expense.table-name"),
+		aws_dynamodb.NewFromConfig(cfg),
+		&dynamodb.DynamoDbBudgetExpenseIdProvider{
 			SaltGenerator: func() string { return uuid.New().String() },
 		},
-		SearchTagRepository: NewSearchTagRepository(),
-	}
+		NewSearchTagRepository(),
+	)
 
 }
 

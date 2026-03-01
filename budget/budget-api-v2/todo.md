@@ -1,4 +1,4 @@
 - [x] search tags rest repository
-- [ ] wire repository
+- [x] wire repository
 - [ ] log endpoint
 - [ ] why log are not there
