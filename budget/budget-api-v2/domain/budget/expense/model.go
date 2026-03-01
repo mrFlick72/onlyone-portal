@@ -1,6 +1,7 @@
 package expense
 
 import (
+	"slices"
 
 	"github.com/mrflick72/budget/budget-api/domain/money"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
@@ -179,6 +180,9 @@ func (spentBudget *SpentBudget) DailyBudgetExpenseList() []DailyBudgetExpense {
 			Total:             total,
 		})
 	}
+		slices.SortFunc(resultList, func(a, b DailyBudgetExpense) int {
+			return a.Date.GetTime().Compare(b.Date.GetTime())
+		})
 	return resultList
 }
 

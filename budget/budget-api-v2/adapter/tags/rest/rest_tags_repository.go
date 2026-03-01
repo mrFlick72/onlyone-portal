@@ -50,8 +50,6 @@ func (repository *RestSearchTagRepository) GetTagBy(ctx context.Context, key str
 		logger.LogErrorfFor("Error while un marshalling tag API response: %s", err)
 		return nil, err
 	}
-	// todo: this is not efficient, we should have an endpoint to get a tag by key
-	logger.LogInfofFor("Received search tags from tag API: %v", searchTags)
 	for _, searchTag := range searchTags {
 		if searchTag.Key == key {
 			return &searchTag, nil
