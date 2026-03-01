@@ -51,13 +51,7 @@ func newDynamoDBClient() (*dynamodb.Client, error) {
 var TableName = "BUDGET_EXPENSE_TABLE_NAME_STAGING"
 
 func newBudgetExpenseRepository(budgetExpenseIdProvider expense.BudgetExpenseIdProvider, searchTagRepository tags.SearchTagRepository) *DynamoDbBudgetExpenseRepository {
-	return &DynamoDbBudgetExpenseRepository{
-		// Initialize with mock or test dependencies as needed
-		TableName:               TableName,
-		Client:                  client,
-		BudgetExpenseIdProvider: budgetExpenseIdProvider,
-		SearchTagRepository:     searchTagRepository,
-	}
+	return NewDynamoDbBudgetExpenseRepository(TableName, client, budgetExpenseIdProvider, searchTagRepository).(*DynamoDbBudgetExpenseRepository)	
 }
 func setupTestDynamoDBTable() error {
 	// it is an attempt to clean up possible dirty state before creating
