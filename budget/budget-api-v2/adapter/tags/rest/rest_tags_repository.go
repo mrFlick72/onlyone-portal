@@ -23,7 +23,7 @@ func NewRestSearchTagRepository(client *http.Client, baseURL string) tags.Search
 	return &RestSearchTagRepository{
 		Client:  client,
 		BaseURL: baseURL,
-		logger: logging.GetLoggerInstance(),
+		logger: logging.GetLoggerInstanceForComponentByType(&RestSearchTagRepository{}),
 	}
 }
 

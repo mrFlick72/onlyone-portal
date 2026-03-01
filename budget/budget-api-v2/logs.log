@@ -1,5 +1,9 @@
-{"level":"info","ts":1772383694.204407,"caller":"dynamodb/bynamo_db_budget_expense_repository.go:80","msg":"Parsing tag key: 2350919f-4280-429b-9f7f-5cbf159fe8fe"}
-{"level":"info","ts":1772383694.2966766,"caller":"dynamodb/bynamo_db_budget_expense_repository.go:80","msg":"Parsing tag key: 3f955466-822f-4445-a1a9-ec46fbcaa060"}
-{"level":"info","ts":1772383694.3202543,"caller":"dynamodb/bynamo_db_budget_expense_repository.go:80","msg":"Parsing tag key: 7dc1a341-e14d-448b-9075-dea3e497a1c6"}
-{"level":"info","ts":1772383694.345148,"caller":"dynamodb/bynamo_db_budget_expense_repository.go:80","msg":"Parsing tag key: 27e427fe-f03f-4d7a-9560-a7289c205540"}
-{"level":"info","ts":1772383694.3680758,"caller":"dynamodb/bynamo_db_budget_expense_repository.go:80","msg":"Parsing tag key: 27e427fe-f03f-4d7a-9560-a7289c205540"}
+
+{"level":"info","ts":1772400973.0188851,"caller":"security/jwt.go:69","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":1772400973.0189533,"caller":"security/jwt.go:72","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":1772400973.0189688,"caller":"security/jwt.go:80","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER\nThe user has [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]","component":"Jwt"}
+{"level":"info","ts":1772400973.0189793,"caller":"security/jwt.go:89","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":1772401063.7611728,"caller":"security/jwt.go:69","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":1772401063.7612598,"caller":"security/jwt.go:72","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":1772401063.7612805,"caller":"security/jwt.go:80","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER\nThe user has [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]","component":"Jwt"}
+{"level":"info","ts":1772401063.7612922,"caller":"security/jwt.go:89","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}

@@ -16,7 +16,7 @@ func RegisterEndpoints(
 	facade expense.BudgetExpenseActions,
 ) *gin.Engine {
 
-	var logger = logging.GetLoggerInstance()
+	var logger = logging.GetLoggerInstanceForComponentByTypeName("web.RegisterEndpoints")
 
 	r.PUT("/api/budget/expense", func(c *gin.Context) {
 		var representation BudgetSearchCriteriaRepresentation

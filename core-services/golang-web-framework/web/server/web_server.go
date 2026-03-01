@@ -2,12 +2,12 @@ package server
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/magangement"
 
@@ -15,6 +15,7 @@ import (
 )
 
 var configurationManager = config.GetConfigurationManagerInstance()
+var web_server_logger = logging.GetLoggerInstanceForComponentByTypeName("WebServerProvisioner")
 
 type WebServerProvisioner struct {
 	router *gin.Engine
@@ -32,16 +33,16 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     strings.Split(configurationManager.GetConfigFor("cors.allowed.origins"), ","),
 		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin","Authorization", "Content-Type", "Accept"},
+		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type", "Accept"},
 		AllowCredentials: true,
 		MaxAge:           60 * time.Minute,
 	}))
 
-	log.Println("Setting up OAuth2 middleware")
+	web_server_logger.LogInfofFor("Setting up OAuth2 middleware")
 	router.Use(security.SetUpOAuth2())
 
 	magangement.RegisterEndpoints(router)
-	
+
 	wsp.router = router
 
 	return router
@@ -51,7 +52,7 @@ func (wsp *WebServerProvisioner) StartEngine() error {
 	port := configurationManager.GetConfigFor("server.port")
 	serverBinder := fmt.Sprintf("0.0.0.0:%s", port)
 	if err := wsp.router.Run(serverBinder); err != nil {
-		log.Fatalf("failed to run server: %v", err)
+		web_server_logger.LogErrorfFor("failed to run server: %v", err)
 	}
 	return nil
 }

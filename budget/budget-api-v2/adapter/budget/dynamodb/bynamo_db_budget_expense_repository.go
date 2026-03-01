@@ -34,7 +34,7 @@ func NewDynamoDbBudgetExpenseRepository(
 		Client:                  Client,
 		BudgetExpenseIdProvider: BudgetExpenseIdProvider,
 		SearchTagRepository:     SearchTagRepository,
-		logger:                  logging.GetLoggerInstance(),
+		logger:                  logging.GetLoggerInstanceForComponentByType(&DynamoDbBudgetExpenseRepository{}),
 	}
 }
 
@@ -89,8 +89,6 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Contex
 		repository.logger.LogErrorfFor("invalid data format in BudgetExpense: %v", err)
 		return nil, errors.New("invalid data format in BudgetExpense")
 	}
-
-	repository.logger.LogInfofFor("Parsing tag key: %s", item["tag"].(*types.AttributeValueMemberS).Value)
 
 	tag, err := repository.SearchTagRepository.GetTagBy(ctx, item["tag"].(*types.AttributeValueMemberS).Value)
 	if err != nil {
