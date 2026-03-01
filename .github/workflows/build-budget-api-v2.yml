@@ -28,6 +28,7 @@ jobs:
 
       - name: Build budget-api-v2 package
         run: |
+          cd budget/budget-api-v2
           go build -o budget-api-v2 .
 
       - name: Run tests
