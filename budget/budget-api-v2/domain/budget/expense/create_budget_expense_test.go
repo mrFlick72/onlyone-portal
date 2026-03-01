@@ -29,14 +29,14 @@ func TestWhenANewBudgetExpenseISCreated(t *testing.T) {
 
 	ctx := testutils.NewUserContext()
 
-	mockedRepository.On("Save", &ctx, &aBudgetExpense).Return(nil)
+	mockedRepository.On("Save", ctx, &aBudgetExpense).Return(nil)
 
-	err := uut.Execute(&ctx, &aBudgetExpense)
+	err := uut.Execute(ctx, &aBudgetExpense)
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "A_USER_NAME", aBudgetExpense.UserName)
 	assert.Equal(t, "A_BUDGET_ID", aBudgetExpense.Id)
-	mockedRepository.AssertCalled(t, "Save", &ctx, &aBudgetExpense)
+	mockedRepository.AssertCalled(t, "Save", ctx, &aBudgetExpense)
 }
 
 func TestWhenANewBudgetExpenseCreationFails(t *testing.T) {
@@ -58,10 +58,10 @@ func TestWhenANewBudgetExpenseCreationFails(t *testing.T) {
 	ctx := testutils.NewUserContext()
 
 	saveError := errors.New("Budget Expense Save operation fails")
-	mockedRepository.On("Save", &ctx, &aBudgetExpense).Return(saveError)
+	mockedRepository.On("Save", ctx, &aBudgetExpense).Return(saveError)
 
-	err := uut.Execute(&ctx, &aBudgetExpense)
+	err := uut.Execute(ctx, &aBudgetExpense)
 
 	assert.Equal(t, saveError, err)
-	mockedRepository.AssertCalled(t, "Save", &ctx, &aBudgetExpense)
+	mockedRepository.AssertCalled(t, "Save", ctx, &aBudgetExpense)
 }

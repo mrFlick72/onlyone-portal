@@ -35,10 +35,8 @@ func TestFindBudgetExpenseByDateRange(t *testing.T) {
 	}
 
 	result, err := repo.FindByDateRange(ctxUser, testutils.SafeDateFor("01/02/2018"), testutils.SafeDateFor("28/02/2019"), []tags.SearchTagKey{})
-	fmt.Println("Result length:", result)
-	fmt.Println("Error:", err)
 	assert.Equal(t, nil, err)
-	assert.Equal(t, 11, len(*result))
+	assert.Equal(t, 11, len(result))
 }
 
 
@@ -109,7 +107,6 @@ func TestSaveANewBudgetExpense(t *testing.T) {
 		Tag:      tags.SearchTag{Key: "TAG", Value: "TAG"},
 	}
 
-	fmt.Println("Input Id:", input.Id)
 	// Implement the test logic here
 	expected := expense.BudgetExpense{
 		Id:       expense.BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU"),

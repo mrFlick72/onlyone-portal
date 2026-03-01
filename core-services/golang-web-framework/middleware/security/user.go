@@ -14,8 +14,8 @@ type User struct {
 	AccessToken *string
 }
 
-func GetCurrentUser(ctx *context.Context) (*User, error) {
-	if v := (*ctx).Value("user"); v != nil {
+func GetCurrentUser(ctx context.Context) (*User, error) {
+	if v := ctx.Value("user"); v != nil {
 		user := v.(User)
 		return &user, nil
 	} else {

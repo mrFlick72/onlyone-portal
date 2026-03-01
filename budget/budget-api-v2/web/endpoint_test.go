@@ -124,7 +124,7 @@ func TestFindBudgetExpensesByTimeRange(t *testing.T) {
 	RegisterEndpoints(r, contextFactoryConverter, facade)
 
 	expected := &expense.SpentBudget{
-		BudgetExpenseList: &[]expense.BudgetExpense{
+		BudgetExpenseList: []expense.BudgetExpense{
 			{
 				Id:       "123-456",
 				UserName: "USER",
@@ -143,7 +143,7 @@ func TestFindBudgetExpensesByTimeRange(t *testing.T) {
 			},
 		},
 
-		SearchTags: &map[tags.SearchTagKey]tags.SearchTagValue{
+		SearchTags: map[tags.SearchTagKey]tags.SearchTagValue{
 			"tagKey": "tagValue",
 		},
 	}
