@@ -19,7 +19,7 @@ type RestSearchTagRepository struct {
 	BaseURL string
 }
 
-func (repository *RestSearchTagRepository) GetTagBy(ctx *context.Context, key string) (*tags.SearchTag, error) {
+func (repository *RestSearchTagRepository) GetTagBy(ctx context.Context, key string) (*tags.SearchTag, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/api/tags", repository.BaseURL), nil)
 	if err != nil {
 		logger.LogErrorfFor("Error while calling tag API: %s", err)
@@ -50,8 +50,6 @@ func (repository *RestSearchTagRepository) GetTagBy(ctx *context.Context, key st
 		logger.LogErrorfFor("Error while un marshalling tag API response: %s", err)
 		return nil, err
 	}
-	// todo: this is not efficient, we should have an endpoint to get a tag by key
-	logger.LogInfofFor("Received search tags from tag API: %v", searchTags)
 	for _, searchTag := range searchTags {
 		if searchTag.Key == key {
 			return &searchTag, nil

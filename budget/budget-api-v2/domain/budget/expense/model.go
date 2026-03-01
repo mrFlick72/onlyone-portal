@@ -1,6 +1,7 @@
 package expense
 
 import (
+	"slices"
 
 	"github.com/mrflick72/budget/budget-api/domain/money"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
@@ -29,8 +30,8 @@ import (
 	}
 */
 type SpentBudget struct {
-	BudgetExpenseList *[]BudgetExpense
-	SearchTags        *map[tags.SearchTagKey]tags.SearchTagValue
+	BudgetExpenseList []BudgetExpense
+	SearchTags        map[tags.SearchTagKey]tags.SearchTagValue
 }
 
 /*
@@ -42,8 +43,8 @@ public SpentBudget(List<BudgetExpense> budgetExpenseList,
 	}
 */
 func NewSpentBudget(
-	budgetExpenseList *[]BudgetExpense,
-	searchTags *[]tags.SearchTag) *SpentBudget {
+	budgetExpenseList []BudgetExpense,
+	searchTags []tags.SearchTag) *SpentBudget {
 
 	return &SpentBudget{
 		BudgetExpenseList: budgetExpenseList,
@@ -69,14 +70,14 @@ private Map adaptSearchTag(List<SearchTag> searchTags) {  // todo
 	            ).orElse(new HashMap<>());
 	}
 */
-func adaptSearchTagFormListToMap(searchTags *[]tags.SearchTag) *map[tags.SearchTagKey]tags.SearchTagValue {
+func adaptSearchTagFormListToMap(searchTags []tags.SearchTag) map[tags.SearchTagKey]tags.SearchTagValue {
 	result := make(map[tags.SearchTagKey]tags.SearchTagValue)
 
-	for _, searchTag := range *searchTags {
+	for _, searchTag := range searchTags {
 		result[searchTag.Key] = searchTag.Value
 	}
 
-	return &result
+	return result
 }
 
 /*
@@ -89,7 +90,7 @@ public Money total() { // todo dote
 */
 func (spentBudget *SpentBudget) Total() money.Money {
 	total := money.Zero()
-	for _, budgetExpense := range *spentBudget.BudgetExpenseList {
+	for _, budgetExpense := range spentBudget.BudgetExpenseList {
 		total = total.Plus(budgetExpense.Amount)
 	}
 	return total
@@ -106,7 +107,7 @@ public Map<SearchTag, Money> totalForSearchTags() { // todo done
 
 func (spentBudget *SpentBudget) TotalForSearchTags() map[tags.SearchTag]money.Money {
 	result := make(map[tags.SearchTag]money.Money)
-	for _, budgetExpense := range *spentBudget.BudgetExpenseList {
+	for _, budgetExpense := range spentBudget.BudgetExpenseList {
 		searchTag := spentBudget.findSearchTagFor(budgetExpense.Tag.Key)
 		if searchTag != nil {
 			currentTotal, exists := result[*searchTag]
@@ -128,7 +129,7 @@ private SearchTag findSearchTagFor(UserName userName, String searchTag) {  // to
 	}
 */
 func (spentBudget *SpentBudget) findSearchTagFor(searchTagKey string) *tags.SearchTag {
-	value, ok := (*spentBudget.SearchTags)[searchTagKey]
+	value, ok := spentBudget.SearchTags[searchTagKey]
 	if !ok {
 		return nil
 	}
@@ -159,7 +160,7 @@ public List<DailyBudgetExpense> dailyBudgetExpenseList() {  // todo done
 */
 func (spentBudget *SpentBudget) DailyBudgetExpenseList() []DailyBudgetExpense {
 	result := make(map[date.Date][]BudgetExpense)
-	for _, budgetExpense := range *spentBudget.BudgetExpenseList {
+	for _, budgetExpense := range spentBudget.BudgetExpenseList {
 		key := budgetExpense.Date
 		value, exists := result[key]
 		if !exists {
@@ -179,6 +180,9 @@ func (spentBudget *SpentBudget) DailyBudgetExpenseList() []DailyBudgetExpense {
 			Total:             total,
 		})
 	}
+		slices.SortFunc(resultList, func(a, b DailyBudgetExpense) int {
+			return a.Date.GetTime().Compare(b.Date.GetTime())
+		})
 	return resultList
 }
 

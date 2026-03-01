@@ -36,7 +36,7 @@ func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
 		panic("unable to load SDK config, " + err.Error())
 	}
 
-	return &dynamodb.DynamoDbBudgetExpenseRepository{
+	return  &dynamodb.DynamoDbBudgetExpenseRepository{
 		TableName: configurationManager.GetConfigFor("budget-api.dynamo-db.budget-expense.table-name"),
 		Client:    aws_dynamodb.NewFromConfig(cfg),
 		BudgetExpenseIdProvider: &dynamodb.DynamoDbBudgetExpenseIdProvider{
@@ -44,6 +44,7 @@ func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
 		},
 		SearchTagRepository: NewSearchTagRepository(),
 	}
+
 }
 
 func NewBudgetExpenseActionsFacade() expense.BudgetExpenseActions {
