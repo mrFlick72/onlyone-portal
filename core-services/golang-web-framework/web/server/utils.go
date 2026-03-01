@@ -7,23 +7,23 @@ import (
 )
 
 type ContextFactoryConverter interface {
-	CreateContextFromGin(c *gin.Context) *context.Context
+	CreateContextFromGin(c *gin.Context) context.Context
 }
 
 type GinContextToPlainContextFactory struct{}
 
-func (f *GinContextToPlainContextFactory) CreateContextFromGin(c *gin.Context) *context.Context {
+func (f *GinContextToPlainContextFactory) CreateContextFromGin(c *gin.Context) context.Context {
 	newCtx := c.Request.Context()
 	for k, v := range c.Keys {
 		newCtx = context.WithValue(newCtx, k, v)
 	}
-	return &newCtx
+	return newCtx
 }
 
-func CopyGinKeysToRequestContext(c *gin.Context) *context.Context {
+func CopyGinKeysToRequestContext(c *gin.Context) context.Context {
 	newCtx := c.Request.Context()
 	for k, v := range c.Keys {
 		newCtx = context.WithValue(newCtx, k, v)
 	}
-	return &newCtx
+	return newCtx
 }

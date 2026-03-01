@@ -3,7 +3,7 @@ package dynamodb
 import (
 	"context"
 	"errors"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -26,7 +26,7 @@ type DynamoDbBudgetExpenseRepository struct {
 	SearchTagRepository     tags.SearchTagRepository
 }
 
-func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx *context.Context, budgetExpenseId expense.BudgetExpenseId) (*expense.BudgetExpense, error) {
+func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx context.Context, budgetExpenseId expense.BudgetExpenseId) (*expense.BudgetExpense, error) {
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
 		logger.LogErrorfFor("Error to get a valid user in the context: %v", err)
@@ -65,7 +65,7 @@ func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx *context.Context,
 	return repository.fromDynamo(ctx, item)
 }
 
-func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx *context.Context, item map[string]types.AttributeValue) (*expense.BudgetExpense, error) {
+func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Context, item map[string]types.AttributeValue) (*expense.BudgetExpense, error) {
 	date, err := date.IsoDateFor(item["transaction_date"].(*types.AttributeValueMemberS).Value)
 	if err != nil {
 		logger.LogErrorfFor("Error parsing transaction_date: %v", err)
@@ -96,7 +96,7 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx *context.Conte
 	return budgetExpense, nil
 }
 
-func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.Context, start date.Date, end date.Date, searchTags []tags.SearchTagKey) (*[]expense.BudgetExpense, error) {
+func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx context.Context, start date.Date, end date.Date, searchTags []tags.SearchTagKey) ([]expense.BudgetExpense, error) {
 	// Implementation to interact with DynamoDB and retrieve budget expenses by date range and search tags
 	budgetExpenses := make([]expense.BudgetExpense, 0)
 	user, err := security.GetCurrentUser(ctx)
@@ -136,11 +136,12 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.
 			}
 		}
 	}
-	sort.SliceStable(budgetExpenses, func(i, j int) bool {
-		return budgetExpenses[i].Date.GetTime().Before(budgetExpenses[j].Date.GetTime())
+	slices.SortFunc(budgetExpenses, func(a, b expense.BudgetExpense) int {
+		return a.Date.GetTime().Compare(b.Date.GetTime())
 	})
+
 	// Placeholder return
-	return &budgetExpenses, nil
+	return budgetExpenses, nil
 }
 
 func (repository *DynamoDbBudgetExpenseRepository) partitionKeysForDateRangeAndUser(idProvider *DynamoDbBudgetExpenseIdProvider, start, end date.Date, userName security.UserName) []string {
@@ -161,7 +162,7 @@ func (repository *DynamoDbBudgetExpenseRepository) partitionKeysForDateRangeAndU
 	return partitionKeys
 }
 
-func (repository *DynamoDbBudgetExpenseRepository) Save(ctx *context.Context, budgetExpense *expense.BudgetExpense) error {
+func (repository *DynamoDbBudgetExpenseRepository) Save(ctx context.Context, budgetExpense *expense.BudgetExpense) error {
 	isNew := false
 	if budgetExpense.Id == "" {
 		isNew = true
@@ -201,13 +202,13 @@ func (repository *DynamoDbBudgetExpenseRepository) Save(ctx *context.Context, bu
 		}
 	}
 
-	_, err = repository.Client.PutItem(*ctx, queryInput)
+	_, err = repository.Client.PutItem(ctx, queryInput)
 
 	// Implementation to save a budget expense to DynamoDB
 	return err
 }
 
-func (repository *DynamoDbBudgetExpenseRepository) Delete(ctx *context.Context, idBudgetExpense expense.BudgetExpenseId) error {
+func (repository *DynamoDbBudgetExpenseRepository) Delete(ctx context.Context, idBudgetExpense expense.BudgetExpenseId) error {
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
 		return err
@@ -219,7 +220,7 @@ func (repository *DynamoDbBudgetExpenseRepository) Delete(ctx *context.Context, 
 		return err
 	}
 
-	_, err = repository.Client.DeleteItem(*ctx, &dynamodb.DeleteItemInput{
+	_, err = repository.Client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
 		TableName: &repository.TableName,
 		Key: map[string]types.AttributeValue{
 			"pk":        &types.AttributeValueMemberS{Value: pk},

@@ -38,7 +38,7 @@ func TestFindBudgetExpenseByDateRange(t *testing.T) {
 	fmt.Println("Result length:", result)
 	fmt.Println("Error:", err)
 	assert.Equal(t, nil, err)
-	assert.Equal(t, 11, len(*result))
+	assert.Equal(t, 11, len(result))
 }
 
 

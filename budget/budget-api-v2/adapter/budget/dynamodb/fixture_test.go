@@ -141,7 +141,7 @@ func loadBudgetExpensesFromCSVFile(filePath string, mockedBudgetExpenseIdProvide
 	return nil
 }
 
-func searchTagMockRepositorySetup(ctx *context.Context, mockSearchTagRepository *tags.SearchTagRepositoryMock) {
+func searchTagMockRepositorySetup(ctx context.Context, mockSearchTagRepository *tags.SearchTagRepositoryMock) {
 	mockSearchTagRepository.On("GetTagBy", ctx, "super-market").Return(&tags.SearchTag{Key: "super-market", Value: "super-market"}, nil)
 	mockSearchTagRepository.On("GetTagBy", ctx, "dinner").Return(&tags.SearchTag{Key: "dinner", Value: "dinner"}, nil)
 	mockSearchTagRepository.On("GetTagBy", ctx, "lunch").Return(&tags.SearchTag{Key: "lunch", Value: "lunch"}, nil)
