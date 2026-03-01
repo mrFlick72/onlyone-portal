@@ -1,5 +1,5 @@
 import { getRevenueApiBaseUrl } from "../../../config/ConfigLoader";
-import BudgetRevenue from "./BudbetRevenue";
+import BudgetRevenue from "./BudgetRevenue";
 
 const BUDGET_REVENUE_URI = (baseUrl: string, budgetRevenueId?: string) => budgetRevenueId ?
     `${baseUrl}/budget/revenue/${budgetRevenueId}` :

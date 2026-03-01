@@ -1,8 +1,8 @@
 import {getBudgetApiBaseUrl} from "../../config/ConfigLoader";
 
 const BUDGET_EXPENSE_URI = (baseUrl, budgetExpenseId) => budgetExpenseId ?
-    `${baseUrl}/budget/expense/${budgetExpenseId}` :
-    `${baseUrl}/budget/expense`
+    `${baseUrl}/api/budget/expense/${budgetExpenseId}` :
+    `${baseUrl}/api/budget/expense`
 
 export async function saveBudgetExpense(budgetExpense) {
     const baseUrl = await getBudgetApiBaseUrl();

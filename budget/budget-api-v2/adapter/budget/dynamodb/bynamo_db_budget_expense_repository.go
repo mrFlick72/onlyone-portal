@@ -3,7 +3,7 @@ package dynamodb
 import (
 	"context"
 	"errors"
-	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -78,9 +78,9 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx *context.Conte
 		return nil, errors.New("invalid data format in BudgetExpense")
 	}
 
-	logger.LogInfofFor("Parsing tag key: %s", item["tag"].(*types.AttributeValueMemberS).Value)	
+	logger.LogInfofFor("Parsing tag key: %s", item["tag"].(*types.AttributeValueMemberS).Value)
 
-	tag,err := repository.SearchTagRepository.GetTagBy(ctx, item["tag"].(*types.AttributeValueMemberS).Value)
+	tag, err := repository.SearchTagRepository.GetTagBy(ctx, item["tag"].(*types.AttributeValueMemberS).Value)
 	if err != nil {
 		logger.LogErrorfFor("Error getting tag: %v", err)
 		return nil, errors.New("invalid tag in BudgetExpense")
@@ -101,7 +101,7 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.
 	budgetExpenses := make([]expense.BudgetExpense, 0)
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
-		fmt.Println("Error getting current user:", err)
+		logger.LogErrorfFor("Error getting current user: %v", err)
 		return nil, err
 	}
 	// ensure provider implements DynamoDbBudgetExpenseIdProvider when needed
@@ -109,7 +109,6 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.
 	// generate partition key for the query
 
 	partitionKeys := repository.partitionKeysForDateRangeAndUser(idProvider, start, end, *user.UserName)
-	fmt.Println("Partition keys to query:", partitionKeys)
 	for _, pk := range partitionKeys {
 		// For simplicity, returning nil. Actual implementation would query DynamoDB.
 		input := &dynamodb.QueryInput{
@@ -137,7 +136,9 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx *context.
 			}
 		}
 	}
-
+	sort.SliceStable(budgetExpenses, func(i, j int) bool {
+		return budgetExpenses[i].Date.GetTime().Before(budgetExpenses[j].Date.GetTime())
+	})
 	// Placeholder return
 	return &budgetExpenses, nil
 }

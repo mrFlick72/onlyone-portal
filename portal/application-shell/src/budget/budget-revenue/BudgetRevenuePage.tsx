@@ -12,7 +12,7 @@ import SaveBudgetRevenuePopUp from "./SaveBudgetRevenuePopUp";
 import Menu from "../../components/menu/Menu";
 import OpenPopUpMenuItem from "../../components/menu/OpenPopUpMenuItem";
 import { FormDateFormatPattern } from "../../components/form/FormDatePicker";
-import BudgetRevenue from "./domain/BudbetRevenue";
+import BudgetRevenue from "./domain/BudgetRevenue";
 interface BudgetRevenuePageProps {
     messageRegistry: any;
 }

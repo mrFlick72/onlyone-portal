@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 
 func TestFindBudgetExpenseByDateRange(t *testing.T) {	
 	mockedBudgetExpenseIdProvider := &DynamoDbBudgetExpenseIdProvider{
-		saltGenerator: func() string { return uuid.New().String() },
+		SaltGenerator: func() string { return uuid.New().String() },
 	}
 	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
 	searchTagMockRepositorySetup(ctxUser, mockSearchTagRepository)
@@ -223,6 +223,7 @@ func TestDeleteBudgetExpense(t *testing.T) {
 
 	// Implement the test logic here
 	budgetExpense := expense.BudgetExpense{
+		Id:       expense.BudgetExpenseId("MjAxOF8yX1VTRVI=-MTJfQV9TQUxU"),
 		UserName: "testuser",
 		Date:     testutils.SafeDateFor("01/01/2024"),
 		Amount:   testutils.SafeMoneyFor("10.50"),

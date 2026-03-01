@@ -11,7 +11,7 @@ import (
 
 func TestANewBudgetIdCreation(t *testing.T) {
 	provider := &DynamoDbBudgetExpenseIdProvider{
-		saltGenerator: func() string { return "A_SALT" },
+		SaltGenerator: func() string { return "A_SALT" },
 	}
 	budgetExpense := expense.BudgetExpense{
 		UserName: "USER",

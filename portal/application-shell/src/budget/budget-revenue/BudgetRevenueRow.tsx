@@ -2,7 +2,7 @@ import React from "react"
 import { Button, ButtonGroup, TableCell, TableRow } from "@mui/material";
 import { Delete, Edit } from "@mui/icons-material";
 import { v1 as uuidv1 } from "uuid";
-import BudgetRevenue from "./domain/BudbetRevenue";
+import BudgetRevenue from "./domain/BudgetRevenue";
 
 interface BudgetRevenueRowProps {
     revenue: BudgetRevenue

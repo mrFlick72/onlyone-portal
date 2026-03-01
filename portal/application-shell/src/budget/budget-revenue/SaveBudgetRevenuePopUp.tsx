@@ -1,9 +1,9 @@
 import React from "react"
 import { Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
-import { AddShoppingCart } from "@mui/icons-material";
 import BudgetRevenueForm from "./BudgetRevenueForm";
 import YesAndNoButtonGroup from "../../components/layout/YesAndNoButtonGroup";
-import BudgetRevenue from "./domain/BudbetRevenue";
+import BudgetRevenue from "./domain/BudgetRevenue";
+import { AddShoppingCart } from "@mui/icons-material";
 
 interface SaveBudgetRevenuePopUpProps {
     budgetRevenue: BudgetRevenue;
