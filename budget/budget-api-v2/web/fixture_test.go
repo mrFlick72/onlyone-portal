@@ -14,22 +14,22 @@ type BudgetExpenseActionsMock struct {
 	mock.Mock
 }
 
-func (mock *BudgetExpenseActionsMock) CreateBudgetExpense(ctx *context.Context, budgetExpense *expense.BudgetExpense) error {
+func (mock *BudgetExpenseActionsMock) CreateBudgetExpense(ctx context.Context, budgetExpense *expense.BudgetExpense) error {
 	args := mock.Called(ctx, budgetExpense)
 	return args.Error(0)
 }
 
-func (mock *BudgetExpenseActionsMock) UpdateBudgetExpense(ctx *context.Context, budgetExpense *expense.BudgetExpense) error {
+func (mock *BudgetExpenseActionsMock) UpdateBudgetExpense(ctx context.Context, budgetExpense *expense.BudgetExpense) error {
 	args := mock.Called(ctx, budgetExpense)
 	return args.Error(0)
 }
 
-func (mock *BudgetExpenseActionsMock) FindSpentBudget(ctx *context.Context, month date.Month, year date.Year, searchTagKeys []tags.SearchTagKey) (*expense.SpentBudget, error) {
+func (mock *BudgetExpenseActionsMock) FindSpentBudget(ctx context.Context, month date.Month, year date.Year, searchTagKeys []tags.SearchTagKey) (*expense.SpentBudget, error) {
 	args := mock.Called(ctx, month, year, searchTagKeys)
 	return args.Get(0).(*expense.SpentBudget), args.Error(1)
 }
 
-func (mock *BudgetExpenseActionsMock) DeleteBudgetExpense(ctx *context.Context, id expense.BudgetExpenseId) error {
+func (mock *BudgetExpenseActionsMock) DeleteBudgetExpense(ctx context.Context, id expense.BudgetExpenseId) error {
 	args := mock.Called(ctx, id)
 	return args.Error(0)
 }	
@@ -38,7 +38,7 @@ type ContextFactoryConverterMock struct {
 	mock.Mock
 }
 
-func (mock *ContextFactoryConverterMock) CreateContextFromGin(c *gin.Context) *context.Context {
+func (mock *ContextFactoryConverterMock) CreateContextFromGin(c *gin.Context) context.Context {
 	args := mock.Called(c)
-	return args.Get(0).(*context.Context)
+	return args.Get(0).(context.Context)
 }	

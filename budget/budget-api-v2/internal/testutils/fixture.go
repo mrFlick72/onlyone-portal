@@ -33,10 +33,10 @@ func SafeMoneyFor(moneyStr string) money.Money {
 	return m
 }
 
-func NewStubbedContextWith(userName security.UserName) *context.Context {
+func NewStubbedContextWith(userName security.UserName) context.Context {
 	ctx := context.Background()
 	user := security.User{UserName: &userName}
 	newCtx := context.WithValue(ctx, "user", user)
 
-	return &newCtx
+	return newCtx
 }
