@@ -3,7 +3,6 @@ package dynamodb
 import (
 	"context"
 	"errors"
-	"slices"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -136,9 +135,6 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx context.C
 			}
 		}
 	}
-	slices.SortFunc(budgetExpenses, func(a, b expense.BudgetExpense) int {
-		return a.Date.GetTime().Compare(b.Date.GetTime())
-	})
 
 	// Placeholder return
 	return budgetExpenses, nil

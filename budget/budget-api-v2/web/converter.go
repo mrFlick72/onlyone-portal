@@ -1,6 +1,6 @@
 package web
 
-import (
+import (	
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
 	"github.com/mrflick72/budget/budget-api/domain/money"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
@@ -45,6 +45,7 @@ func SpentBudgetDomainToRepresentationModel(spentBudget *expense.SpentBudget) *S
 			Total:                           dailyBudgetExpense.Total.StringifyAmount(),
 		}
 		dailyBudgetExpenseRepresentations = append(dailyBudgetExpenseRepresentations, dailyBudgetExpenseRepresentation)
+	
 	}
 
 	totalBySearchTagDetails := make([]TotalBySearchTagDetail, 0)
