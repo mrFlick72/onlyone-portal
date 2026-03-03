@@ -6,17 +6,19 @@ import (
 
 	"github.com/dgraph-io/ristretto"
 )
-
+	// Get(key string) (string, error)
+	// Set(key string, value string) error
+	// Evict(key string) error
 type RistrettoCacheProvider struct {
 	Cache *ristretto.Cache
 }
 
-func (provider *RistrettoCacheProvider) Get(key string) (string, error) {
+func (provider *RistrettoCacheProvider) Get(key string) (string, bool) {
 	val, found := provider.Cache.Get(key)
 	if !found {
-		return "", nil
+		return "", false
 	}
-	return val.(string), nil
+	return val.(string), true
 }
 
 func (provider *RistrettoCacheProvider) Set(key string, value string) error {

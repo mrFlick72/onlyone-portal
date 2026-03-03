@@ -12,4 +12,5 @@ type SearchTag struct {
 
 type SearchTagRepository interface {
 	GetTagBy(ctx context.Context, key string) (*SearchTag, error)
+	GetAllTags(ctx context.Context) ([]SearchTag, error)
 }

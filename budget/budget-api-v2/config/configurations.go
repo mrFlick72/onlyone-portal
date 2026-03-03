@@ -19,10 +19,12 @@ var configurationManager = config.GetConfigurationManagerInstance()
 var logger = logging.GetLoggerInstance()
 
 func NewSearchTagRepository() tags.SearchTagRepository {
-	return rest.NewRestSearchTagRepository(
+	delegate := rest.NewRestSearchTagRepository(
 		&http.Client{},
 		configurationManager.GetConfigFor("tag-api.base-url"),
 	)
+
+	return rest.NewRistrettoCachedSearchTagRepository(delegate)
 }
 
 func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {

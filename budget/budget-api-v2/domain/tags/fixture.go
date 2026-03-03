@@ -19,3 +19,11 @@ func (mock *SearchTagRepositoryMock) GetTagBy(ctx context.Context, searchTagKey 
 	}
 	return args.Get(0).(*SearchTag), args.Error(1)
 }
+
+func (mock *SearchTagRepositoryMock) GetAllTags(ctx context.Context) ([]SearchTag, error) {
+	args := mock.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]SearchTag), args.Error(1)
+}
