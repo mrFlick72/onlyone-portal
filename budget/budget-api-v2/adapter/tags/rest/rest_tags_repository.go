@@ -28,6 +28,21 @@ func NewRestSearchTagRepository(client *http.Client, baseURL string) tags.Search
 }
 
 func (repository *RestSearchTagRepository) GetTagBy(ctx context.Context, key string) (*tags.SearchTag, error) {
+	searchTags, err := repository.GetAllTags(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, searchTag := range searchTags {
+		if searchTag.Key == key {
+			return &searchTag, nil
+		}
+	}
+	return nil, fmt.Errorf("tag with key '%s' not found", key)
+
+}
+
+func (repository *RestSearchTagRepository) GetAllTags(ctx context.Context) ([]tags.SearchTag, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/api/tags", repository.BaseURL), nil)
 	if err != nil {
 		repository.logger.LogErrorfFor("Error while calling tag API: %s", err)
@@ -58,11 +73,5 @@ func (repository *RestSearchTagRepository) GetTagBy(ctx context.Context, key str
 		repository.logger.LogErrorfFor("Error while un marshalling tag API response: %s", err)
 		return nil, err
 	}
-	for _, searchTag := range searchTags {
-		if searchTag.Key == key {
-			return &searchTag, nil
-		}
-	}
-	return nil, fmt.Errorf("tag with key '%s' not found", key)
-
+	return searchTags, nil	
 }

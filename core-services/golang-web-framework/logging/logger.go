@@ -2,6 +2,7 @@ package logging
 
 import (
 	"fmt"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
 	"reflect"
 	"sync"
@@ -51,6 +52,14 @@ func logInit(f *os.File) *zap.SugaredLogger {
 	pe := zap.NewProductionEncoderConfig()
 	pe.EncodeTime = zapcore.ISO8601TimeEncoder
 
+	lumberjackLogger := &lumberjack.Logger{
+		Filename:   f.Name(), // log file path
+		MaxSize:    1,      // MB before rotation
+		MaxBackups: 5,        // number of old files to retain
+		MaxAge:     30,       // days
+		Compress:   true,     // gzip old files
+	}
+
 	fileEncoder := zapcore.NewJSONEncoder(pe)
 	consoleEncoder := zapcore.NewConsoleEncoder(pe)
 
@@ -64,7 +73,7 @@ func logInit(f *os.File) *zap.SugaredLogger {
 
 	} else {
 		core = zapcore.NewTee(
-			zapcore.NewCore(fileEncoder, zapcore.AddSync(f), level),
+			zapcore.NewCore(fileEncoder, zapcore.AddSync(lumberjackLogger), level),
 			zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), level),
 		)
 
@@ -118,6 +127,7 @@ func (impl *Logger) LogDebugfFor(format string, a ...any) {
 	impl.logger.Debugf(format, a...)
 }
 
+// todo add a function to flush the logger buffer, to be called on application shutdown
 func Dispose() {
 	if loggerManager != nil {
 		loggerManager.logger.Sync()

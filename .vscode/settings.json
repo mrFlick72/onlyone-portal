@@ -1,6 +1,7 @@
 {
     "cSpell.words": [
-        "pytest"
+        "pytest",
+        "ristretto"
     ],
     "python.testing.pytestArgs": [
         "budget/budget-api",
