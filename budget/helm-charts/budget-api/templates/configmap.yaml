@@ -1,0 +1,29 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: budget-api-config
+stringData:
+  config.yaml: |-
+    server:
+        port: {{ .Values.service.port }}
+
+    idp:
+        jwks-endpoint: {{ .Values.application.idpJwksEndpoint }}
+
+    user:
+        required-role: {{ .Values.application.userRequiredRole }}
+
+    logger:
+        file-name: logs.log
+
+    tag-api:
+        base-url: {{ .Values.application.tagApiBaseUrl }}
+
+    cors:
+        allowed:
+            origins: {{ .Values.application.corsAllowedOrigins | quote }}
+
+    budget-api:
+        dynamo-db:
+            budget-expense:
+                table-name: {{ .Values.application.budgetExpenseTableName }}
