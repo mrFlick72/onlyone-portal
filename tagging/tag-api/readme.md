@@ -1,0 +1,1 @@
+docker build -t mrflick72/tagging/tag-api:1 -f ../../core-services/docker/ubuntu.Dockerfile  .

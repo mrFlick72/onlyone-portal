@@ -28,7 +28,7 @@ jobs:
 
       - name: Build tag-api package
         run: |
-          go build -o tag-api .
+          go build -o app .
 
       - name: Run tests
         env:
