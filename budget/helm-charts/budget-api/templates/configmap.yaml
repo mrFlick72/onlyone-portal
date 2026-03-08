@@ -2,7 +2,7 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: budget-api-config
-stringData:
+data:
   config.yaml: |-
     server:
         port: {{ .Values.service.port }}

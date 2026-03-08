@@ -8,7 +8,7 @@ spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: budget-api
+  {{- include "budget-api.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -21,6 +21,10 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+      {{- with .Values.hostAliases }}
+      hostAliases:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -66,11 +70,10 @@ spec:
             - name: AWS_REGION
               value: {{ .Values.application.aws.region }}
           volumeMounts:
-            volumeMounts:
             - name: application-config
-              mountPath: /opt/app
+              mountPath: /opt/app/config.yaml
               subPath: config.yaml
       volumes:
-        - name: application-configuration
+        - name: application-config
           configMap:
             name: budget-api-config

@@ -20,7 +20,6 @@ spec:
       {{ end }}
     {{- include "budget-api.selectorLabels" . | nindent 8 }}
     spec:
-      {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
