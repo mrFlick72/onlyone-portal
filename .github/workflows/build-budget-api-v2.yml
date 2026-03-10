@@ -28,7 +28,7 @@ jobs:
 
       - name: Build budget-api-v2 package
         run: |
-          go build -o app .
+          CGO_ENABLED=0 GOOS=linux go build -o app .
 
       - name: Run tests
         env:
