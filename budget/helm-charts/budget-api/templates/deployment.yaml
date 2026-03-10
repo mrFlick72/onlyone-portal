@@ -67,7 +67,7 @@ spec:
               value: {{ .Values.application.aws.accessKeyId }}
             - name: AWS_SECRET_ACCESS_KEY
               value: {{ .Values.application.aws.secretAccessKey }}
-            - name: AWS_REGION
+            - name: AWS_DEFAULT_REGION
               value: {{ .Values.application.aws.region }}
           volumeMounts:
             - name: application-config

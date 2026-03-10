@@ -8,7 +8,7 @@ RUN apt-get update && \
     update-ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-# all following instructions, 
+# all following instructions,
 # switch to that unprivileged user for the rest of the build
 USER application
 
