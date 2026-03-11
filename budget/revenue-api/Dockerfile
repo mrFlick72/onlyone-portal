@@ -1,9 +1,14 @@
-FROM amazoncorretto:21
+FROM python:3.14.3-alpine3.23
 
-COPY lib /usr/local/onlyone-portal/
 
-VOLUME /var/log/onlyone-portal
 
-WORKDIR /usr/local/onlyone-portal/
+COPY build/lib /opt/application
+COPY pyproject.toml /opt/application/pyproject.toml
+COPY requirements.txt /opt/application/requirements.txt
+RUN  pip install -r /opt/application/requirements.txt
 
-CMD ["java", "-jar", "application.jar"]
+WORKDIR /opt/application
+RUN pip install .
+
+
+CMD ["python",  "app/main.py"]
