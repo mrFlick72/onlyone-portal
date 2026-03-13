@@ -1,8 +1,9 @@
 package api
 
 import (
-	"log"
 	"net/http"
+
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 
 	"github.com/gin-gonic/gin"
@@ -12,11 +13,13 @@ import (
 
 func RegisterEndpoints(r *gin.Engine, contextFactoryConverter server.ContextFactoryConverter, repository domain.TagRepository) *gin.Engine {
 
+	var logger = logging.GetLoggerInstanceForComponentByTypeName("api.RegisterEndpoints")
+
 	// GET /api/tags — return all tags as JSON
 	r.GET("/api/tags", func(c *gin.Context) {
 		tags, err := repository.FindAllTags(contextFactoryConverter.CreateContextFromGin(c))
 		if err != nil {
-			log.Println("error occurred:", err)
+			logger.LogErrorfFor("error occurred: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -32,15 +35,16 @@ func RegisterEndpoints(r *gin.Engine, contextFactoryConverter server.ContextFact
 	r.PUT("/api/tags", func(c *gin.Context) {
 		var tag domain.Tag
 		if err := c.ShouldBindJSON(&tag); err != nil {
+			logger.LogErrorfFor("error occurred: %v", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
 		tag.Key = uuid.New().String() // Assign a new UUID as the key
-		log.Println("Saving tag:", tag)
 
 		ctx := contextFactoryConverter.CreateContextFromGin(c)
 		if err := repository.SaveTag(ctx, &tag); err != nil {
+			logger.LogErrorfFor("error occurred: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

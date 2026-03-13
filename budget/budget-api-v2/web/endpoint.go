@@ -12,7 +12,7 @@ import (
 
 func RegisterEndpoints(
 	r *gin.Engine,
-	ContextFactoryConverter server.ContextFactoryConverter,
+	ContextFactoryConverter server.ContextFactoryConverter, //todo could be private
 	facade expense.BudgetExpenseActions,
 ) *gin.Engine {
 
