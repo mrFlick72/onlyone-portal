@@ -3,18 +3,18 @@ package api
 import (
 	"log"
 	"net/http"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/domain"
-	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/web/server"
 )
 
-func RegisterEndpoints(r *gin.Engine, repository domain.TagRepository) *gin.Engine {
+func RegisterEndpoints(r *gin.Engine, contextFactoryConverter server.ContextFactoryConverter, repository domain.TagRepository) *gin.Engine {
 
 	// GET /api/tags — return all tags as JSON
 	r.GET("/api/tags", func(c *gin.Context) {
-		tags, err := repository.FindAllTags(server.CopyGinKeysToRequestContext(c))
+		tags, err := repository.FindAllTags(contextFactoryConverter.CreateContextFromGin(c))
 		if err != nil {
 			log.Println("error occurred:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -25,7 +25,7 @@ func RegisterEndpoints(r *gin.Engine, repository domain.TagRepository) *gin.Engi
 			c.JSON(http.StatusOK, []domain.Tag{})
 			return
 		}
-		c.JSON(http.StatusOK, *tags)
+		c.JSON(http.StatusOK, tags)
 	})
 
 	// PUT /api/tags — create or update a tag from JSON body
@@ -39,7 +39,7 @@ func RegisterEndpoints(r *gin.Engine, repository domain.TagRepository) *gin.Engi
 		tag.Key = uuid.New().String() // Assign a new UUID as the key
 		log.Println("Saving tag:", tag)
 
-		ctx := server.CopyGinKeysToRequestContext(c)
+		ctx := contextFactoryConverter.CreateContextFromGin(c)
 		if err := repository.SaveTag(ctx, &tag); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

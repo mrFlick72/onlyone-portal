@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/domain"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,7 +23,7 @@ func TestFindAllTagsGiveEmptyTags(t *testing.T) {
 	// simple in-memory mock implementing domain.TagRepository
 	mock := &MockRepo{tags: []domain.Tag{}}
 	var repo domain.TagRepository = mock
-	RegisterEndpoints(router, repo)
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/tags", nil)
@@ -48,7 +49,7 @@ func TestFindAllTagsGiveNotEmptyTags(t *testing.T) {
 	}}
 
 	var repo domain.TagRepository = mock
-	RegisterEndpoints(router, repo)
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/tags", nil)
@@ -64,12 +65,12 @@ type MockRepo struct {
 	tags []domain.Tag
 }
 
-func (m *MockRepo) SaveTag(ctx *context.Context, tag *domain.Tag) error {
+func (m *MockRepo) SaveTag(ctx context.Context, tag *domain.Tag) error {
 	m.tags = append(m.tags, *tag)
 	return nil
 }
 
-func (m *MockRepo) GetTagBy(ctx *context.Context, key string) (*domain.Tag, error) {
+func (m *MockRepo) GetTagBy(ctx context.Context, key string) (*domain.Tag, error) {
 	for _, t := range m.tags {
 		if t.Key == key {
 			return &t, nil
@@ -78,6 +79,6 @@ func (m *MockRepo) GetTagBy(ctx *context.Context, key string) (*domain.Tag, erro
 	return nil, nil
 }
 
-func (m *MockRepo) FindAllTags(ctx *context.Context) (*[]domain.Tag, error) {
-	return &m.tags, nil
+func (m *MockRepo) FindAllTags(ctx context.Context) ([]domain.Tag, error) {
+	return m.tags, nil
 }
