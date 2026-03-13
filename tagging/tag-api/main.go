@@ -3,16 +3,18 @@ package main
 import (
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/adapter/dynamodb"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/web/api"
-	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/web/server"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 )
 
 func main() {
+
+	// Entry point for the budget API v2 service
 	// Create a Gin router with default middleware (logger and recovery)
 	engine := server.WebServerProvisioner{}
 
-	router := engine.ConfigureEngine()
-	
-	api.RegisterEndpoints(router, dynamodb.NewTagDynamoDBRepository())
+	ginEngine := engine.ConfigureEngine()
+	GinContextToPlainContextFactory := &server.GinContextToPlainContextFactory{}
+	api.RegisterEndpoints(ginEngine, GinContextToPlainContextFactory, dynamodb.NewTagDynamoDBRepository())
 
 	engine.StartEngine()
 }

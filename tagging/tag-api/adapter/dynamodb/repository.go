@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/domain"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
 
 type TagDynamoDBRepository struct {
@@ -40,10 +41,10 @@ func NewTagDynamoDBRepository() *TagDynamoDBRepository {
 	}
 }
 
-func (r *TagDynamoDBRepository) SaveTag(ctx *context.Context, tag *domain.Tag) error {
+func (r *TagDynamoDBRepository) SaveTag(ctx context.Context, tag *domain.Tag) error {
 	// Implementation for saving a tag to DynamoDB
 
-	user, err := domain.GetCurrentUser(ctx)
+	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
 		return err
 	}
@@ -61,9 +62,9 @@ func (r *TagDynamoDBRepository) SaveTag(ctx *context.Context, tag *domain.Tag) e
 	return err
 }
 
-func (r *TagDynamoDBRepository) GetTagBy(ctx *context.Context, key string) (*domain.Tag, error) {
+func (r *TagDynamoDBRepository) GetTagBy(ctx context.Context, key string) (*domain.Tag, error) {
 	// Implementation for retrieving a tag by key from DynamoDB
-	user, err := domain.GetCurrentUser(ctx)
+	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -92,9 +93,9 @@ func (r *TagDynamoDBRepository) GetTagBy(ctx *context.Context, key string) (*dom
 	}, nil
 }
 
-func (r *TagDynamoDBRepository) FindAllTags(ctx *context.Context) (*[]domain.Tag, error) {
+func (r *TagDynamoDBRepository) FindAllTags(ctx context.Context) ([]domain.Tag, error) {
 	// Implementation for retrieving all tags from DynamoDB
-	user, err := domain.GetCurrentUser(ctx)
+	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -118,5 +119,5 @@ func (r *TagDynamoDBRepository) FindAllTags(ctx *context.Context) (*[]domain.Tag
 		})
 	}
 
-	return &tags, nil
+	return tags, nil
 }

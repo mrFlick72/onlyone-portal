@@ -12,18 +12,19 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/domain"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
 
 var TableName = "TestTagsTable"
 var client, _ = newDynamoDBClient()
 
-func newStubbedContext() *context.Context {
+func newStubbedContext() context.Context {
 	ctx := context.Background()
-	userName := domain.UserName("testuser")
-	user := domain.User{UserName: &userName}
+	userName := security.UserName("testuser")
+	user := security.User{UserName: &userName}
 	newCtx := context.WithValue(ctx, "user", user)
 
-	return &newCtx
+	return newCtx
 }
 
 func newDynamoDBClient() (*dynamodb.Client, error) {
@@ -136,7 +137,7 @@ func TestFindAllTags(t *testing.T) {
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
-	if len(*tags) == 0 {
+	if len(tags) == 0 {
 		t.Errorf("Expected some tags, got none")
 	}
 }

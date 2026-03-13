@@ -8,7 +8,7 @@ type Tag struct {
 }
 
 type TagRepository interface {
-	SaveTag(ctx *context.Context, tag *Tag) error
-	GetTagBy(ctx *context.Context, key string) (*Tag, error)
-	FindAllTags(ctx *context.Context) (*[]Tag, error)
+	SaveTag(ctx context.Context, tag *Tag) error
+	GetTagBy(ctx context.Context, key string) (*Tag, error)
+	FindAllTags(ctx context.Context) ([]Tag, error)
 }
