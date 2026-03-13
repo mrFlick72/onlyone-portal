@@ -3,16 +3,18 @@ package dynamodb
 import (
 	"context"
 	"errors"
-	"log"
-	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
+	aws_config "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/domain"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
+
+var configurationManager = config.GetConfigurationManagerInstance()
 
 type TagDynamoDBRepository struct {
 	Client    *dynamodb.Client
@@ -20,16 +22,19 @@ type TagDynamoDBRepository struct {
 }
 
 func NewTagDynamoDBRepository() *TagDynamoDBRepository {
-	cfg, err := config.LoadDefaultConfig(
-		context.TODO(),
-		config.WithRegion("eu-central-1"),
-	)
+	var logger = logging.GetLoggerInstanceForComponentByTypeName("dynamodb.TagDynamoDBRepository")
 
-	if os.Getenv("DYNAMODB_ENDPOINT") != "" {
-		log.Println("Using local DynamoDB endpoint:", os.Getenv("DYNAMODB_ENDPOINT"))
+	cfg, err := aws_config.LoadDefaultConfig(
+		context.TODO(),
+		aws_config.WithRegion("eu-central-1"),
+	)
+	dynamoDbEndpoint := configurationManager.GetConfigFor("aws.endpoint.dynamodb")
+
+	if dynamoDbEndpoint != "" {
+		logger.LogInfofFor("Using local DynamoDB endpoint: %s", dynamoDbEndpoint)
 		cfg.BaseEndpoint = aws.String("http://localhost:4566")
 	} else {
-		log.Println("Using AWS DynamoDB service without local endpoint")
+		logger.LogInfofFor("Using AWS DynamoDB service without local endpoint")
 	}
 
 	if err != nil {
@@ -37,7 +42,7 @@ func NewTagDynamoDBRepository() *TagDynamoDBRepository {
 	}
 	return &TagDynamoDBRepository{
 		Client:    dynamodb.NewFromConfig(cfg),
-		TableName: os.Getenv("TAGS_TABLE_NAME"),
+		TableName: configurationManager.GetConfigFor("tags.dynamo-db.table-name"),
 	}
 }
 
