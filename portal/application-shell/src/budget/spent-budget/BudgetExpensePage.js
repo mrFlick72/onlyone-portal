@@ -7,7 +7,7 @@ import {
     setSearchTagsSearchCriteria,
     setYearSearchCriteria
 } from "../SearchCriteriaProvider";
-import {deleteBudgetExpense, findBudgetExpense, saveBudgetExpense} from "./BudgetExpenseRepository";
+import {deleteBudgetExpense, findBudgetExpense, saveBudgetExpense} from "./domain/BudgetExpenseRepository";
 import moment from "moment";
 import {OnlyonePortalPagesConfigMap} from "../../messages/OnlyonePortalPagesConfigMap";
 import {getMonthRegistry} from "../../time/MonthRepository";

@@ -1,12 +1,13 @@
-import {getBudgetApiBaseUrl} from "../../config/ConfigLoader";
+import { getBudgetApiBaseUrl } from "../../../config/ConfigLoader";
+import { BudgetExpense, BudgetExpenseSearchCriteria } from "./BudgetExpense";
 
-const BUDGET_EXPENSE_URI = (baseUrl, budgetExpenseId) => budgetExpenseId ?
+const BUDGET_EXPENSE_URI = (baseUrl: string, budgetExpenseId?: string) => budgetExpenseId ?
     `${baseUrl}/api/budget/expense/${budgetExpenseId}` :
     `${baseUrl}/api/budget/expense`
 
-export async function saveBudgetExpense(budgetExpense) {
+export async function saveBudgetExpense(budgetExpense: BudgetExpense) {
     const baseUrl = await getBudgetApiBaseUrl();
-    return fetch(BUDGET_EXPENSE_URI(baseUrl,budgetExpense.id), {
+    return fetch(BUDGET_EXPENSE_URI(baseUrl, budgetExpense.id), {
         method: budgetExpense.id ? "PUT" : "POST",
         credentials: 'include',
         headers: {
@@ -17,7 +18,7 @@ export async function saveBudgetExpense(budgetExpense) {
     })
 }
 
-export async function findBudgetExpense(searchCriteria) {
+export async function findBudgetExpense(searchCriteria: BudgetExpenseSearchCriteria){
     const baseUrl = await getBudgetApiBaseUrl();
     let baseUri = BUDGET_EXPENSE_URI(baseUrl);
     return fetch(baseUri, {
@@ -34,7 +35,7 @@ export async function findBudgetExpense(searchCriteria) {
     })
 }
 
-export async function deleteBudgetExpense(budgetExpenseId) {
+export async function deleteBudgetExpense(budgetExpenseId: string) {
     const baseUrl = await getBudgetApiBaseUrl();
     return fetch([BUDGET_EXPENSE_URI(baseUrl), budgetExpenseId].join("/"), {
         headers: {

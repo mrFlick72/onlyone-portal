@@ -8,8 +8,7 @@ import FormMoneyFormat from "../../../components/form/FormMoneyFormat";
 import FormSelect from "../../../components/form/FormSelect";
 import FormTextArea from "../../../components/form/FormTextArea";
 
-export default ({spentBudgetComponentId, spentBudgetData, spentBudgetHandlers, searchTagRegistry}) => {
-    let spentBudgetComponentIdAux = spentBudgetComponentId || {}
+export default ({spentBudgetData, spentBudgetHandlers, searchTagRegistry}) => {
     return <Box>
         <FormDatePicker
             label={"Date:"}
@@ -17,14 +16,14 @@ export default ({spentBudgetComponentId, spentBudgetData, spentBudgetHandlers, s
             onClickHandler={spentBudgetHandlers.date}/>
 
         <FormMoneyFormat
-            id={spentBudgetComponentIdAux.amount || uuidv1()}
+            id={uuidv1()}
             label="Amount:"
             required={true}
             handler={spentBudgetHandlers.amount}
             value={spentBudgetData.amount}/>
 
         <FormSelect multi={false}
-                    componentId={spentBudgetComponentIdAux.searchTag || uuidv1()}
+                    componentId={uuidv1()}
                     componentLabel="Search Tag:"
                     value={spentBudgetData.searchTag}
                     onChangeHandler={spentBudgetHandlers.searchTag}
@@ -32,7 +31,7 @@ export default ({spentBudgetComponentId, spentBudgetData, spentBudgetHandlers, s
 
         <FormTextArea value={spentBudgetData.note}
                       onChangeHandler={spentBudgetHandlers.note}
-                      id={spentBudgetComponentIdAux.note || uuidv1()}
+                      id={uuidv1()}
                       label="Note:"/>
     </Box>
 }

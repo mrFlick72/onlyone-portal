@@ -1,5 +1,3 @@
-import moment from "moment";
-
 type BudgetRevenue = {
   id?: string;
   amount: string;
