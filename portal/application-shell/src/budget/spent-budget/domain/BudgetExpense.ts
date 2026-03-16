@@ -19,3 +19,22 @@ export type BudgetExpenseSearchCriteria = {
     month: string,
     year: string
 }
+
+export type SpentBudget = {
+    dailyBudgetExpenseRepresentationList: DailyBudgetExpenseRepresentationList[],
+    totalDetailList: TotalDetail[]
+    total: string
+}
+
+export type DailyBudgetExpenseRepresentationList = {
+    budgetExpenseRepresentationList: BudgetExpense[]
+    date: string,
+    total: string
+}
+
+
+export type TotalDetail = {
+    searchTagKey: string,
+    searchTagValue: string
+    total: string
+}

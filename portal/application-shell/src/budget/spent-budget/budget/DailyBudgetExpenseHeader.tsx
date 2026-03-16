@@ -4,7 +4,7 @@ import { TableCell, TableRow } from "@mui/material";
 type DailyBudgetExpenseHeaderProps = {
     key: string,
     date: string,
-    total: number
+    total: string
 }
 
 const DailyBudgetExpenseHeader: React.FC<DailyBudgetExpenseHeaderProps> = ({ key, date, total }) => {
