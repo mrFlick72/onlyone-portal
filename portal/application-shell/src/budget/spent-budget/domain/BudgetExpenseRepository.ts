@@ -1,5 +1,5 @@
 import { getBudgetApiBaseUrl } from "../../../config/ConfigLoader";
-import { BudgetExpense, BudgetExpenseSearchCriteria } from "./BudgetExpense";
+import { BudgetExpense, BudgetExpenseSearchCriteria, SpentBudget } from "./BudgetExpense";
 
 const BUDGET_EXPENSE_URI = (baseUrl: string, budgetExpenseId?: string) => budgetExpenseId ?
     `${baseUrl}/api/budget/expense/${budgetExpenseId}` :
@@ -18,10 +18,10 @@ export async function saveBudgetExpense(budgetExpense: BudgetExpense) {
     })
 }
 
-export async function findBudgetExpense(searchCriteria: BudgetExpenseSearchCriteria){
+export async function findBudgetExpense(searchCriteria: BudgetExpenseSearchCriteria): Promise<SpentBudget> {
     const baseUrl = await getBudgetApiBaseUrl();
     let baseUri = BUDGET_EXPENSE_URI(baseUrl);
-    return fetch(baseUri, {
+    const response = await fetch(baseUri, {
         method: "PUT",
         credentials: 'include',
         headers: {
@@ -30,9 +30,8 @@ export async function findBudgetExpense(searchCriteria: BudgetExpenseSearchCrite
             'Accept': 'application/json'
         },
         body: JSON.stringify(searchCriteria)
-    }).then((response) => {
-        return response.json();
     })
+    return await response.json()
 }
 
 export async function deleteBudgetExpense(budgetExpenseId: string) {
