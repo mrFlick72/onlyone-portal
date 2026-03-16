@@ -1,11 +1,13 @@
 import React from "react";
 import FormSelect from "../../components/form/FormSelect";
+import { Month } from "../../time/months";
 
 type MonthsSelectorProps = {
-    monthRegistry: { monthValue: string, monthLabel: string }[],
+    monthRegistry: Month[],
     month: string,
     handler: (event: any) => void
 }
+
 
 const MonthsSelector: React.FC<MonthsSelectorProps> = ({ monthRegistry, month, handler }) => {
 
@@ -15,7 +17,7 @@ const MonthsSelector: React.FC<MonthsSelectorProps> = ({ monthRegistry, month, h
             valueLabel = item.monthLabel
         }
         return {
-            value: item.monthValue,
+            value: String(item.monthValue),
             label: item.monthLabel
         }
     });
