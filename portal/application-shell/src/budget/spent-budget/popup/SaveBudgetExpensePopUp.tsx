@@ -4,7 +4,7 @@ import { Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material
 import { AddShoppingCart } from "@mui/icons-material";
 import selectUiAdapterFor from "../../search-tags/SearchTagsUIAdapter";
 import YesAndNoButtonGroup from "../../../components/layout/YesAndNoButtonGroup";
-import { BudgetExpense } from "../domain/BudgetExpense";
+import { BudgetExpense, SavedBudgetExpense } from "../domain/BudgetExpense";
 
 type SaveBudgetExpensePopUpProps = {
     open: boolean,
@@ -22,7 +22,7 @@ type SaveBudgetExpensePopUpProps = {
         searchTag: (selectedOption: any) => void
 
     },
-    budgetExpense: BudgetExpense,
+    budgetExpense: SavedBudgetExpense,
     saveCallback: () => void
 }
 
@@ -35,11 +35,17 @@ const SaveBudgetExpensePopUp: React.FC<SaveBudgetExpensePopUpProps> = ({
     budgetExpense,
     saveCallback
 }) => {
+    console.log("SaveBudgetExpensePopUp render with data: ", budgetExpense)
     return <Dialog onClose={handleClose} open={open} fullWidth scroll="paper">
         <DialogTitle>{modal.title}</DialogTitle>
 
         <DialogContent>
-            <SpentBudgetForm spentBudgetData={budgetExpense}
+            <SpentBudgetForm spentBudgetData={{
+                date: budgetExpense.date,
+                amount: budgetExpense.amount,
+                note: budgetExpense.note,
+                searchTag: budgetExpense.searchTag
+            }}
                 spentBudgetHandlers={spentBudgetHandlers}
                 searchTagRegistry={selectUiAdapterFor(searchTagRegistry)} />
         </DialogContent>
