@@ -17,13 +17,13 @@ const oAuth2ResourceServerMiddlewareFactory = (issuer: string) => {
                 const roles = result.payload["authorities"] as string[]
 
                 const ALLOWED_ROLE = process.env.ALLOWED_ROLE;
-                const hasPermision: boolean = roles.some((role, _) => {
+                const hasPermission: boolean = roles.some((role, _) => {
                     console.log("role " + role)
                     console.log("role === ALLOWED_ROLE " + role !== ALLOWED_ROLE)
                     return role === ALLOWED_ROLE
                 })
 
-                if (hasPermision) {
+                if (hasPermission) {
                     SecurityContextHolder.run({
                         token: token,
                         userName: userName,
