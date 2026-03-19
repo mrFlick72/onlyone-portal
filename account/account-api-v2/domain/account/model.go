@@ -1,9 +1,9 @@
 package account
 
 type Account struct {
-	FirstName string
-	LastName  string
-	BirthDate string
-	Email     string
-	Phone     string
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	BirthDate string `json:"birthDate"`
+	Email     string `json:"email"`
+	Phone     string `json:"phone"`
 }
