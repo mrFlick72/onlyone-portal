@@ -1,0 +1,78 @@
+package date
+
+import (
+	"errors"
+	"time"
+)
+
+type Date struct {
+	t time.Time
+}
+
+func (d *Date) GetTime() time.Time {
+	return d.t
+}
+
+func (d *Date) GetFormattedDate() string {
+	return d.t.Format("02/01/2006")
+}
+
+func (d *Date) GetIsoFormattedDate() string {
+	return d.t.Format("2006-01-02")
+}
+
+func (d *Date) GetYear() int {
+	return d.t.Year()
+}
+
+func (d *Date) GetMonth() int {
+	nextMonth := d.t.Month()
+	return int(nextMonth)
+}
+
+func (d *Date) GetDay() int {
+	return d.t.Day()
+}
+
+func FirstDateOfMonth(month Month, year Year) (Date, error) {
+	if month.Content < 1 || month.Content > 12 {
+		return Date{}, errors.New("invalid month value")
+	}
+	DateContent := time.Date(int(year.Content), time.Month(month.Content), 1, 0, 0, 0, 0, time.UTC)
+	return Date{t: DateContent}, nil
+}
+
+func LastDateOfMonth(month Month, year Year) (Date, error) {
+	if month.Content < 1 || month.Content > 12 {
+		return Date{}, errors.New("invalid month value")
+	}
+	lastDate := time.Date(int(year.Content), time.Month(month.Content)+1, 0, 0, 0, 0, 0, time.UTC)
+	return Date{t: lastDate}, nil
+}
+
+// DateFor tries several common layouts and returns a Date.
+func DateFor(date string) (*Date, error) {
+	layouts := []string{
+		"02/01/2006",
+	}
+	var parseErr error
+	for _, l := range layouts {
+		if t, err := time.Parse(l, date); err == nil {
+			return &Date{t: t}, nil
+		} else {
+			parseErr = err
+		}
+	}
+	return nil, parseErr
+}
+
+// IsoDateFor parses an ISO date string like "2006-01-02" or RFC3339 datetime.
+func IsoDateFor(date string) (*Date, error) {
+	if t, err := time.Parse("2006-01-02", date); err == nil {
+		return &Date{t: t}, nil
+	}
+	if t, err := time.Parse(time.RFC3339, date); err == nil {
+		return &Date{t: t}, nil
+	}
+	return nil, errors.New("invalid ISO date format")
+}
