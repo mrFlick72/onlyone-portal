@@ -4,7 +4,10 @@ go 1.25.1
 
 replace github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../core-services/golang-web-framework
 
-require github.com/mrflick72/onlyone-portal/core-services/golang-web-framework v0.0.0-00010101000000-000000000000
+require (
+	github.com/gin-gonic/gin v1.11.0
+	github.com/mrflick72/onlyone-portal/core-services/golang-web-framework v0.0.0-00010101000000-000000000000
+)
 
 require (
 	github.com/bytedance/sonic v1.14.0 // indirect
@@ -15,7 +18,6 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
 	github.com/gin-contrib/cors v1.7.6 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
-	github.com/gin-gonic/gin v1.11.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.27.0 // indirect
