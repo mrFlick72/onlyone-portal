@@ -10,7 +10,7 @@ import { getAllMessageRegistry } from "../messages/MessageRepository";
 import { isAuthenticated } from "../auth/Authenticator";
 import Menu from "../components/menu/Menu";
 import FormInputTextField from '../components/form/FormInputTextField';
-import FormDatePicker, { ApiDateFormatPattern, FormDateFormatPattern } from '../components/form/FormDatePicker';
+import FormDatePicker, { FormDateFormatPattern } from '../components/form/FormDatePicker';
 import Account from './domain/Account';
 
 const AccountDetailsPage = () => {
@@ -47,7 +47,6 @@ const AccountDetailsPage = () => {
         setMessageRegistry(getAllMessageRegistry())
     }, [])
 
-    const padding = "10px"
     let theme = createTheme({
         palette: {
             primary: {
@@ -88,7 +87,7 @@ const AccountDetailsPage = () => {
                     value={account.lastName || ""} />
 
                 <FormDatePicker
-                    pattern={ApiDateFormatPattern}
+                    pattern={FormDateFormatPattern}
                     value={account.birthDate}
                     onClickHandler={(value) => {
                         let date = "";
@@ -98,7 +97,7 @@ const AccountDetailsPage = () => {
                         }
                         setAccount((account: Account) => {
                             let copiedAccount = Object.assign({}, account)
-                            copiedAccount.phone = date
+                            copiedAccount.birthDate = date
                             return copiedAccount
                         })
                     }}
