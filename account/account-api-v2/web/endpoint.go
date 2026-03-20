@@ -27,10 +27,10 @@ func RegisterEndpoints(
 		if err != nil {
 			logger.LogErrorFor(err)
 			c.JSON(http.StatusInternalServerError, nil)
-			return 
+			return
 		}
 
-		formattedDate := getFormattedDate(userAccount)
+		formattedDate := getFormattedDate(userAccount, *logger)
 		c.JSON(http.StatusOK, account.Account{
 			FirstName: userAccount.FirstName,
 			LastName:  userAccount.FirstName,
@@ -51,7 +51,7 @@ func RegisterEndpoints(
 			return
 		}
 
-		formattedIsoDate := getFormattedIsoDate(&userAccount)
+		formattedIsoDate := getFormattedIsoDate(&userAccount, *logger)
 		userAccountToBeStored := &account.Account{
 			FirstName: userAccount.FirstName,
 			LastName:  userAccount.LastName,
@@ -67,20 +67,22 @@ func RegisterEndpoints(
 
 }
 
-func getFormattedDate(account *account.Account) string {
-
+func getFormattedDate(account *account.Account, logger logging.Logger) string {
 	formattedDate, err := date.IsoDateFor(account.BirthDate)
 	if err != nil {
-		formattedDate.GetFormattedDate()
+		logger.LogErrorfFor("date parsing for %s is in error: %v", account.BirthDate, err)
+		return ""
+	} else {
+		return formattedDate.GetFormattedDate()
 	}
-	return ""
 }
 
-func getFormattedIsoDate(account *account.Account) string {
-
+func getFormattedIsoDate(account *account.Account, logger logging.Logger) string {
 	formattedDate, err := date.DateFor(account.BirthDate)
 	if err != nil {
-		formattedDate.GetIsoFormattedDate()
+		logger.LogErrorfFor("date parsing for %s is in error: %v", account.BirthDate, err)
+		return ""
+	} else {
+		return formattedDate.GetIsoFormattedDate()
 	}
-	return ""
 }
