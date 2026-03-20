@@ -10,7 +10,7 @@ idp:
   jwks-endpoint: http://local.api.vauthenticator.com:9090/oauth2/jwks
 
 user:
-  required-role: USER_ROLE
+  required-role: ROLE_USER
 
 logger:
   file-name: logs.log
