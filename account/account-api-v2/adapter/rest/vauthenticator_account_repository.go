@@ -81,7 +81,12 @@ func (r *VauthenticatorAccountRepository) Save(ctx context.Context, account *acc
 	}
 	req.Header.Set("Content-Type", "application/json")
 
+	r.Logger.LogInfofFor("request %v", req)
+	r.Logger.LogInfofFor("account %v", account)
+	r.Logger.LogInfofFor("request body %v", body)
 	resp, err := r.Client.Do(req)
+	r.Logger.LogInfofFor("resposne %v", resp)
+
 	if err != nil {
 		r.Logger.LogErrorfFor("error while calling vauthenticator account update endpoint: %s", err)
 		return err
@@ -101,6 +106,9 @@ func (r *VauthenticatorAccountRepository) newAuthorizedRequest(ctx context.Conte
 		requestBody = bytes.NewReader(body)
 	}
 
+	requestBody2,_ := io.ReadAll(bytes.NewReader(body))
+	r.Logger.LogInfoFor("string(requestBody2)")
+	r.Logger.LogInfoFor(string(requestBody2))
 	req, err := http.NewRequestWithContext(ctx, method, url, requestBody)
 	if err != nil {
 		r.Logger.LogErrorfFor("error while creating request for vauthenticator: %s", err)

@@ -17,7 +17,7 @@ export async function getAccountData(): Promise<Account> {
 
 export async function save(account: Account): Promise<void> {
     const baseUrl = await getAccountApiBaseUrl()
-    await fetch(`${baseUrl}/account/api/user-account`, {
+    await fetch(`${baseUrl}/api/account/user-account`, {
         method: "PUT",
         mode: "cors",
         headers: {
