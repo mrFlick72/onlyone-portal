@@ -1,0 +1,28 @@
+name: build Account API
+
+on:
+  push: { }
+  workflow_dispatch: {}
+
+jobs:
+  build-budget-api:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: budget/account-api-v2
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      
+      - name: Set up Golang
+        uses: actions/setup-go@v6
+        with:
+          go-version: 1.25.1
+
+      - name: Build account-api package
+        run: |
+          CGO_ENABLED=0 GOOS=linux go build -o app .
+
+      - name: Run tests
+        run: |
+          go test -tags test ./...
