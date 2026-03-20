@@ -34,9 +34,9 @@ func (r *VauthenticatorAccountRepository) FindAnAccount(ctx context.Context) (*a
 	}
 	req.Header.Set("Accept", "application/json")
 
-	r.Logger.LogInfofFor("request %v", req)
+	r.Logger.LogDebugfFor("request %v", req)
 	resp, err := r.Client.Do(req)
-	r.Logger.LogInfofFor("resposne %v", resp)
+	r.Logger.LogDebugfFor("resposne %v", resp)
 	if err != nil {
 		r.Logger.LogErrorfFor("error while calling vauthenticator userinfo endpoint: %s", err)
 		return nil, err
