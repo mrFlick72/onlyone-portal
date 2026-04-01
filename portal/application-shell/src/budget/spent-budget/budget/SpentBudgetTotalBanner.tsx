@@ -2,7 +2,7 @@ import React from "react"
 import { Box, Paper, Typography } from "@mui/material";
 
 type SpentBudgetTotalBannerProps = {
-    total: number
+    total: string 
 }
 
 const SpentBudgetTotalBanner: React.FC<SpentBudgetTotalBannerProps> = ({ total }) => {
