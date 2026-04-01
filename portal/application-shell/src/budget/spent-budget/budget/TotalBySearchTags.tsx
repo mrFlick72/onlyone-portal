@@ -1,11 +1,9 @@
 import React from "react"
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
+import { TotalDetail } from "../domain/BudgetExpense";
 
 type TotalBySearchTagsProps = {
-    totals: {
-        searchTagValue: string,
-        total: number
-    }[]
+    totals:  TotalDetail[]
 }
 
 const TotalBySearchTags: React.FC<TotalBySearchTagsProps> = ({ totals }) => {
