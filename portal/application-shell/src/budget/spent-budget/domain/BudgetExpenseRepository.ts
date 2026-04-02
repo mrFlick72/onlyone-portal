@@ -14,7 +14,14 @@ export async function saveBudgetExpense(budgetExpense: BudgetExpense) {
             'Authorization': `Bearer ${window.sessionStorage.getItem("ACCESS_TOKEN")}`,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(budgetExpense)
+        body: JSON.stringify( {
+            id : budgetExpense.id,
+            date: budgetExpense.date,
+            amount: budgetExpense.amount.toString(),
+            note: budgetExpense.note,
+            tagKey: budgetExpense.tagKey,
+            tagValue: budgetExpense.tagValue,
+        })
     })
 }
 
