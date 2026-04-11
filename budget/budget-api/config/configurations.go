@@ -7,9 +7,11 @@ import (
 	aws_config "github.com/aws/aws-sdk-go-v2/config"
 	aws_dynamodb "github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/google/uuid"
-	"github.com/mrflick72/budget/budget-api/adapter/budget/dynamodb"
+	"github.com/mrflick72/budget/budget-api/adapter/budget/expense/dynamodb"
+	revenuedynamo "github.com/mrflick72/budget/budget-api/adapter/budget/revenue/dynamodb"
 	"github.com/mrflick72/budget/budget-api/adapter/tags/rest"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
+	"github.com/mrflick72/budget/budget-api/domain/budget/revenue"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
@@ -71,5 +73,35 @@ func NewBudgetExpenseActionsFacade() expense.BudgetExpenseActions {
 		UpdateBudgetExpenseAction: updateBudgetExpense,
 		FindSpentBudgetAction:     findSpentBudget,
 		DeleteBudgetExpenseAction: deleteBudgetExpense,
+	}
+}
+
+func NewRevenueRepository() revenue.RevenueRepository {
+	cfg, err := aws_config.LoadDefaultConfig(
+		context.TODO(),
+		aws_config.WithRegion("eu-central-1"),
+	)
+
+	if err != nil {
+		logger.LogErrorfFor("unable to load SDK config: %s", err.Error())
+		panic("unable to load SDK config, " + err.Error())
+	}
+
+	return revenuedynamo.NewDynamoDbRevenueRepository(
+		configurationManager.GetConfigFor("budget-api.dynamo-db.revenue.table-name"),
+		aws_dynamodb.NewFromConfig(cfg),
+		&revenuedynamo.DynamoDbRevenueIdProvider{
+			SaltGenerator: func() string { return uuid.New().String() },
+		},
+	)
+}
+
+func NewRevenueActionsFacade() revenue.RevenueActions {
+	revenueRepository := NewRevenueRepository()
+	return &revenue.RevenueActionsFacade{
+		CreateRevenueAction: &revenue.CreateRevenue{Repository: revenueRepository},
+		UpdateRevenueAction: &revenue.UpdateRevenue{Repository: revenueRepository},
+		FindRevenueAction:   &revenue.FindRevenue{Repository: revenueRepository},
+		DeleteRevenueAction: &revenue.DeleteRevenue{Repository: revenueRepository},
 	}
 }

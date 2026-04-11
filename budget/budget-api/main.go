@@ -15,6 +15,7 @@ func main() {
 	ginEngine := engine.ConfigureEngine()
 	GinContextToPlainContextFactory := &server.GinContextToPlainContextFactory{}
 	web.RegisterEndpoints(ginEngine, GinContextToPlainContextFactory, config.NewBudgetExpenseActionsFacade())
+	web.RegisterRevenueEndpoints(ginEngine, GinContextToPlainContextFactory, config.NewRevenueActionsFacade())
 
 	engine.StartEngine()
 }
