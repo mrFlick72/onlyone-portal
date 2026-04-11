@@ -25,7 +25,7 @@ func TestCreateANewBudgetExpense(t *testing.T) {
 	r := SetUpRouter()
 	facade := new(BudgetExpenseActionsMock)
 	contextFactoryConverter := new(ContextFactoryConverterMock)
-	RegisterEndpoints(r, contextFactoryConverter, facade)
+	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
 
 	budgetExpense := expense.BudgetExpense{
 		Date:   testutils.SafeDateFor("01/01/2018"),
@@ -64,7 +64,7 @@ func TestUpdateABudgetExpense(t *testing.T) {
 	r := SetUpRouter()
 	facade := new(BudgetExpenseActionsMock)
 	contextFactoryConverter := new(ContextFactoryConverterMock)
-	RegisterEndpoints(r, contextFactoryConverter, facade)
+	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
 
 	budgetExpense := expense.BudgetExpense{
 		Id:     "123-456",
@@ -104,7 +104,7 @@ func TestDeleteABudgetExpense(t *testing.T) {
 	r := SetUpRouter()
 	facade := new(BudgetExpenseActionsMock)
 	contextFactoryConverter := new(ContextFactoryConverterMock)
-	RegisterEndpoints(r, contextFactoryConverter, facade)
+	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
 
 	ctx := testutils.NewStubbedContextWith("USER")
 	facade.On("DeleteBudgetExpense", ctx, "123-456").Return(nil)
@@ -121,7 +121,7 @@ func TestFindBudgetExpensesByTimeRange(t *testing.T) {
 	r := SetUpRouter()
 	facade := new(BudgetExpenseActionsMock)
 	contextFactoryConverter := new(ContextFactoryConverterMock)
-	RegisterEndpoints(r, contextFactoryConverter, facade)
+	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
 
 	expected := &expense.SpentBudget{
 		BudgetExpenseList: []expense.BudgetExpense{

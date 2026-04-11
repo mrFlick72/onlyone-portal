@@ -10,7 +10,7 @@ import (
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 )
 
-func RegisterEndpoints(
+func RegisterExpenseEndpoints(
 	r *gin.Engine,
 	ContextFactoryConverter server.ContextFactoryConverter, //todo could be private
 	facade expense.BudgetExpenseActions,
