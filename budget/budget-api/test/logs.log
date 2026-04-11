@@ -1,0 +1,3 @@
+{"level":"info","ts":"2026-04-11T23:05:18.563+0200","caller":"server/web_server.go:41","msg":"Setting up OAuth2 middleware","component":"WebServerProvisioner"}
+{"level":"error","ts":"2026-04-11T23:05:18.564+0200","caller":"security/jwk.go:17","msg":"Error fetching JWK set: jwk.Fetch: request failed: Get \"http://local.api.vauthenticator.com:9090/oauth2/jwks\": dial tcp 127.0.0.1:9090: connect: connection refused","component":"Jwk"}
+{"level":"info","ts":"2026-04-11T23:05:18.564+0200","caller":"security/jwt.go:21","msg":"OAuth2 middleware set up with role: USER_ROLE","component":"Jwt"}
