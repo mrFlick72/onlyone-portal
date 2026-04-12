@@ -177,13 +177,13 @@ func TestDeleteRevenue(t *testing.T) {
 	repo := newRevenueRepository(idProviderMock)
 
 	input := revenue.Revenue{
-		Id:       revenue.RevenueId("MjAyNF90ZXN0dXNlcg==-NV8xX1NBTFQ="),
 		UserName: "testuser",
 		Date:     testutils.SafeDateFor("01/05/2024"),
 		Amount:   testutils.SafeMoneyFor("10.50"),
 		Note:     "NOTE",
 	}
-	idProviderMock.On("GenerateIdFor", &input).Return(string(input.Id))
+	id := revenue.RevenueId("MjAyNF90ZXN0dXNlcg==-NV8xX1NBTFQ=")
+	idProviderMock.On("GenerateIdFor", &input).Return(string(id))
 
 	if err := repo.Save(ctx, &input); err != nil {
 		t.Fatalf("save failed: %v", err)
