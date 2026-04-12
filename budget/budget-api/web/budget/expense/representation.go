@@ -1,4 +1,4 @@
-package web
+package expense
 
 import "github.com/mrflick72/budget/budget-api/domain/tags"
 

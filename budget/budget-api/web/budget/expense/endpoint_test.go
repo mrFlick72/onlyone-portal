@@ -1,4 +1,4 @@
-package web
+package expense
 
 import (
 	"bytes"
@@ -25,7 +25,7 @@ func TestCreateANewBudgetExpense(t *testing.T) {
 	r := SetUpRouter()
 	facade := new(BudgetExpenseActionsMock)
 	contextFactoryConverter := new(ContextFactoryConverterMock)
-	RegisterEndpoints(r, contextFactoryConverter, facade)
+	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
 
 	budgetExpense := expense.BudgetExpense{
 		Date:   testutils.SafeDateFor("01/01/2018"),
@@ -64,7 +64,7 @@ func TestUpdateABudgetExpense(t *testing.T) {
 	r := SetUpRouter()
 	facade := new(BudgetExpenseActionsMock)
 	contextFactoryConverter := new(ContextFactoryConverterMock)
-	RegisterEndpoints(r, contextFactoryConverter, facade)
+	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
 
 	budgetExpense := expense.BudgetExpense{
 		Id:     "123-456",
@@ -100,11 +100,65 @@ func TestUpdateABudgetExpense(t *testing.T) {
 	facade.AssertCalled(t, "UpdateBudgetExpense", ctx, &budgetExpense)
 }
 
+func TestCreateANewBudgetExpenseWithBadDateReturns400(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(BudgetExpenseActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
+
+	rep := BudgetExpenseRepresentation{
+		Date:     "not-a-date",
+		Amount:   "100.00",
+		Note:     "Test note",
+		TagKey:   "tagKey",
+		TagValue: "tagValue",
+	}
+	jsonValue, _ := json.Marshal(rep)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+
+	req, _ := http.NewRequest("POST", "/api/budget/expense", bytes.NewBuffer(jsonValue))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	facade.AssertNotCalled(t, "CreateBudgetExpense", mock.Anything, mock.Anything)
+}
+
+func TestUpdateABudgetExpenseWithBadDateReturns400(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(BudgetExpenseActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
+
+	rep := BudgetExpenseRepresentation{
+		Date:     "not-a-date",
+		Amount:   "100.00",
+		Note:     "Test note",
+		TagKey:   "tagKey",
+		TagValue: "tagValue",
+	}
+	jsonValue, _ := json.Marshal(rep)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+
+	req, _ := http.NewRequest("PUT", "/api/budget/expense/123-456", bytes.NewBuffer(jsonValue))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	facade.AssertNotCalled(t, "UpdateBudgetExpense", mock.Anything, mock.Anything)
+}
+
 func TestDeleteABudgetExpense(t *testing.T) {
 	r := SetUpRouter()
 	facade := new(BudgetExpenseActionsMock)
 	contextFactoryConverter := new(ContextFactoryConverterMock)
-	RegisterEndpoints(r, contextFactoryConverter, facade)
+	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
 
 	ctx := testutils.NewStubbedContextWith("USER")
 	facade.On("DeleteBudgetExpense", ctx, "123-456").Return(nil)
@@ -121,7 +175,7 @@ func TestFindBudgetExpensesByTimeRange(t *testing.T) {
 	r := SetUpRouter()
 	facade := new(BudgetExpenseActionsMock)
 	contextFactoryConverter := new(ContextFactoryConverterMock)
-	RegisterEndpoints(r, contextFactoryConverter, facade)
+	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
 
 	expected := &expense.SpentBudget{
 		BudgetExpenseList: []expense.BudgetExpense{

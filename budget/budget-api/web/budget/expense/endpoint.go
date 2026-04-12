@@ -1,4 +1,4 @@
-package web
+package expense
 
 import (
 	"net/http"
@@ -10,7 +10,7 @@ import (
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 )
 
-func RegisterEndpoints(
+func RegisterExpenseEndpoints(
 	r *gin.Engine,
 	ContextFactoryConverter server.ContextFactoryConverter, //todo could be private
 	facade expense.BudgetExpenseActions,
@@ -47,7 +47,12 @@ func RegisterEndpoints(
 			return
 		}
 
-		domainModel := RepresentationModelToDomainModel(representation)
+		domainModel, err := RepresentationModelToDomainModel(representation)
+		if err != nil {
+			logger.LogErrorfFor("Error converting expense representation: %v\n", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		domainModel.Id = c.Param("id")
 		facade.UpdateBudgetExpense(ctx, domainModel)
 		c.Status(http.StatusNoContent)
@@ -64,7 +69,12 @@ func RegisterEndpoints(
 			return
 		}
 
-		domainModel := RepresentationModelToDomainModel(representation)
+		domainModel, err := RepresentationModelToDomainModel(representation)
+		if err != nil {
+			logger.LogErrorfFor("Error converting expense representation: %v\n", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		facade.CreateBudgetExpense(ctx, domainModel)
 		c.Status(http.StatusCreated)
 	})

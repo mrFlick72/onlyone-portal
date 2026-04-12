@@ -2,10 +2,10 @@ import { getRevenueApiBaseUrl } from "../../../config/ConfigLoader";
 import BudgetRevenue from "./BudgetRevenue";
 
 const BUDGET_REVENUE_URI = (baseUrl: string, budgetRevenueId?: string) => budgetRevenueId ?
-    `${baseUrl}/budget/revenue/${budgetRevenueId}` :
-    `${baseUrl}/budget/revenue`
+    `${baseUrl}/api/budget/revenue/${budgetRevenueId}` :
+    `${baseUrl}/api/budget/revenue`
 
-const budgetRevenueWith = (baseUrl: string, year: string) => `${baseUrl}/budget/revenue?q=year=${year}`
+const budgetRevenueWith = (baseUrl: string, year: string) => `${baseUrl}/api/budget/revenue?q=year=${year}`
 
 
 export async function deleteBudgetRevenue(budgetRevenueId: string) {
