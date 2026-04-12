@@ -47,7 +47,12 @@ func RegisterExpenseEndpoints(
 			return
 		}
 
-		domainModel := RepresentationModelToDomainModel(representation)
+		domainModel, err := RepresentationModelToDomainModel(representation)
+		if err != nil {
+			logger.LogErrorfFor("Error converting expense representation: %v\n", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		domainModel.Id = c.Param("id")
 		facade.UpdateBudgetExpense(ctx, domainModel)
 		c.Status(http.StatusNoContent)
@@ -64,7 +69,12 @@ func RegisterExpenseEndpoints(
 			return
 		}
 
-		domainModel := RepresentationModelToDomainModel(representation)
+		domainModel, err := RepresentationModelToDomainModel(representation)
+		if err != nil {
+			logger.LogErrorfFor("Error converting expense representation: %v\n", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		facade.CreateBudgetExpense(ctx, domainModel)
 		c.Status(http.StatusCreated)
 	})

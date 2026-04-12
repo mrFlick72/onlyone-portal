@@ -97,6 +97,56 @@ func TestDeleteARevenue(t *testing.T) {
 	facade.AssertCalled(t, "DeleteRevenue", ctx, "123-456")
 }
 
+func TestCreateANewRevenueWithBadDateReturns400(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(RevenueActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterRevenueEndpoints(r, contextFactoryConverter, facade)
+
+	rep := RevenueRepresentation{
+		Date:   "not-a-date",
+		Amount: "100.00",
+		Note:   "Test note",
+	}
+	jsonValue, _ := json.Marshal(rep)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+
+	req, _ := http.NewRequest("POST", "/api/budget/revenue", bytes.NewBuffer(jsonValue))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	facade.AssertNotCalled(t, "CreateRevenue", mock.Anything, mock.Anything)
+}
+
+func TestUpdateARevenueWithBadDateReturns400(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(RevenueActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterRevenueEndpoints(r, contextFactoryConverter, facade)
+
+	rep := RevenueRepresentation{
+		Date:   "not-a-date",
+		Amount: "100.00",
+		Note:   "Test note",
+	}
+	jsonValue, _ := json.Marshal(rep)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+
+	req, _ := http.NewRequest("PUT", "/api/budget/revenue/123-456", bytes.NewBuffer(jsonValue))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	facade.AssertNotCalled(t, "UpdateRevenue", mock.Anything, mock.Anything)
+}
+
 func TestFindRevenuesByYear(t *testing.T) {
 	r := SetUpRouter()
 	facade := new(RevenueActionsMock)

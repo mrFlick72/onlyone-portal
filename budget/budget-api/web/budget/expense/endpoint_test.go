@@ -100,6 +100,60 @@ func TestUpdateABudgetExpense(t *testing.T) {
 	facade.AssertCalled(t, "UpdateBudgetExpense", ctx, &budgetExpense)
 }
 
+func TestCreateANewBudgetExpenseWithBadDateReturns400(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(BudgetExpenseActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
+
+	rep := BudgetExpenseRepresentation{
+		Date:     "not-a-date",
+		Amount:   "100.00",
+		Note:     "Test note",
+		TagKey:   "tagKey",
+		TagValue: "tagValue",
+	}
+	jsonValue, _ := json.Marshal(rep)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+
+	req, _ := http.NewRequest("POST", "/api/budget/expense", bytes.NewBuffer(jsonValue))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	facade.AssertNotCalled(t, "CreateBudgetExpense", mock.Anything, mock.Anything)
+}
+
+func TestUpdateABudgetExpenseWithBadDateReturns400(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(BudgetExpenseActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
+
+	rep := BudgetExpenseRepresentation{
+		Date:     "not-a-date",
+		Amount:   "100.00",
+		Note:     "Test note",
+		TagKey:   "tagKey",
+		TagValue: "tagValue",
+	}
+	jsonValue, _ := json.Marshal(rep)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+
+	req, _ := http.NewRequest("PUT", "/api/budget/expense/123-456", bytes.NewBuffer(jsonValue))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	facade.AssertNotCalled(t, "UpdateBudgetExpense", mock.Anything, mock.Anything)
+}
+
 func TestDeleteABudgetExpense(t *testing.T) {
 	r := SetUpRouter()
 	facade := new(BudgetExpenseActionsMock)

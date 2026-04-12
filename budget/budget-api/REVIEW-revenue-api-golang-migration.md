@@ -47,7 +47,7 @@ func (action *CreateRevenue) Execute(ctx context.Context, revenue *Revenue) erro
 }
 ```
 
-### 4. `RevenueRepresentationToDomainModel` silently discards parse errors
+### 4. `RevenueRepresentationToDomainModel` silently discards parse errors DONE
 
 **File:** `web/budget/revenue/converter.go:12-14`
 
