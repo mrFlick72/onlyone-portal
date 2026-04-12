@@ -61,7 +61,7 @@ func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx context.Context, 
 		KeyConditionExpression: aws.String("pk =:pk AND range_key =:range_key"),
 		FilterExpression:       aws.String("user_name = :user_name"),
 	}
-	result, err := repository.Client.Query(context.TODO(), input)
+	result, err := repository.Client.Query(ctx, input)
 	if err != nil {
 		repository.logger.LogErrorfFor("Error querying DynamoDB: %v", err)
 		return nil, err
@@ -133,7 +133,7 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx context.C
 			KeyConditionExpression: aws.String("pk = :pk"),
 		}
 
-		items, err := repository.Client.Query(context.TODO(), input)
+		items, err := repository.Client.Query(ctx, input)
 		if err != nil {
 			return nil, err
 		}
