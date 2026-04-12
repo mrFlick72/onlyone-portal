@@ -9,16 +9,21 @@ import (
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 )
 
-func RevenueRepresentationToDomainModel(rep RevenueRepresentation) *domainrevenue.Revenue {
-	d, _ := date.DateFor(rep.Date)
-	m, _ := money.MoneyFor(rep.Amount)
+func RevenueRepresentationToDomainModel(rep RevenueRepresentation) (*domainrevenue.Revenue, error) {
+	d, err := date.DateFor(rep.Date)
+	if err != nil {
+		return nil, err
+	}
+	m, err := money.MoneyFor(rep.Amount)
+	if err != nil {
+		return nil, err
+	}
 	return &domainrevenue.Revenue{
 		Id:     domainrevenue.RevenueId(rep.Id),
 		Date:   *d,
 		Amount: m,
 		Note:   rep.Note,
-		
-	}
+	}, nil
 }
 
 func RevenueDomainToRepresentationModel(r *domainrevenue.Revenue) RevenueRepresentation {

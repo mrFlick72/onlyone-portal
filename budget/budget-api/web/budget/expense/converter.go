@@ -7,10 +7,15 @@ import (
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 )
 
-// todo to be tested
-func RepresentationModelToDomainModel(budgetExpenseRepresentation BudgetExpenseRepresentation) *expense.BudgetExpense {
-	date, _ := date.DateFor(budgetExpenseRepresentation.Date)
-	money, _ := money.MoneyFor(budgetExpenseRepresentation.Amount)
+func RepresentationModelToDomainModel(budgetExpenseRepresentation BudgetExpenseRepresentation) (*expense.BudgetExpense, error) {
+	date, err := date.DateFor(budgetExpenseRepresentation.Date)
+	if err != nil {
+		return nil, err
+	}
+	money, err := money.MoneyFor(budgetExpenseRepresentation.Amount)
+	if err != nil {
+		return nil, err
+	}
 	return &expense.BudgetExpense{
 		Id:       expense.BudgetExpenseId(budgetExpenseRepresentation.Id),
 		UserName: "", // This will be set in the service layer using the current logged user
@@ -18,7 +23,7 @@ func RepresentationModelToDomainModel(budgetExpenseRepresentation BudgetExpenseR
 		Amount:   money,
 		Note:     budgetExpenseRepresentation.Note,
 		Tag:      tags.SearchTag{Key: budgetExpenseRepresentation.TagKey, Value: budgetExpenseRepresentation.TagValue},
-	}
+	}, nil
 }
 
 //     public SpentBudgetRepresentation domainToRepresentationModel(SpentBudget spentBudget) {

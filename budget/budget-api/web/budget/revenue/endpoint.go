@@ -45,7 +45,12 @@ func RegisterRevenueEndpoints(
 			return
 		}
 
-		domainModel := RevenueRepresentationToDomainModel(representation)
+		domainModel, err := RevenueRepresentationToDomainModel(representation)
+		if err != nil {
+			logger.LogErrorfFor("Error converting revenue representation: %v\n", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		facade.CreateRevenue(ctx, domainModel)
 		c.Status(http.StatusCreated)
 	})
@@ -60,7 +65,12 @@ func RegisterRevenueEndpoints(
 			return
 		}
 
-		domainModel := RevenueRepresentationToDomainModel(representation)
+		domainModel, err := RevenueRepresentationToDomainModel(representation)
+		if err != nil {
+			logger.LogErrorfFor("Error converting revenue representation: %v\n", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		domainModel.Id = c.Param("id")
 		facade.UpdateRevenue(ctx, domainModel)
 		c.Status(http.StatusNoContent)
