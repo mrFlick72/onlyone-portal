@@ -15,15 +15,15 @@ The architecture is clean and the DynamoDB key scheme correctly preserves Python
 
 ## Critical Issues
 
-### 1. Committed binary: `budget/budget-api/app` (40 MB)
+### 1. Committed binary: `budget/budget-api/app` (40 MB) DONE
 
 A compiled Go binary was committed to the repo. There is no `.gitignore` for `budget-api/`. This bloats the repository permanently (even after removal, it stays in git history). Should be removed from tracking and a `.gitignore` added.
 
-### 2. Committed log file: `budget/budget-api/test/logs.log`
+### 2. Committed log file: `budget/budget-api/test/logs.log` DONE
 
 Contains runtime output from a local test run. Should be git-ignored.
 
-### 3. `CreateRevenue.Execute` silently discards `GetCurrentUser` error
+### 3. `CreateRevenue.Execute` silently discards `GetCurrentUser` error DONE
 
 **File:** `domain/budget/revenue/actions.go:16`
 
