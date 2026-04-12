@@ -13,7 +13,10 @@ type CreateRevenue struct {
 }
 
 func (action *CreateRevenue) Execute(ctx context.Context, revenue *Revenue) error {
-	user, _ := security.GetCurrentUser(ctx)
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		return err
+	}
 	revenue.UserName = *user.UserName
 	return action.Repository.Save(ctx, revenue)
 }

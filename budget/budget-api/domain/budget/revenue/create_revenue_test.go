@@ -1,6 +1,7 @@
 package revenue
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -31,6 +32,24 @@ func TestWhenANewRevenueIsCreated(t *testing.T) {
 	assert.Equal(t, "A_USER_NAME", aRevenue.UserName)
 	assert.Equal(t, "A_REVENUE_ID", aRevenue.Id)
 	mockedRepository.AssertCalled(t, "Save", ctx, &aRevenue)
+}
+
+func TestWhenANewRevenueCreationFailsBecauseNoUserInContext(t *testing.T) {
+	mockedRepository := new(RevenueRepositoryMock)
+	uut := CreateRevenue{Repository: mockedRepository}
+
+	aDate, _ := date.IsoDateFor("2018-01-01")
+	anAmount, _ := money.MoneyFor("1.00")
+	aRevenue := Revenue{
+		Date:   *aDate,
+		Amount: anAmount,
+		Note:   "A_NOTE",
+	}
+
+	err := uut.Execute(context.Background(), &aRevenue)
+
+	assert.NotEqual(t, nil, err)
+	mockedRepository.AssertNotCalled(t, "Save")
 }
 
 func TestWhenANewRevenueCreationFails(t *testing.T) {
