@@ -7,7 +7,7 @@ import { MenuItemProps } from "./Menu";
 const BudgetPageMenuItem: React.FC<MenuItemProps> = ({ text }) => {
     return <MenuItem
         icon={<ShoppingCartIcon />}
-        link="/budget/index"
+        link="/budget/expense/index"
         text={text} />
 }
 

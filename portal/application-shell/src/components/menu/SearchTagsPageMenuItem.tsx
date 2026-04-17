@@ -7,7 +7,7 @@ import { MenuItemProps } from "./Menu";
 const SearchTagsPageMenuItem: React.FC<MenuItemProps> = ({ text }) => {
     return <MenuItem
         icon={<LocalOffer />}
-        link="/budget/index#/search-tags"
+        link="/budget/search-tags"
         text={text} />
 }
 
