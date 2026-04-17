@@ -17,8 +17,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": false,
-    "jsx": "react-jsx",
-    "outDir": "../dist"
+    "noEmit": true,
+    "jsx": "react-jsx"
   }
 }

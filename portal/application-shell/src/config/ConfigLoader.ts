@@ -13,14 +13,14 @@ type ApplicationConfig = {
 export const applicationConfigLoader = async () => {
     const configData = {
         scope: "openid",
-        redirectUri: process.env.REDIRECT_URI,
-        clientApplicationId: process.env.CLIENT_APPLICATION_ID,
-        idpBaseUrl: process.env.IDP_BASE_URL,
-        authenticationCheckInterval: Number(process.env.AUTHENTICATION_CHECK_INTERVAL),
-        budgetApiBaseUrl: process.env.BUDGET_API_BASE_URL,
-        revenueApiBaseUrl: process.env.REVENUE_API_BASE_URL,
-        accountApiBaseUrl: process.env.ACCOUNT_API_BASE_URL,
-        tagApiBaseUrl: process.env.TAG_API_BASE_URL
+        redirectUri: import.meta.env.REDIRECT_URI,
+        clientApplicationId: import.meta.env.CLIENT_APPLICATION_ID,
+        idpBaseUrl: import.meta.env.IDP_BASE_URL,
+        authenticationCheckInterval: Number(import.meta.env.AUTHENTICATION_CHECK_INTERVAL),
+        budgetApiBaseUrl: import.meta.env.BUDGET_API_BASE_URL,
+        revenueApiBaseUrl: import.meta.env.REVENUE_API_BASE_URL,
+        accountApiBaseUrl: import.meta.env.ACCOUNT_API_BASE_URL,
+        tagApiBaseUrl: import.meta.env.TAG_API_BASE_URL
 
     };
     return configData as ApplicationConfig

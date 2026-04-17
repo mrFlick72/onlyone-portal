@@ -2,32 +2,17 @@
   "name": "onlyone-portal-ui",
   "version": "1.0.0",
   "description": "onlyone PortalBudget UI",
-  "babel": {
-    "presets": [
-      "@babel/react",
-      "@babel/env"
-    ]
-  },
   "scripts": {
-    "build": "ENV=development webpack --config webpack.config.js --mode=development",
-    "production-build": "ENV=production webpack --config webpack.config.js --mode=production",
-    "watch": "webpack --watch"
+    "build": "vite build --mode production",
+    "production-build": "vite build --mode production",
+    "dev": "vite",
+    "type-check": "tsc --noEmit"
   },
   "author": "mrFlick72",
   "license": "ISC",
   "devDependencies": {
-    "@babel/core": "7.26.0",
-    "@babel/preset-env": "7.26.0",
-    "@babel/preset-react": "7.26.3",
-    "babel-loader": "^8.4.1",
-    "clean-webpack-plugin": "4.0.0",
-    "dotenv-webpack": "^8.1.0",
-    "html-webpack-plugin": "^4.5.2",
-    "prop-types": "15.8.1",
-    "style-loader": "^2.0.0",
-    "ts-loader": "^9.2.1",
-    "webpack": "^5.105.3",
-    "webpack-cli": "^4.10.0"
+    "@vitejs/plugin-react": "^4.3.0",
+    "vite": "^5.4.0"
   },
   "dependencies": {
     "jose": "^6.2.2",
