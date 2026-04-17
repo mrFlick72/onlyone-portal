@@ -1,35 +1,26 @@
-import React, { useEffect, useState } from "react"
-import { getAllMessageRegistry, MessageBundle } from "../messages/MessageRepository";
+import React, { useEffect, useMemo, useState } from "react"
+import { getAllMessageRegistry } from "../messages/MessageRepository";
 import BudgetExpensePage from "./spent-budget/BudgetExpensePage";
-import { HashRouter, Route, Routes } from "react-router";
+import { createBrowserRouter, RouterProvider } from "react-router";
 import BudgetRevenuePage from "./budget-revenue/BudgetRevenuePage";
 import SearchTagsPage from "./search-tags/SearchTagsPage";
 import { isAuthenticated } from "../auth/Authenticator";
 
-interface SpentBudgetAppProps {
-}
-
-const SpentBudgetApp: React.FC<SpentBudgetAppProps> = () => {
-    let [messageRegistry, setMessageRegistry] = useState({})
+const SpentBudgetApp: React.FC = () => {
+    const [messageRegistry, setMessageRegistry] = useState({})
 
     useEffect(() => {
         isAuthenticated().then()
         setMessageRegistry(getAllMessageRegistry())
-    }, []); // Or [] if effect doesn't need props or state
+    }, []);
 
+    const router = useMemo(() => createBrowserRouter([
+        { path: "/budget/expense/index",  element: <BudgetExpensePage messageRegistry={messageRegistry} /> },
+        { path: "/budget/revenue/index",  element: <BudgetRevenuePage messageRegistry={messageRegistry} /> },
+        { path: "/budget/search-tags",    element: <SearchTagsPage messageRegistry={messageRegistry} /> },
+    ]), [messageRegistry]);
 
-
-    return (
-        <HashRouter>
-            <Routes>
-                <Route path="/"
-                    element={<BudgetExpensePage messageRegistry={messageRegistry} />} />
-                <Route path="/budget-revenue"
-                    element={<BudgetRevenuePage messageRegistry={messageRegistry} />} />
-                <Route path="/search-tags"
-                    element={<SearchTagsPage messageRegistry={messageRegistry} />} />
-            </Routes>
-        </HashRouter>)
+    return <RouterProvider router={router} />;
 }
 
 export default SpentBudgetApp;

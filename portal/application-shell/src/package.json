@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "onlyone PortalBudget UI",
   "scripts": {
-    "build": "vite build --mode production",
+    "build": "vite build --mode development",
     "production-build": "vite build --mode production",
     "dev": "vite",
     "type-check": "tsc --noEmit"

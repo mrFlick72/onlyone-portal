@@ -4,11 +4,13 @@ import path from 'path';
 import fs from 'fs';
 
 const pages: Record<string, { html: string; entry: string }> = {
-  home:     { html: 'index.html',          entry: '/home/index.tsx' },
-  callback: { html: 'callback.html',       entry: '/auth/Callback.tsx' },
-  logout:   { html: 'logout.html',         entry: '/auth/Logout.tsx' },
-  budget:   { html: 'budget/index.html',   entry: '/budget/index.tsx' },
-  account:  { html: 'account/index.html',  entry: '/account/index.tsx' },
+  home:          { html: 'index.html',                    entry: '/home/index.tsx' },
+  callback:      { html: 'callback.html',                 entry: '/auth/Callback.tsx' },
+  logout:        { html: 'logout.html',                   entry: '/auth/Logout.tsx' },
+  budgetExpense: { html: 'budget/expense/index.html',     entry: '/budget/index.tsx' },
+  budgetRevenue: { html: 'budget/revenue/index.html',     entry: '/budget/index.tsx' },
+  budgetTags:    { html: 'budget/search-tags/index.html', entry: '/budget/index.tsx' },
+  account:       { html: 'account/index.html',            entry: '/account/index.tsx' },
 };
 
 function htmlTemplatePlugin(): Plugin {

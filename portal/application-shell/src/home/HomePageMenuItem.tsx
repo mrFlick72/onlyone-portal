@@ -44,13 +44,13 @@ export const homeMenuContent = {
         titleText: "Budget Management Section",
         titleIcon: <ShoppingCartIcon style={{fontSize: FONT_SIZE}}/>,
         body: "In this section you can manage your budget",
-        link: "/budget/index"
+        link: "/budget/expense/index"
     },
     revenue: {
         titleText: "Revenue Management Section",
         titleIcon: <Money style={{fontSize: FONT_SIZE}}/>,
         body: "In this section you can manage your revenue",
-        link: "/budget/index#/budget-revenue"
+        link: "/budget/revenue/index"
     },
 
 }
