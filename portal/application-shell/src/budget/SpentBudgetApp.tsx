@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react"
 import { getAllMessageRegistry } from "../messages/MessageRepository";
-import BudgetExpensePage from "./spent-budget/BudgetExpensePage";
+import BudgetExpensePage from "./expense/BudgetExpensePage";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import BudgetRevenuePage from "./revenue/BudgetRevenuePage";
 import SearchTagsPage from "./search-tags/SearchTagsPage";
