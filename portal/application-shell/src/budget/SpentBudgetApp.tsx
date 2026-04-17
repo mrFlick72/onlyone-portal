@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react"
 import { getAllMessageRegistry } from "../messages/MessageRepository";
 import BudgetExpensePage from "./spent-budget/BudgetExpensePage";
 import { createBrowserRouter, RouterProvider } from "react-router";
-import BudgetRevenuePage from "./budget-revenue/BudgetRevenuePage";
+import BudgetRevenuePage from "./revenue/BudgetRevenuePage";
 import SearchTagsPage from "./search-tags/SearchTagsPage";
 import { isAuthenticated } from "../auth/Authenticator";
 
