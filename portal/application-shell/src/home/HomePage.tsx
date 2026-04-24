@@ -24,7 +24,8 @@ const HomePage: React.FC = () => {
     return <ThemeProvider theme={themeProvider}>
         <Paper variant="outlined">
             <Menu messages={configMap.searchTags(messageRegistry).menuMessages}
-                  navBarItems={[]}>
+                  navBarItems={[]}
+                  showGlobalNav={false}>
                 <BudgetPageMenuItem text={configMap.budgetExpense(messageRegistry).menuMessages.budgetPageLabel}/>
                 <BudgetRevenuePageMenuItem text={configMap.budgetExpense(messageRegistry).menuMessages.revenuePageLabel}/>
                 <AccountPageMenuItem text={configMap.budgetExpense(messageRegistry).menuMessages.userProfileLabel}/>
