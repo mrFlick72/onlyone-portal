@@ -30,6 +30,7 @@ type vauthenticatorUserInfoResponse struct {
 func (r *VauthenticatorAccountRepository) FindAnAccount(ctx context.Context) (*account.Account, error) {
 	req, err := r.newAuthorizedRequest(ctx, http.MethodGet, fmt.Sprintf("%s/userinfo", r.BaseUrl), nil)
 	if err != nil {
+	    r.Logger.LogErrorfFor("error %v", req)
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/json")
@@ -104,11 +105,12 @@ func (r *VauthenticatorAccountRepository) newAuthorizedRequest(ctx context.Conte
 	var requestBody io.Reader
 	if body != nil {
 		requestBody = bytes.NewReader(body)
+		requestBodyContent,_ := io.ReadAll(bytes.NewReader(body))
+		r.Logger.LogInfoFor("string(requestBodyContent)")
+		r.Logger.LogInfoFor(string(requestBodyContent))
 	}
 
-	requestBody2,_ := io.ReadAll(bytes.NewReader(body))
-	r.Logger.LogInfoFor("string(requestBody2)")
-	r.Logger.LogInfoFor(string(requestBody2))
+
 	req, err := http.NewRequestWithContext(ctx, method, url, requestBody)
 	if err != nil {
 		r.Logger.LogErrorfFor("error while creating request for vauthenticator: %s", err)
