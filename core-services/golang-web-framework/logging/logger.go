@@ -47,6 +47,21 @@ func GetLoggerInstanceForComponentByType(obj any) *Logger {
 	}
 }
 
+func resolveLevel(level string) zapcore.Level {
+	switch level {
+	case "debug":
+		return zap.DebugLevel
+	case "info":
+		return zap.InfoLevel
+	case "warn":
+		return zap.WarnLevel
+	case "error":
+		return zap.ErrorLevel
+	default:
+		return zap.InfoLevel
+	}
+}
+
 func logInit(f *os.File) *zap.SugaredLogger {
 
 	pe := zap.NewProductionEncoderConfig()
@@ -55,7 +70,7 @@ func logInit(f *os.File) *zap.SugaredLogger {
 	fileEncoder := zapcore.NewJSONEncoder(pe)
 	consoleEncoder := zapcore.NewConsoleEncoder(pe)
 
-	level := zap.InfoLevel
+	level := resolveLevel(manager.GetConfigFor("logger.level"))
 
 	var core zapcore.Core
 	if f == nil {

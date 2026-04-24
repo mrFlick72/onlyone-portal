@@ -20,4 +20,5 @@ user:
   required-role: USER_ROLE
 
 logger:
+  level: info
   file-name: logs.log
