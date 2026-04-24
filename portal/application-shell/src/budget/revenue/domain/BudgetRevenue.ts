@@ -5,4 +5,9 @@ type BudgetRevenue = {
   note: string;
 };
 
+export type BudgetRevenueList = {
+  revenues: BudgetRevenue[];
+  total: string;
+};
+
 export default BudgetRevenue;

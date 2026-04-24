@@ -35,12 +35,17 @@ func RevenueDomainToRepresentationModel(r *domainrevenue.Revenue) RevenueReprese
 	}
 }
 
-func RevenueListDomainToRepresentationModel(list []domainrevenue.Revenue) []RevenueRepresentation {
-	result := make([]RevenueRepresentation, 0, len(list))
+func RevenueListDomainToRepresentationModel(list []domainrevenue.Revenue) RevenueListRepresentation {
+	revenues := make([]RevenueRepresentation, 0, len(list))
+	total := money.Zero()
 	for i := range list {
-		result = append(result, RevenueDomainToRepresentationModel(&list[i]))
+		revenues = append(revenues, RevenueDomainToRepresentationModel(&list[i]))
+		total = total.Plus(list[i].Amount)
 	}
-	return result
+	return RevenueListRepresentation{
+		Revenues: revenues,
+		Total:    total.StringifyAmount(),
+	}
 }
 
 // parseYearQueryParam preserves the Python revenue-api wire format "year=2023"

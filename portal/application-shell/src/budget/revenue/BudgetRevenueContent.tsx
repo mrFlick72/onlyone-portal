@@ -5,11 +5,13 @@ import BudgetRevenue from "./domain/BudgetRevenue";
 
 interface BudgetRevenueTableProps {
     revenues: BudgetRevenue[];
+    total: string;
     openDeletePopUp: (revenue: BudgetRevenue) => void;
     openUpdatePopUp: (revenue: BudgetRevenue) => void;
 }
 
-const BudgetRevenueTable: React.FC<BudgetRevenueTableProps> = ({ revenues, openDeletePopUp, openUpdatePopUp }) => {
+const BudgetRevenueTable: React.FC<BudgetRevenueTableProps> = ({ revenues, total, openDeletePopUp, openUpdatePopUp }) => {
+
     return <TableContainer component={Paper}>
         <Table>
             <TableHead>
@@ -24,6 +26,13 @@ const BudgetRevenueTable: React.FC<BudgetRevenueTableProps> = ({ revenues, openD
                 {revenues.map(revenue => <BudgetRevenueRow revenue={revenue}
                     openUpdatePopUp={openUpdatePopUp.bind(this, revenue)}
                     openDeletePopUp={openDeletePopUp.bind(this, revenue)} />)}
+                <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold' }}>Total</TableCell>
+                    <TableCell></TableCell>
+                    <TableCell></TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>{total}</TableCell>
+                    <TableCell colSpan={2} />
+                </TableRow>
             </TableBody>
         </Table>
     </TableContainer>

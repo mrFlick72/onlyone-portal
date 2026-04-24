@@ -6,3 +6,8 @@ type RevenueRepresentation struct {
 	Amount string `json:"amount"`
 	Note   string `json:"note"`
 }
+
+type RevenueListRepresentation struct {
+	Revenues []RevenueRepresentation `json:"revenues"`
+	Total    string                  `json:"total"`
+}

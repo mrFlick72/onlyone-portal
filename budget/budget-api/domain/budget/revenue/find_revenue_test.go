@@ -19,13 +19,19 @@ func TestWhenRevenuesAreFoundByYear(t *testing.T) {
 	start, _ := date.FirstDateOfMonth(date.JANUARY(), year)
 	end, _ := date.LastDateOfMonth(date.DECEMBER(), year)
 
-	aDate, _ := date.IsoDateFor("2018-06-15")
+	earlierDate, _ := date.IsoDateFor("2018-03-10")
+	laterDate, _ := date.IsoDateFor("2018-06-15")
 	amount, _ := money.MoneyFor("500.00")
+	unsorted := []Revenue{
+		{Id: "ID1", UserName: "A_USER_NAME", Date: *earlierDate, Amount: amount, Note: "N1"},
+		{Id: "ID2", UserName: "A_USER_NAME", Date: *laterDate, Amount: amount, Note: "N2"},
+	}
 	expected := []Revenue{
-		{Id: "ID", UserName: "A_USER_NAME", Date: *aDate, Amount: amount, Note: "N"},
+		{Id: "ID1", UserName: "A_USER_NAME", Date: *earlierDate, Amount: amount, Note: "N1"},
+		{Id: "ID2", UserName: "A_USER_NAME", Date: *laterDate, Amount: amount, Note: "N2"},
 	}
 
-	mockedRepository.On("FindByDateRange", ctx, start, end).Return(expected, nil)
+	mockedRepository.On("FindByDateRange", ctx, start, end).Return(unsorted, nil)
 
 	actual, err := uut.Execute(ctx, year)
 

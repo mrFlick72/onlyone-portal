@@ -20,7 +20,8 @@ interface BudgetRevenuePageProps {
 const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }) => {
 
     const [deletableItem, setDeletableItem] = useState<BudgetRevenue | null>(null)
-    const [revenues, setRevenues] = useState([])
+    const [revenues, setRevenues] = useState<BudgetRevenue[]>([])
+    const [total, setTotal] = useState("0.00")
     const [currentBudgetRevenueId, setCurrentBudgetRevenueId] = useState("")
     const [currentBudgetRevenueDate, setCurrentBudgetRevenueDate] = useState(moment())
     const [currentBudgetRevenueAmount, setCurrentBudgetRevenueAmount] = useState("0.00")
@@ -60,7 +61,10 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
 
     const budgetRevenue = () => {
         findBudgetRevenue(searchCriteria.getYearSearchCriteria())
-            .then(revenues => setRevenues(revenues))
+            .then(({ revenues, total }) => {
+                setRevenues(revenues)
+                setTotal(total)
+            })
     }
 
     const budgetRevenueHandlers = {
@@ -130,7 +134,8 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
 
                 <BudgetRevenueContent openUpdatePopUp={makeUpdateBudgetRevenuePopUpOpen}
                     openDeletePopUp={makeDeleteBudgetRevenuePopUpOpen}
-                    revenues={revenues} />
+                    revenues={revenues}
+                    total={total} />
             </Container>
 
         </Paper>
