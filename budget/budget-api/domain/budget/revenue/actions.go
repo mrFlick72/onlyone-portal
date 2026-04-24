@@ -3,6 +3,7 @@ package revenue
 import (
 	"context"
 	"errors"
+	"sort"
 
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
@@ -54,7 +55,14 @@ func (action *FindRevenue) Execute(ctx context.Context, year date.Year) ([]Reven
 	if err != nil {
 		return nil, err
 	}
-	return action.Repository.FindByDateRange(ctx, firstDate, lastDate)
+	revenues, err := action.Repository.FindByDateRange(ctx, firstDate, lastDate)
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(revenues, func(i, j int) bool {
+		return revenues[i].Date.GetTime().Before(revenues[j].Date.GetTime())
+	})
+	return revenues, nil
 }
 
 type DeleteRevenue struct {

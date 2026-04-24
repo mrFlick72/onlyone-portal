@@ -15,5 +15,6 @@ class RevenueResponseRepresentation(BaseModel):
     note: str
 
 
+
 class QueryParamRepresentation(BaseModel):
     year: Year

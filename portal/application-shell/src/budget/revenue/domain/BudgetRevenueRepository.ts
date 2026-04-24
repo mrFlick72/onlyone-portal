@@ -1,5 +1,5 @@
 import { getRevenueApiBaseUrl } from "../../../config/ConfigLoader";
-import BudgetRevenue from "./BudgetRevenue";
+import BudgetRevenue, { BudgetRevenueList } from "./BudgetRevenue";
 
 const BUDGET_REVENUE_URI = (baseUrl: string, budgetRevenueId?: string) => budgetRevenueId ?
     `${baseUrl}/api/budget/revenue/${budgetRevenueId}` :
@@ -20,9 +20,9 @@ export async function deleteBudgetRevenue(budgetRevenueId: string) {
     })
 }
 
-export async function findBudgetRevenue(year: string) {
+export async function findBudgetRevenue(year: string): Promise<BudgetRevenueList> {
     const baseUrl = await getRevenueApiBaseUrl();
-    let responsePromise = await fetch(budgetRevenueWith(baseUrl, year), {
+    const response = await fetch(budgetRevenueWith(baseUrl, year), {
         method: "GET",
         credentials: 'include',
         headers: {
@@ -30,7 +30,7 @@ export async function findBudgetRevenue(year: string) {
             'Accept': 'application/json'
         }
     });
-    return responsePromise.json()
+    return response.json();
 }
 
 export async function saveBudgetRevenue(budgetRevenue: BudgetRevenue) {

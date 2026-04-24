@@ -44,7 +44,7 @@ async def get_revenue(
         converter.from_domain_to_representation(revenue).model_dump()
         for revenue in revenues
     ]
-    
+
 
     return Response(
         status_code=200,
