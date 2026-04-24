@@ -6,7 +6,6 @@ import { getSearchTagRegistry, saveSearchTag } from "./domain/SearchTagRepositor
 import { Container, Paper, ThemeProvider } from "@mui/material";
 import themeProvider from "../../theme/ThemeProvider";
 import Menu from "../../components/menu/Menu";
-import AccountPageMenuItem from "../../components/menu/AccountPageMenuItem";
 import Separator from "../../components/form/Separator";
 import { MessageBundle } from '../../messages/MessageRepository';
 
@@ -54,9 +53,7 @@ const SearchTagsPage: FC<SearchTagsPageProps> = ({ messageRegistry }) => {
 
     return <ThemeProvider theme={theme}>
         <Paper variant="outlined">
-            <Menu messages={configMap.searchTags(messageRegistry).menuMessages} navBarItems={[]}>
-                <AccountPageMenuItem text={configMap.searchTags(messageRegistry).menuMessages.userProfileLabel} />
-            </Menu>
+            <Menu messages={configMap.searchTags(messageRegistry).menuMessages} navBarItems={[]} />
 
             <Container>
                 <SearchTagsForm searchTag={{ key: searchTag.key, value: searchTag.value }} handler={formHandler} />

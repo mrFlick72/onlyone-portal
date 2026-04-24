@@ -1,7 +1,8 @@
 import React from "react"
-import { AppBar, Box, Button, Drawer, IconButton, List, Toolbar, Typography, useTheme } from "@mui/material";
+import { AppBar, Box, Button, Divider, Drawer, IconButton, List, Toolbar, Typography, useTheme } from "@mui/material";
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
+import GlobalPageNavigation from "./GlobalPageNavigation";
 
 type MenuItemProps = {
     text: string
@@ -10,10 +11,11 @@ type MenuItemProps = {
 type MenuProps = {
     messages: { [key: string]: string },
     children?: React.ReactNode,
-    navBarItems: React.ReactNode
+    navBarItems: React.ReactNode,
+    showGlobalNav?: boolean
 }
 
-const Menu: React.FC<MenuProps> = ({ messages, children, navBarItems }) => {
+const Menu: React.FC<MenuProps> = ({ messages, children, navBarItems, showGlobalNav = true }) => {
     const links = {
         logOut: "/logout",
         home: "/"
@@ -49,20 +51,20 @@ const Menu: React.FC<MenuProps> = ({ messages, children, navBarItems }) => {
                     }}>{messages.title}</a>
                 </Typography>
 
-                {children &&
-                    <Drawer
-                        open={openDrawer}
-                        onClose={toggleDrawer(false)}>
-                        <Box
-                            role="presentation"
-                            onClick={toggleDrawer(false)}
-                            onKeyDown={toggleDrawer(false)}>
-                            <List>
-                                {children}
-                            </List>
-                        </Box>
-                    </Drawer>
-                }
+                <Drawer
+                    open={openDrawer}
+                    onClose={toggleDrawer(false)}>
+                    <Box
+                        role="presentation"
+                        onClick={toggleDrawer(false)}
+                        onKeyDown={toggleDrawer(false)}>
+                        <List>
+                            {children}
+                            {children && showGlobalNav && <Divider />}
+                            {showGlobalNav && <GlobalPageNavigation />}
+                        </List>
+                    </Box>
+                </Drawer>
                 {navBarItems}
                 <form action={links.logOut} method="GET">
                     <Button color="inherit" type="submit">
