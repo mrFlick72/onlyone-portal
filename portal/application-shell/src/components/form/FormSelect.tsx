@@ -3,7 +3,7 @@ import { commonStyle } from "../../theme/ThemeProvider";
 
 
 import Select, { GroupBase, OptionsOrGroups } from "react-select";
-import { Grid2, InputLabel } from "@mui/material";
+import { Grid, InputLabel } from "@mui/material";
 
 export interface SelectOption {
     value: string
@@ -21,11 +21,11 @@ interface FormSelectProps {
 }
 
 const FormSelect: React.FC<FormSelectProps> = ({ id, label, multi, options, value, onChangeHandler, prefix }) => {
-    return <Grid2 container spacing={8} alignItems="flex-end" style={commonStyle.formRow}>
-        {prefix && <Grid2>
+    return <Grid container spacing={8} alignItems="flex-end" style={commonStyle.formRow}>
+        {prefix && <Grid>
             {prefix}
-        </Grid2>}
-        <Grid2 size={{ xs: 12 }}>
+        </Grid>}
+        <Grid size={{ xs: 12 }}>
             <InputLabel id={id}>{label}</InputLabel>
             <Select
                 menuPortalTarget={document.body}
@@ -36,8 +36,8 @@ const FormSelect: React.FC<FormSelectProps> = ({ id, label, multi, options, valu
 
                 options={options}
                 onChange={onChangeHandler} />
-        </Grid2>
-    </Grid2>
+        </Grid>
+    </Grid>
 
 }
 

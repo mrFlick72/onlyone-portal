@@ -1,5 +1,5 @@
 import React, {ReactNode} from 'react';
-import {Grid2} from "@mui/material";
+import {Grid} from "@mui/material";
 
 
 interface MenuCardContainerProps {
@@ -7,8 +7,8 @@ interface MenuCardContainerProps {
 }
 
 const MenuCardContainer: React.FC<MenuCardContainerProps> = ({children}) => {
-    return <Grid2 container spacing={2}>
+    return <Grid container spacing={2}>
         {children}
-    </Grid2>
+    </Grid>
 }
 export default MenuCardContainer
