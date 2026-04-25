@@ -37,7 +37,9 @@ export function getAllMessageRegistry(): MessageBundle {
         "budgetExpensePage.loadCsvFile.popup.formUploadFileLabel": "File:",
         "budgetExpensePage.cards.dailyDetails": "Daily details",
         "budgetExpensePage.cards.totalByCategories": "Total by categories",
-        "budgetRevenuePage.newBudgetRevenueModal.title": "Save a Revenue Expense"
+        "budgetRevenuePage.newBudgetRevenueModal.title": "Save a Revenue Expense",
+        "budgetRevenuePage.menu.changeYear": "Change Year",
+        "budgetRevenuePage.changeYear.popup.title": "Select Year"
     }
 }
 

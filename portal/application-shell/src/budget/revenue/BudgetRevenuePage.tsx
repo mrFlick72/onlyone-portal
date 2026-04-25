@@ -5,8 +5,9 @@ import * as searchCriteria from "../SearchCriteriaProvider";
 import { deleteBudgetRevenue, findBudgetRevenue, saveBudgetRevenue } from "./domain/BudgetRevenueRepository";
 import themeProvider from "../../theme/ThemeProvider";
 import { Container, Paper, ThemeProvider } from "@mui/material";
-import { Money } from "@mui/icons-material";
+import { CalendarToday, Money } from "@mui/icons-material";
 import BudgetRevenueContent from "./BudgetRevenueContent";
+import ChangeRevenueYearPopUp from "./ChangeRevenueYearPopUp";
 import DeleteBudgetRevenueConfirmationPopUp from "./DeleteBudgetRevenueConfirmationPopUp";
 import SaveBudgetRevenuePopUp from "./SaveBudgetRevenuePopUp";
 import Menu from "../../components/menu/Menu";
@@ -47,6 +48,20 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
         setOpenSaveBudgetRevenuePopUp(true)
     }, [])
 
+    const [selectedYear, setSelectedYear] = useState(searchCriteria.getYearSearchCriteria())
+
+    const [openChangeRevenueYearPopUp, setOpenChangeRevenueYearPopUp] = useState(false)
+    const makeChangeRevenueYearPopUpOpen = useCallback(() => {
+        setSelectedYear(searchCriteria.getYearSearchCriteria())
+        setOpenChangeRevenueYearPopUp(true)
+    }, [])
+    const changeRevenueYearPopUpCloseHandler = useCallback(() => {
+        setOpenChangeRevenueYearPopUp(false)
+    }, [])
+
+    const yearHandler = (event: React.ChangeEvent<HTMLInputElement>) =>
+        setSelectedYear(event.target.value)
+
     const [openDeleteBudgetRevenuePopUp, setOpenDeleteBudgetRevenuePopUp] = useState(false)
     const makeDeleteBudgetRevenuePopUpOpen = useCallback((revenue: BudgetRevenue) => {
         setDeletableItem(revenue)
@@ -66,6 +81,12 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
                 setTotal(total)
             })
     }
+
+    const saveYear = useCallback(() => {
+        searchCriteria.setYearSearchCriteria(selectedYear)
+        setOpenChangeRevenueYearPopUp(false)
+        budgetRevenue()
+    }, [selectedYear])
 
     const budgetRevenueHandlers = {
         date: (value:moment.Moment) => setCurrentBudgetRevenueDate(value),
@@ -112,6 +133,10 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
                     openPopupHandler={makeSaveBudgetRevenuePopUpOpen}
                     text={configMap.budgetExpense(messageRegistry).menuMessages.insertBudgetModal} />
 
+                <OpenPopUpMenuItem icon={<CalendarToday />}
+                    openPopupHandler={makeChangeRevenueYearPopUpOpen}
+                    text={configMap.budgetRevenue(messageRegistry).menuMessages.changeYearModal} />
+
             </Menu>
             <Container>
                 <SaveBudgetRevenuePopUp
@@ -131,6 +156,14 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
                     handleClose={deleteBudgetRevenuePopUpOpenCloseHandler}
                     modal={deleteConfirmationPopupMessages}
                     saveCallback={deleteItem} />
+
+                <ChangeRevenueYearPopUp
+                    open={openChangeRevenueYearPopUp}
+                    handleClose={changeRevenueYearPopUpCloseHandler}
+                    year={selectedYear}
+                    handler={yearHandler}
+                    modal={configMap.budgetRevenue(messageRegistry).changeYearModal}
+                    saveCallback={saveYear} />
 
                 <BudgetRevenueContent openUpdatePopUp={makeUpdateBudgetRevenuePopUpOpen}
                     openDeletePopUp={makeDeleteBudgetRevenuePopUpOpen}

@@ -57,12 +57,19 @@ export class OnlyonePortalPagesConfigMap {
             menuMessages: {
                 title: getMessageFor(bundle, "menu.title"),
                 userProfileLabel: getMessageFor(bundle, "menu.userProfile.label"),
-                logOutLabel: getMessageFor(bundle, "menu.logOut.label")
+                logOutLabel: getMessageFor(bundle, "menu.logOut.label"),
+                changeYearModal: getMessageFor(bundle, "budgetRevenuePage.menu.changeYear")
             },
             deleteModal: { id: "deleteBudgetRevenueModal" },
             saveBudgetRevenueModal: {
                 id: "saveBudgetRevenueModal",
                 title: getMessageFor(bundle, "budgetRevenuePage.newBudgetRevenueModal.title"),
+                closeButtonLabel: getMessageFor(bundle, "common.button.close.label"),
+                saveButtonLabel: getMessageFor(bundle, "common.button.save.label")
+            },
+            changeYearModal: {
+                id: "changeRevenueYearModal",
+                title: getMessageFor(bundle, "budgetRevenuePage.changeYear.popup.title"),
                 closeButtonLabel: getMessageFor(bundle, "common.button.close.label"),
                 saveButtonLabel: getMessageFor(bundle, "common.button.save.label")
             }
