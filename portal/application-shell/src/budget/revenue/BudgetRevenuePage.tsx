@@ -5,9 +5,9 @@ import * as searchCriteria from "../SearchCriteriaProvider";
 import { deleteBudgetRevenue, findBudgetRevenue, saveBudgetRevenue } from "./domain/BudgetRevenueRepository";
 import themeProvider from "../../theme/ThemeProvider";
 import { Container, Paper, ThemeProvider } from "@mui/material";
-import { CalendarToday, Money } from "@mui/icons-material";
+import { Money, Search } from "@mui/icons-material";
 import BudgetRevenueContent from "./BudgetRevenueContent";
-import ChangeRevenueYearPopUp from "./ChangeRevenueYearPopUp";
+import RevenueSearchPopUp from "./RevenueSearchPopUp";
 import DeleteBudgetRevenueConfirmationPopUp from "./DeleteBudgetRevenueConfirmationPopUp";
 import SaveBudgetRevenuePopUp from "./SaveBudgetRevenuePopUp";
 import Menu from "../../components/menu/Menu";
@@ -50,13 +50,13 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
 
     const [selectedYear, setSelectedYear] = useState(searchCriteria.getYearSearchCriteria())
 
-    const [openChangeRevenueYearPopUp, setOpenChangeRevenueYearPopUp] = useState(false)
-    const makeChangeRevenueYearPopUpOpen = useCallback(() => {
+    const [openRevenueSearchPopUp, setOpenRevenueSearchPopUp] = useState(false)
+    const makeRevenueSearchPopUpOpen = useCallback(() => {
         setSelectedYear(searchCriteria.getYearSearchCriteria())
-        setOpenChangeRevenueYearPopUp(true)
+        setOpenRevenueSearchPopUp(true)
     }, [])
-    const changeRevenueYearPopUpCloseHandler = useCallback(() => {
-        setOpenChangeRevenueYearPopUp(false)
+    const revenueSearchPopUpCloseHandler = useCallback(() => {
+        setOpenRevenueSearchPopUp(false)
     }, [])
 
     const yearHandler = (event: React.ChangeEvent<HTMLInputElement>) =>
@@ -84,7 +84,7 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
 
     const saveYear = useCallback(() => {
         searchCriteria.setYearSearchCriteria(selectedYear)
-        setOpenChangeRevenueYearPopUp(false)
+        setOpenRevenueSearchPopUp(false)
         budgetRevenue()
     }, [selectedYear])
 
@@ -133,8 +133,8 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
                     openPopupHandler={makeSaveBudgetRevenuePopUpOpen}
                     text={configMap.budgetExpense(messageRegistry).menuMessages.insertBudgetModal} />
 
-                <OpenPopUpMenuItem icon={<CalendarToday />}
-                    openPopupHandler={makeChangeRevenueYearPopUpOpen}
+                <OpenPopUpMenuItem icon={<Search />}
+                    openPopupHandler={makeRevenueSearchPopUpOpen}
                     text={configMap.budgetRevenue(messageRegistry).menuMessages.changeYearModal} />
 
             </Menu>
@@ -157,9 +157,9 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
                     modal={deleteConfirmationPopupMessages}
                     saveCallback={deleteItem} />
 
-                <ChangeRevenueYearPopUp
-                    open={openChangeRevenueYearPopUp}
-                    handleClose={changeRevenueYearPopUpCloseHandler}
+                <RevenueSearchPopUp
+                    open={openRevenueSearchPopUp}
+                    handleClose={revenueSearchPopUpCloseHandler}
                     year={selectedYear}
                     handler={yearHandler}
                     modal={configMap.budgetRevenue(messageRegistry).changeYearModal}
