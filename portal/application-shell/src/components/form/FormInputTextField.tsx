@@ -1,4 +1,4 @@
-import { Grid2, TextField } from "@mui/material";
+import { Grid, TextField } from "@mui/material";
 import React from "react";
 import { commonStyle } from "../../theme/ThemeProvider";
 
@@ -25,18 +25,18 @@ const FormInputTextField: React.FC<FormInputTextFieldProps> = ({
     value,
     handler
 }) => {
-    return <Grid2 container spacing={8} alignItems="flex-end" style={commonStyle.formRow}>
-        {prefix && <Grid2>
+    return <Grid container spacing={8} alignItems="flex-end" style={commonStyle.formRow}>
+        {prefix && <Grid>
 
             {prefix}
-        </Grid2>}
-        <Grid2 size={{ xs: 12 }}>
+        </Grid>}
+        <Grid size={{ xs: 12 }}>
             <TextField name={id} id={id} label={label} type={type || "text"} disabled={disabled}
                 variant="outlined" fullWidth autoFocus={autoFocus} required={required || false}
                 value={value}
                 onChange={handler} />
-        </Grid2>
-    </Grid2>
+        </Grid>
+    </Grid>
 }
 
 export default FormInputTextField

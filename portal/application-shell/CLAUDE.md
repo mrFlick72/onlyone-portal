@@ -4,7 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-The frontend SPA for OnlyOne Portal — a React 19 + TypeScript multi-page application built with Webpack 5 and Material UI v6.
+The frontend SPA for OnlyOne Portal — a React 19 + TypeScript multi-page application built with Vite js and Material UI v6.
+
+Take in consideration $typescript-expert and $react-expert tags for this task.
+Do not forget to use context7 and mui-mcp MCP if available for further details
 
 ## Build Commands
 

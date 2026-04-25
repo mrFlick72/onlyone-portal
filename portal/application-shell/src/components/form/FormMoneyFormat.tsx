@@ -1,5 +1,5 @@
 import React from "react";
-import { Grid2, TextField } from "@mui/material";
+import { Grid, TextField } from "@mui/material";
 import { NumericFormat } from "react-number-format";
 import { commonStyle } from "../../theme/ThemeProvider";
 
@@ -15,8 +15,8 @@ type FormMoneyFormatProps = {
 
 
 const FormMoneyFormat: React.FC<FormMoneyFormatProps> = ({ id, label, required, autoFocus, disabled, value, handler }) => {
-    return <Grid2 container spacing={8} alignItems="flex-end" style={commonStyle.formRow}>
-        <Grid2 size={{ xs: 12 }}>
+    return <Grid container spacing={8} alignItems="flex-end" style={commonStyle.formRow}>
+        <Grid size={{ xs: 12 }}>
             <NumericFormat
                 size={"medium"}
                 label={label}
@@ -31,8 +31,8 @@ const FormMoneyFormat: React.FC<FormMoneyFormatProps> = ({ id, label, required, 
                 customInput={TextField}
                 decimalScale={2}
             />
-        </Grid2>
-    </Grid2>
+        </Grid>
+    </Grid>
 }
 
 export default FormMoneyFormat

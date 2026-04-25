@@ -1,5 +1,5 @@
 import React from "react";
-import { Grid2 } from "@mui/material";
+import { Grid } from "@mui/material";
 import { DesktopDatePicker } from "@mui/x-date-pickers"
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -19,8 +19,8 @@ const FormDatePicker: React.FC<FormDatePickerProps> = ({
     label, value, onClickHandler, pattern }) => {
     let val = value && moment(value, pattern)
 
-    return <Grid2 container alignItems="flex-end" style={commonStyle.formRow}>
-        <Grid2 size={{ xs: 12 }}>
+    return <Grid container alignItems="flex-end" style={commonStyle.formRow}>
+        <Grid size={{ xs: 12 }}>
             <LocalizationProvider dateAdapter={AdapterMoment}>
                 <DesktopDatePicker
                     slotProps={{ textField: { fullWidth: true } }}
@@ -30,8 +30,8 @@ const FormDatePicker: React.FC<FormDatePickerProps> = ({
                     value={val || moment()}
                 />
             </LocalizationProvider>
-        </Grid2>
-    </Grid2>
+        </Grid>
+    </Grid>
 
 }
 

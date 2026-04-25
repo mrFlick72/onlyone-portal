@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react"
 import moment, { type Moment } from "moment"
-import { Container, Paper, Tab, Tabs, ThemeProvider } from "@mui/material"
+import { Box, Container, Paper, Tab, Tabs, ThemeProvider } from "@mui/material"
 import { LocalGroceryStore, Search } from "@mui/icons-material"
 import {
     getMonthSearchCriteria,
@@ -204,7 +204,7 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
 
     return (
         <ThemeProvider theme={themeProvider}>
-            <Paper variant="outlined">
+            <Paper variant="outlined" sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
                 <SearchBudgetExpensePopUp
                     month={selectedMonth}
                     year={selectedYear}
@@ -259,7 +259,7 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
                     <SearchTagsPageMenuItem text={configMap.budgetExpense(messageRegistry).menuMessages.searchTags} />
                 </Menu>
 
-                <Container>
+                <Container sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     <Tabs
                         value={tabPanel}
                         onChange={handleTabPanelChange}
@@ -270,16 +270,18 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
                         <Tab value={0} label="Daily View" />
                         <Tab value={1} label="By Tags View" />
                     </Tabs>
-                    <TabPanel value={tabPanel} index={0}>
-                        <SpentBudgetContent
-                            spentBudget={spentBudget}
-                            openUpdateBudgetExpensePopUp={makeUpdateBudgetExpensePopUpOpen}
-                            openDeleteBudgetExpensePopUp={makeDeleteBudgetExpensePopUpOpen}
-                        />
-                    </TabPanel>
-                    <TabPanel value={tabPanel} index={1}>
-                        <TotalBySearchTags totals={spentBudget.totalDetailList || []} />
-                    </TabPanel>
+                    <Box sx={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
+                        <TabPanel value={tabPanel} index={0}>
+                            <SpentBudgetContent
+                                spentBudget={spentBudget}
+                                openUpdateBudgetExpensePopUp={makeUpdateBudgetExpensePopUpOpen}
+                                openDeleteBudgetExpensePopUp={makeDeleteBudgetExpensePopUpOpen}
+                            />
+                        </TabPanel>
+                        <TabPanel value={tabPanel} index={1}>
+                            <TotalBySearchTags totals={spentBudget.totalDetailList || []} />
+                        </TabPanel>
+                    </Box>
                 </Container>
             </Paper>
         </ThemeProvider>
