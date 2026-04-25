@@ -1,0 +1,9 @@
+go 1.25.1
+
+use (
+	./account/account-api
+	./budget/budget-api
+	./core-services/golang-web-framework
+	./plan/plan-service
+	./tagging/tag-api
+)
