@@ -3,9 +3,9 @@ import { Button, Grid } from "@mui/material";
 import { commonStyle } from "../../theme/ThemeProvider";
 
 interface FormButtonProps {
-    labelPrefix?: any,
+    labelPrefix?: React.ReactNode,
     label: string,
-    type: any,
+    type: "button" | "submit" | "reset",
     onClickHandler?: React.MouseEventHandler<HTMLButtonElement>,
     direction?: string
 }
@@ -15,7 +15,7 @@ const FormButton: React.FC<FormButtonProps> = ({ labelPrefix, label, type, onCli
     return <div dir={direction || ""}>
         <Grid container alignItems="flex-end" style={commonStyle.formRow}>
             <Grid size={{ xs: 12 }}>
-                <Button type={type || "button"}
+                <Button type={type}
                     variant="outlined"
                     color="primary"
                     onClick={onClickHandler}
