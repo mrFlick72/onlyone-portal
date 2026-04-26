@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -11,39 +10,39 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
-	"github.com/mrflick72/onlyone-portal/plan/plan-service/src/pkg/clock"
-	"github.com/mrflick72/onlyone-portal/plan/plan-service/src/plan"
+	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/todo"
+	"github.com/mrflick72/onlyone-portal/plan/plan-service/pkg/clock"
 	"github.com/stretchr/testify/assert"
 )
 
-const testUserName = "valerio.vaudi"
+const testUser = "valerio.vaudi"
 
-func setupRouter(mock plan.TodoRepository) *gin.Engine {
+func setupRouter(repo todo.Repository) *gin.Engine {
 	r := gin.Default()
 	r.Use(func(c *gin.Context) {
-		userName := testUserName
+		userName := testUser
 		c.Set("user", security.User{UserName: &userName})
 		c.Next()
 	})
-	RegisterEndpoints(r, &server.GinContextToPlainContextFactory{}, mock)
+	RegisterEndpoints(r, &server.GinContextToPlainContextFactory{}, repo)
 	return r
 }
 
 func TestGetAllTodo(t *testing.T) {
-	mock := &mockTodoRepo{todos: []*plan.Todo{aNewTodo()}}
-	router := setupRouter(mock)
+	td := aTestTodo()
+	router := setupRouter(&mockRepo{todos: []*todo.Todo{td}})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/todo-service/todo", nil)
 	router.ServeHTTP(w, req)
 
-	expected, _ := json.Marshal([]todoRepresentation{fromDomainToRepresentation(mock.todos[0])})
+	expected, _ := json.Marshal([]todoRepresentation{toRepresentation(td)})
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, string(expected), strings.TrimSpace(w.Body.String()))
 }
 
 func TestGetAllTodoWhenEmpty(t *testing.T) {
-	router := setupRouter(&mockTodoRepo{todos: []*plan.Todo{}})
+	router := setupRouter(&mockRepo{})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/todo-service/todo", nil)
@@ -54,20 +53,20 @@ func TestGetAllTodoWhenEmpty(t *testing.T) {
 }
 
 func TestGetOneTodo(t *testing.T) {
-	todo := aNewTodo()
-	router := setupRouter(&mockTodoRepo{todos: []*plan.Todo{todo}})
+	td := aTestTodo()
+	router := setupRouter(&mockRepo{todos: []*todo.Todo{td}})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, "/todo-service/todo/"+todo.Id, nil)
+	req, _ := http.NewRequest(http.MethodGet, "/todo-service/todo/"+td.Id, nil)
 	router.ServeHTTP(w, req)
 
-	expected, _ := json.Marshal(fromDomainToRepresentation(todo))
+	expected, _ := json.Marshal(toRepresentation(td))
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, string(expected), strings.TrimSpace(w.Body.String()))
 }
 
 func TestGetOneTodoNotFound(t *testing.T) {
-	router := setupRouter(&mockTodoRepo{todos: []*plan.Todo{}})
+	router := setupRouter(&mockRepo{})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/todo-service/todo/nonexistent", nil)
@@ -77,14 +76,9 @@ func TestGetOneTodoNotFound(t *testing.T) {
 }
 
 func TestSaveTodo(t *testing.T) {
-	mock := &mockTodoRepo{}
-	router := setupRouter(mock)
+	router := setupRouter(&mockRepo{})
 
-	body, _ := json.Marshal(todoRepresentation{
-		UserName: testUserName,
-		Date:     "2026-04-26",
-		Content:  "a content",
-	})
+	body, _ := json.Marshal(todoRepresentation{UserName: testUser, Date: "2026-04-26", Content: "a content"})
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodPost, "/todo-service/todo", strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
@@ -94,45 +88,38 @@ func TestSaveTodo(t *testing.T) {
 }
 
 func TestDeleteTodo(t *testing.T) {
-	todo := aNewTodo()
-	router := setupRouter(&mockTodoRepo{todos: []*plan.Todo{todo}})
+	td := aTestTodo()
+	router := setupRouter(&mockRepo{todos: []*todo.Todo{td}})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodDelete, "/todo-service/todo/"+todo.Id, nil)
+	req, _ := http.NewRequest(http.MethodDelete, "/todo-service/todo/"+td.Id, nil)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNoContent, w.Code)
 }
 
-func aNewTodo() *plan.Todo {
-	id := "test-id-1"
-	return &plan.Todo{
-		Id:       id,
-		UserName: testUserName,
-		Date:     clock.ToDay(),
-		Content:  "a content",
-	}
+func aTestTodo() *todo.Todo {
+	return &todo.Todo{Id: "test-id-1", UserName: testUser, Date: clock.ToDay(), Content: "a content"}
 }
 
-// mockTodoRepo is an in-memory TodoRepository for handler tests.
-type mockTodoRepo struct {
-	todos []*plan.Todo
+type mockRepo struct {
+	todos []*todo.Todo
 }
 
-func (m *mockTodoRepo) GetAllTodo(userName string) ([]*plan.Todo, error) {
-	var result []*plan.Todo
+func (m *mockRepo) GetAllTodo(userName string) ([]*todo.Todo, error) {
+	var result []*todo.Todo
 	for _, t := range m.todos {
 		if t.UserName == userName {
 			result = append(result, t)
 		}
 	}
 	if result == nil {
-		result = []*plan.Todo{}
+		result = []*todo.Todo{}
 	}
 	return result, nil
 }
 
-func (m *mockTodoRepo) GetTodo(id string) (*plan.Todo, error) {
+func (m *mockRepo) GetTodo(id string) (*todo.Todo, error) {
 	for _, t := range m.todos {
 		if t.Id == id {
 			return t, nil
@@ -141,12 +128,12 @@ func (m *mockTodoRepo) GetTodo(id string) (*plan.Todo, error) {
 	return nil, nil
 }
 
-func (m *mockTodoRepo) SaveTodo(todo *plan.Todo) error {
-	m.todos = append(m.todos, todo)
+func (m *mockRepo) SaveTodo(t *todo.Todo) error {
+	m.todos = append(m.todos, t)
 	return nil
 }
 
-func (m *mockTodoRepo) RemoveTodo(id string) error {
+func (m *mockRepo) RemoveTodo(id string) error {
 	for i, t := range m.todos {
 		if t.Id == id {
 			m.todos = append(m.todos[:i], m.todos[i+1:]...)
@@ -156,12 +143,4 @@ func (m *mockTodoRepo) RemoveTodo(id string) error {
 	return nil
 }
 
-// Ensure mockTodoRepo satisfies the interface at compile time.
-var _ plan.TodoRepository = (*mockTodoRepo)(nil)
-
-// Stub context factory (unused in these tests — router middleware sets the user).
-type stubContextFactory struct{}
-
-func (s *stubContextFactory) CreateContextFromGin(c *gin.Context) context.Context {
-	return server.CopyGinKeysToRequestContext(c)
-}
+var _ todo.Repository = (*mockRepo)(nil)
