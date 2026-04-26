@@ -21,7 +21,7 @@ interface FormSelectProps {
 }
 
 const FormSelect: React.FC<FormSelectProps> = ({ id, label, multi, options, value, onChangeHandler, prefix }) => {
-    return <Grid container spacing={8} alignItems="flex-end" style={commonStyle.formRow}>
+    return <Grid container spacing={8} sx={{ alignItems: "flex-end", ...commonStyle.formRow }}>
         {prefix && <Grid>
             {prefix}
         </Grid>}

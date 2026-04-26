@@ -20,7 +20,7 @@ const FormDatePicker: React.FC<FormDatePickerProps> = ({
                                                        }) => {
     let val = value && moment(value, pattern)
 
-    return <Grid container alignItems="flex-end" style={commonStyle.formRow}>
+    return <Grid container sx={{ alignItems: "flex-end", ...commonStyle.formRow }}>
         <Grid size={{xs: 12}}>
             <LocalizationProvider dateAdapter={AdapterMoment}>
                 <DesktopDatePicker
