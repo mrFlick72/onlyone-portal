@@ -1,8 +1,9 @@
 import React from "react"
-import { AppBar, Box, Button, Divider, Drawer, IconButton, List, Toolbar, Typography, useTheme } from "@mui/material";
+import {AppBar, Box, Button, Divider, Drawer, IconButton, List, Toolbar, Typography, useTheme} from "@mui/material";
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import GlobalPageNavigation from "./GlobalPageNavigation";
+import MenuSectionTitle from "./MenuSectionTitle";
 
 type MenuItemProps = {
     text: string
@@ -15,7 +16,7 @@ type MenuProps = {
     showGlobalNav?: boolean
 }
 
-const Menu: React.FC<MenuProps> = ({ messages, children, navBarItems, showGlobalNav = true }) => {
+const Menu: React.FC<MenuProps> = ({messages, children, navBarItems, showGlobalNav = true}) => {
     const links = {
         logOut: "/logout",
         home: "/"
@@ -41,10 +42,10 @@ const Menu: React.FC<MenuProps> = ({ messages, children, navBarItems, showGlobal
                     edge="start"
                     color="inherit"
                     aria-label="menu"
-                    sx={{ mr: 2 }}>
-                    <MenuIcon />
+                    sx={{mr: 2}}>
+                    <MenuIcon/>
                 </IconButton>
-                <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                <Typography variant="h6" component="div" sx={{flexGrow: 1}}>
                     <a href={links.home} style={{
                         "textDecoration": "none",
                         "color": theme.palette.primary.contrastText
@@ -59,16 +60,24 @@ const Menu: React.FC<MenuProps> = ({ messages, children, navBarItems, showGlobal
                         onClick={toggleDrawer(false)}
                         onKeyDown={toggleDrawer(false)}>
                         <List>
-                            {children}
-                            {children && showGlobalNav && <Divider />}
-                            {showGlobalNav && <GlobalPageNavigation />}
+                            {children && <>
+                                <MenuSectionTitle content={"Section Specific Feature"}/>
+                                {children}
+                            </>}
+                            {children && showGlobalNav && <Divider/>}
+                            {showGlobalNav && <>
+
+                                <MenuSectionTitle content={"Other Feature"}/>
+
+                                <GlobalPageNavigation/>
+                            </>}
                         </List>
                     </Box>
                 </Drawer>
                 {navBarItems}
                 <form action={links.logOut} method="GET">
                     <Button color="inherit" type="submit">
-                        {messages.logOutLabel} <LogoutIcon />
+                        {messages.logOutLabel} <LogoutIcon/>
                     </Button>
                 </form>
             </Toolbar>
@@ -77,4 +86,4 @@ const Menu: React.FC<MenuProps> = ({ messages, children, navBarItems, showGlobal
 }
 
 export default Menu
-export type { MenuItemProps }
+export type {MenuItemProps}
