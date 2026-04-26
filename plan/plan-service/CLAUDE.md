@@ -64,6 +64,33 @@ main.go     # WebServerProvisioner + registers todo endpoints
 
 **Notable unfinished work:** `PlanRepository` in `adapter/plan/db/repository.go` is a stub — all methods return nil.
 
+## Domain Model
+
+The core domain entities and their relationships:
+
+```plantuml
+@startuml
+class Plan {
+  - id: string
+  - user_name: string
+  - title: string
+  - date: timestamp
+  - todo: string
+}
+
+class Todo {
+  - id: string
+  - user_name: string
+  - date: timestamp
+  - content: string
+}
+
+Plan "1" -- "0..*" Todo : contains
+@enduml
+```
+
+At the database level, one Plan may have zero or more Todos. The relationship is enforced via foreign key constraint on the `planId` column in the `todo` table.
+
 ## Configuration
 
 Set `CONFIG_FILE_LOCATION` to a YAML config file path. Required keys:

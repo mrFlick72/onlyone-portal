@@ -1,9 +1,8 @@
 package plan
 
 import (
-	"time"
-
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/todo"
+	"time"
 )
 
 type Plan struct {
@@ -11,9 +10,5 @@ type Plan struct {
 	UserName string
 	Title    string
 	Date     time.Time
-}
-
-type PlanDetails struct {
-	Id    string
-	Todos []*todo.Todo
+	Todos    []*todo.Todo
 }
