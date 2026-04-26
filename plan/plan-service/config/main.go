@@ -1,13 +1,13 @@
-package configuration
+package config
 
 import (
 	"fmt"
 
-	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
+	frameworkConfig "github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 )
 
 func NewPostgresDSN() string {
-	cm := config.GetConfigurationManagerInstance()
+	cm := frameworkConfig.GetConfigurationManagerInstance()
 	return fmt.Sprintf(
 		"host=%s dbname=%s user=%s password=%s sslmode=disable",
 		cm.GetConfigFor("database.url"),

@@ -10,21 +10,19 @@ import (
 var logger = logging.GetLoggerInstance()
 
 func GetDatabaseConnectionFor(connectionString string) (*sql.DB, error) {
-	database, err := sql.Open("postgres", connectionString)
+	db, err := sql.Open("postgres", connectionString)
 	logger.LogErrorFor(err)
-	return database, err
+	return db, err
 }
 
-func CloseResources(rows *sql.Rows, query *sql.Stmt, database *sql.DB) {
+func CloseResources(rows *sql.Rows, query *sql.Stmt, db *sql.DB) {
 	if rows != nil {
 		defer rows.Close()
 	}
-
 	if query != nil {
 		defer query.Close()
 	}
-
-	if database != nil {
-		defer database.Close()
+	if db != nil {
+		defer db.Close()
 	}
 }
