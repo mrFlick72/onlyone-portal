@@ -1,11 +1,9 @@
 services:
-  mysql: 
-    image: mysql
+  postgres:
+    image: postgres:16-alpine
     ports:
-      - 3306:3306
+      - 5432:5432
     environment:
-      MYSQL_ROOT_PASSWORD: "root"
-      MYSQL_DATABASE: "todo"
-      # MYSQL_USER: "root"
-      # MYSQL_PASSWORD: "root"
-
+      POSTGRES_DB: todo
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root

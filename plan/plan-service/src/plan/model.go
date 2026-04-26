@@ -3,7 +3,7 @@ package plan
 import (
 	"time"
 
-	"github.com/mrflick72/onlyone-portal/plan/plan-service/src/pkg/logging"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 )
 
 var logger = logging.GetLoggerInstance()

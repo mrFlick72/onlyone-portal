@@ -1,3 +1,5 @@
+//go:build test
+
 package plan
 
 import (
@@ -7,21 +9,22 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	_ "github.com/lib/pq"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/src/pkg/clock"
 )
 
-var testableDatabaseConnectionString = "root:root@tcp(localhost)/todo?parseTime=true"
+var testableDatabaseConnectionString = "host=localhost dbname=todo user=root password=root sslmode=disable"
 
 func clearDatabase() {
-	connection, _ := sql.Open("mysql", testableDatabaseConnectionString)
-	cleanTable("TODO", connection)
-	cleanTable("PLAN", connection)
+	connection, _ := sql.Open("postgres", testableDatabaseConnectionString)
+	cleanTable("todo", connection)
+	cleanTable("plan", connection)
 }
 
 func cleanTable(table string, connection *sql.DB) {
-	_, error := connection.Exec(fmt.Sprintf("truncate table %s", table))
-	if error != nil {
-		logger.LogErrorFor(error)
+	_, err := connection.Exec(fmt.Sprintf("TRUNCATE TABLE %s", table))
+	if err != nil {
+		logger.LogErrorFor(err)
 	}
 }
 
@@ -29,7 +32,7 @@ func assertEqualityFor(t *testing.T, expected Todo, actual *Todo) {
 	if expected != *actual {
 		t.Error("expected: ", expected)
 		t.Error("actual: ", actual)
-		t.Error("the retrieved todo is not wat we expect")
+		t.Error("the retrieved todo is not what we expect")
 	}
 }
 

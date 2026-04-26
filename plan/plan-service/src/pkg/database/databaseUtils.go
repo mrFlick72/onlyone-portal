@@ -3,13 +3,14 @@ package database
 import (
 	"database/sql"
 
-	"github.com/mrflick72/onlyone-portal/plan/plan-service/src/pkg/logging"
+	_ "github.com/lib/pq"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 )
 
 var logger = logging.GetLoggerInstance()
 
-func GetDatabaseConnectionFor(connectionStrung string) (*sql.DB, error) {
-	database, err := sql.Open("mysql", connectionStrung)
+func GetDatabaseConnectionFor(connectionString string) (*sql.DB, error) {
+	database, err := sql.Open("postgres", connectionString)
 	logger.LogErrorFor(err)
 	return database, err
 }

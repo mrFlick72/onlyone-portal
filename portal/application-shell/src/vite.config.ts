@@ -29,6 +29,7 @@ function htmlTemplatePlugin(): Plugin {
     name: 'html-template',
     closeBundle() {
       for (const { html: htmlPath } of Object.values(pages)) {
+        console.log("closeBundle called")
         try { fs.unlinkSync(path.resolve(__dirname, htmlPath)); } catch {}
       }
     },
