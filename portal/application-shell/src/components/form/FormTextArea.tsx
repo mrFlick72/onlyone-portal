@@ -16,7 +16,7 @@ type FormTextAreaProps = {
 }
 
 const FormTextArea: React.FC<FormTextAreaProps> = ({ id, label, type, required, autoFocus, disabled, value, onChangeHandler, row }) => {
-    return <Grid container spacing={8} alignItems="flex-end" style={commonStyle.formRow}>
+    return <Grid container spacing={8} sx={{ alignItems: "flex-end", ...commonStyle.formRow }}>
         <Grid size={{ xs: 12 }}>
             <TextField name={id} id={id} label={label} type={type || "text"} disabled={disabled}
                 variant="outlined" fullWidth autoFocus={autoFocus} required={required || false}

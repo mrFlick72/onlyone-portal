@@ -15,7 +15,7 @@ type FormMoneyFormatProps = {
 
 
 const FormMoneyFormat: React.FC<FormMoneyFormatProps> = ({ id, label, required, autoFocus, disabled, value, handler }) => {
-    return <Grid container spacing={8} alignItems="flex-end" style={commonStyle.formRow}>
+    return <Grid container spacing={8} sx={{ alignItems: "flex-end", ...commonStyle.formRow }}>
         <Grid size={{ xs: 12 }}>
             <NumericFormat
                 size={"medium"}
