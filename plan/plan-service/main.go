@@ -1,21 +1,18 @@
 package main
 
 import (
-	"fmt"
-
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/src/configuration"
-	"github.com/mrflick72/onlyone-portal/plan/plan-service/src/pkg/config"
-	"github.com/mrflick72/onlyone-portal/plan/plan-service/src/pkg/logging"
+	"github.com/mrflick72/onlyone-portal/plan/plan-service/src/plan"
+	api "github.com/mrflick72/onlyone-portal/plan/plan-service/src/web"
 )
 
 func main() {
-	var configurationManager = config.GetConfigurationManagerInstance()
+	engine := server.WebServerProvisioner{}
+	ginEngine := engine.ConfigureEngine()
+	factory := &server.GinContextToPlainContextFactory{}
 
-	logging.GetLoggerInstance()
+	api.RegisterEndpoints(ginEngine, factory, plan.NewPostgresTodoRepository(configuration.NewPostgresDSN()))
 
-	server := configuration.ServerConfigurer()
-	fmt.Println(configurationManager.GetConfigFor("LOGGING_FILE_NAME"))
-	webServerPort := configurationManager.GetConfigFor("WEB_SERVER_PORT")
-	server.Start(fmt.Sprintf(":%v", webServerPort))
-
+	engine.StartEngine()
 }

@@ -3,14 +3,16 @@ package api
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/labstack/echo"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/src/pkg/clock"
-	"github.com/mrflick72/onlyone-portal/plan/plan-service/src/pkg/logging"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/src/plan"
 )
 
-var logger = logging.GetLoggerInstance()
+var logger = logging.GetLoggerInstanceForComponentByTypeName("TodoEndpoints")
 
 type todoRepresentation struct {
 	Id       string `json:"id"`
@@ -21,87 +23,78 @@ type todoRepresentation struct {
 
 type TodoEndpoints struct {
 	TodoRepository plan.TodoRepository
+	ContextFactory server.ContextFactoryConverter
 }
 
-func (endpoints *TodoEndpoints) GetTodoEndpoint(c echo.Context) error {
-	userNameParameter := c.QueryParam("user_name")
-	allTodo, err := endpoints.TodoRepository.GetAllTodo(userNameParameter)
+func RegisterEndpoints(r *gin.Engine, factory server.ContextFactoryConverter, repo plan.TodoRepository) {
+	endpoint := &TodoEndpoints{TodoRepository: repo, ContextFactory: factory}
+	contextPath := "/todo-service"
+	r.GET(contextPath+"/todo", endpoint.GetTodoEndpoint)
+	r.GET(contextPath+"/todo/:id", endpoint.GetOneTodoEndpoint)
+	r.POST(contextPath+"/todo", endpoint.SaveTodoEndpoint)
+	r.DELETE(contextPath+"/todo/:id", endpoint.DeleteTodoEndpoint)
+}
 
-	if noErrorFor(err) {
-		todoRepresentation := fromDomainToRepresentationForAllTodoInList(allTodo)
-		err = c.JSON(http.StatusOK, &todoRepresentation)
+func (endpoints *TodoEndpoints) GetTodoEndpoint(c *gin.Context) {
+	ctx := endpoints.ContextFactory.CreateContextFromGin(c)
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
 	}
 
-	return err
+	allTodo, err := endpoints.TodoRepository.GetAllTodo(*user.UserName)
+	if err != nil {
+		logger.LogErrorFor(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	c.JSON(http.StatusOK, fromDomainToRepresentationForAllTodoInList(allTodo))
 }
 
-func (endpoints *TodoEndpoints) GetOneTodoEndpoint(c echo.Context) error {
+func (endpoints *TodoEndpoints) GetOneTodoEndpoint(c *gin.Context) {
 	id := c.Param("id")
 	todo, err := endpoints.TodoRepository.GetTodo(id)
-
-	if foundAtodo(err, todo) {
-		err = c.JSON(http.StatusOK, fromDomainToRepresentation(todo))
-	} else if notFoundAtodo(err, todo) {
-		err = c.NoContent(http.StatusNotFound)
+	if err != nil || todo == nil {
+		c.Status(http.StatusNotFound)
+		return
 	}
-
-	return err
+	c.JSON(http.StatusOK, fromDomainToRepresentation(todo))
 }
 
-func noErrorFor(err error) bool {
-	return err == nil
-}
-
-func foundAtodo(err error, todo *plan.Todo) bool {
-	return err == nil && todo != nil
-}
-
-func notFoundAtodo(err error, todo *plan.Todo) bool {
-	return err != nil && todo == nil
-}
-
-func (endpoints *TodoEndpoints) SaveTodoEndpoint(c echo.Context) error {
-	todoRepresentation := new(todoRepresentation)
-
-	if err := c.Bind(todoRepresentation); err != nil {
+func (endpoints *TodoEndpoints) SaveTodoEndpoint(c *gin.Context) {
+	var rep todoRepresentation
+	if err := c.ShouldBindJSON(&rep); err != nil {
 		logger.LogErrorFor(err)
-		return err
+		c.Status(http.StatusBadRequest)
+		return
 	}
-	(*todoRepresentation).Id = uuid.NewString()
+	rep.Id = uuid.NewString()
 
-	err := endpoints.TodoRepository.SaveTodo(fromRepresentationToDomain(todoRepresentation))
-
-	if err != nil {
+	if err := endpoints.TodoRepository.SaveTodo(fromRepresentationToDomain(&rep)); err != nil {
 		logger.LogErrorFor(err)
-		return c.NoContent(http.StatusInternalServerError)
+		c.Status(http.StatusInternalServerError)
+		return
 	}
-	return c.NoContent(http.StatusCreated)
+	c.Status(http.StatusCreated)
 }
 
-func (endpoints *TodoEndpoints) DeleteTodoEndpoint(c echo.Context) error {
+func (endpoints *TodoEndpoints) DeleteTodoEndpoint(c *gin.Context) {
 	id := c.Param("id")
-	err := endpoints.TodoRepository.RemoveTodo(id)
-
-	if err != nil {
+	if err := endpoints.TodoRepository.RemoveTodo(id); err != nil {
 		logger.LogErrorFor(err)
-		return c.NoContent(http.StatusInternalServerError)
+		c.Status(http.StatusInternalServerError)
+		return
 	}
-	return c.NoContent(http.StatusNoContent)
-}
-
-func manageErrorFor(err error, c echo.Context) {
-	if err != nil {
-		logger.LogErrorFor(err)
-		c.NoContent(http.StatusInternalServerError)
-	}
+	c.Status(http.StatusNoContent)
 }
 
 func fromDomainToRepresentationForAllTodoInList(allTodo []*plan.Todo) []todoRepresentation {
-	todoRepresentation := []todoRepresentation{}
+	result := make([]todoRepresentation, 0, len(allTodo))
 	for _, todo := range allTodo {
-		todoRepresentation = append(todoRepresentation, fromDomainToRepresentation(todo))
+		result = append(result, fromDomainToRepresentation(todo))
 	}
-	return todoRepresentation
+	return result
 }
 
 func fromDomainToRepresentation(todo *plan.Todo) todoRepresentation {
@@ -112,11 +105,12 @@ func fromDomainToRepresentation(todo *plan.Todo) todoRepresentation {
 		Content:  todo.Content,
 	}
 }
-func fromRepresentationToDomain(representation *todoRepresentation) *plan.Todo {
+
+func fromRepresentationToDomain(rep *todoRepresentation) *plan.Todo {
 	return &plan.Todo{
-		Id:       representation.Id,
-		UserName: representation.UserName,
-		Date:     clock.ParseDateFor(representation.Date),
-		Content:  representation.Content,
+		Id:       rep.Id,
+		UserName: rep.UserName,
+		Date:     clock.ParseDateFor(rep.Date),
+		Content:  rep.Content,
 	}
 }
