@@ -1,0 +1,39 @@
+name: build Plan API
+
+on:
+  push: { }
+  workflow_dispatch: {}
+
+jobs:
+  build-plan-api:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: planning/plan-api
+    services:
+      localstack:
+        image: localstack/localstack:3.2
+        ports:
+          - "4566-4599:4566-4599"
+        env:
+          SERVICES: dynamodb
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      
+      - name: Set up Golang
+        uses: actions/setup-go@v6
+        with:
+          go-version: 1.25.1
+
+      - name: Build plan-api package
+        run: |
+          go build -o app .
+
+      - name: Run tests
+        env:
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          go test -tags test ./...

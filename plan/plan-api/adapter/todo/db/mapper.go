@@ -18,7 +18,7 @@ func buildTodos(rows *sql.Rows, result []*todo.Todo) []*todo.Todo {
 		result = append(result, &todo.Todo{
 			Id:       id,
 			UserName: username,
-			Date:     date,
+			Date:     date.UTC(),
 			Content:  content,
 		})
 	}

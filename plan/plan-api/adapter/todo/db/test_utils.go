@@ -5,6 +5,8 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"github.com/stretchr/testify/assert"
+	"os"
 	"sort"
 	"testing"
 
@@ -14,12 +16,24 @@ import (
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/pkg/clock"
 )
 
-const testDSN = "host=localhost dbname=todo user=root password=root sslmode=disable"
+const testDSN = "host=localhost dbname=postgres user=postgres password=postgres sslmode=disable"
 
 func clearDatabase() {
 	conn, _ := sql.Open("postgres", testDSN)
 	defer conn.Close()
+	initDatabase(conn)
 	cleanTable("todo", conn)
+}
+
+func initDatabase(conn *sql.DB) {
+	content, err := os.ReadFile("../../../scripts/init.sql")
+	if err != nil {
+		logger.LogErrorfFor("File not found: %v", err)
+	}
+	if _, err := conn.Exec(string(content)); err != nil {
+		logger.LogErrorfFor("Sql execution error: %v", err)
+		panic(err)
+	}
 }
 
 func cleanTable(table string, conn *sql.DB) {
@@ -30,9 +44,7 @@ func cleanTable(table string, conn *sql.DB) {
 
 func assertEqualityFor(t *testing.T, expected todo.Todo, actual *todo.Todo) {
 	t.Helper()
-	if expected != *actual {
-		t.Errorf("expected %+v, got %+v", expected, *actual)
-	}
+	assert.Equal(t, expected, *actual)
 }
 
 func assertNoError(t *testing.T, err error, msg string) {
