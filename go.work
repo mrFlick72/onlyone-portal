@@ -4,6 +4,6 @@ use (
 	./account/account-api
 	./budget/budget-api
 	./core-services/golang-web-framework
-	./plan/plan-service
+	./plan/plan-api
 	./tagging/tag-api
 )

@@ -111,9 +111,9 @@ user:
 
 database:
   url: localhost
-  name: todo
-  user: root
-  password: root
+  name: postgres
+  user: postgres
+  password: postgres
 
 logger:
   level: info
