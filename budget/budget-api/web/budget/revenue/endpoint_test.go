@@ -153,7 +153,7 @@ func TestFindRevenuesByYear(t *testing.T) {
 	contextFactoryConverter := new(ContextFactoryConverterMock)
 	RegisterRevenueEndpoints(r, contextFactoryConverter, facade)
 
-	expected := []revenue.Revenue{
+	revenues := []revenue.Revenue{
 		{
 			Id:       "123-456",
 			UserName: "USER",
@@ -165,19 +165,19 @@ func TestFindRevenuesByYear(t *testing.T) {
 
 	ctx := testutils.NewStubbedContextWith("USER")
 	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
-	facade.On("FindRevenue", ctx, date.NewYear(2018)).Return(expected, nil)
+	facade.On("FindRevenue", ctx, date.NewYear(2018)).Return(revenues, nil)
 
 	req, _ := http.NewRequest("GET", "/api/budget/revenue?q=year=2018", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	var actual []RevenueRepresentation
+	var actual RevenueListRepresentation
 	if err := json.Unmarshal(w.Body.Bytes(), &actual); err != nil {
 		t.Fatalf("Error unmarshalling: %v", err)
 	}
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, RevenueListDomainToRepresentationModel(expected), actual)
+	assert.Equal(t, RevenueListDomainToRepresentationModel(revenues), actual)
 	facade.AssertCalled(t, "FindRevenue", ctx, date.NewYear(2018))
 }
 
