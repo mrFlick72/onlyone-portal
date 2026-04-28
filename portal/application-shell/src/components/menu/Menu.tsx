@@ -60,10 +60,12 @@ const Menu: React.FC<MenuProps> = ({messages, children, navBarItems, showGlobalN
                         onClick={toggleDrawer(false)}
                         onKeyDown={toggleDrawer(false)}>
                         <List>
-                            {children && <>
-                                <MenuSectionTitle content={"Section Specific Feature"}/>
-                                {children}
-                            </>}
+                            {/*{children && <>*/}
+                            {/*    <MenuSectionTitle content={"Section Specific Feature"}/>*/}
+                            {/*    {children}*/}
+                            {/*</>}*/}
+
+                            {children}
                             {children && showGlobalNav && <Divider/>}
                             {showGlobalNav && <>
 
