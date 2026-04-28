@@ -22,7 +22,25 @@ func NewPlanRepository(dsn string) *PlanPostgresRepository {
 }
 
 func (r *PlanPostgresRepository) GetAllPlanBy(userName string) ([]*domainplan.Plan, error) {
-	return nil, nil
+	result := make([]*domainplan.Plan, 0)
+
+	db, err := database.GetDatabaseConnectionFor(r.ConnectionString)
+	if err != nil {
+		return result, err
+	}
+
+	query, err := db.Prepare("SELECT id, user_name, title, date FROM plan WHERE user_name = $1")
+	if err != nil {
+		return result, err
+	}
+
+	rows, err := query.Query(userName)
+	logger.LogErrorFor(err)
+	result = buildPlans(rows)
+
+	database.CloseResources(rows, query, db)
+
+	return result, err
 }
 
 func (r *PlanPostgresRepository) GetPlan(idPlanId string, userName string) (*domainplan.Plan, error) {
@@ -79,11 +97,12 @@ func (r *PlanPostgresRepository) loadTodosFor(planId string) ([]*todo.Todo, erro
 }
 
 func buildPlans(rows *sql.Rows) []*domainplan.Plan {
-	var result []*domainplan.Plan
+	result := make([]*domainplan.Plan, 0)
 	for rows.Next() {
 		var p domainplan.Plan
 		rows.Scan(&p.Id, &p.UserName, &p.Title, &p.Date)
 		p.Date = p.Date.UTC()
+		p.Todos = []*todo.Todo{}
 		result = append(result, &p)
 	}
 	return result
@@ -127,5 +146,18 @@ func (r *PlanPostgresRepository) AddTodo(idPlanId string, t todo.Todo) error {
 }
 
 func (r *PlanPostgresRepository) RemoveTodo(idPlanId string, todoId string) error {
-	return nil
+	db, err := database.GetDatabaseConnectionFor(r.ConnectionString)
+	if err != nil {
+		return err
+	}
+
+	query, err := db.Prepare("DELETE FROM todo WHERE id = $1 AND plan_id=$2")
+	if err != nil {
+		return err
+	}
+
+	_, err = query.Exec(todoId, idPlanId)
+	logger.LogErrorFor(err)
+	database.CloseResources(nil, query, db)
+	return err
 }
