@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-24.04
     defaults:
       run:
-        working-directory: planning/plan-api
+        working-directory: plan/plan-api
     services:
       localstack:
         image: localstack/localstack:3.2
