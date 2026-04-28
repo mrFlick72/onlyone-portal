@@ -4,6 +4,7 @@ package db
 
 import (
 	"database/sql"
+	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/todo"
 	"os"
 	"testing"
 
@@ -41,6 +42,16 @@ func aNewPlan() domainplan.Plan {
 		Title:    "a test plan",
 		UserName: "user-name",
 		Date:     clock.ToDay(),
+		Todos:    []*todo.Todo{},
+	}
+}
+
+func aNewTodoWith(content string) todo.Todo {
+	return todo.Todo{
+		Id:       uuid.New().String(),
+		UserName: "user-name",
+		Date:     clock.ToDay(),
+		Content:  content,
 	}
 }
 
@@ -56,4 +67,9 @@ func assertValidUUID(t *testing.T, id string) {
 	assert.NotEmpty(t, id)
 	_, err := uuid.Parse(id)
 	assert.NoError(t, err, "returned id should be a valid UUID")
+}
+
+func assertEqualPlan(t *testing.T, expected domainplan.Plan, actual *domainplan.Plan) {
+	t.Helper()
+	assert.Equal(t, expected, *actual)
 }
