@@ -17,7 +17,7 @@ import (
 
 const testUser = "valerio.vaudi"
 
-func setupRouter(repo todo.Repository) *gin.Engine {
+func setupRouter(repo todo.TodoRepository) *gin.Engine {
 	r := gin.Default()
 	r.Use(func(c *gin.Context) {
 		userName := testUser
@@ -143,4 +143,4 @@ func (m *mockRepo) RemoveTodo(id string) error {
 	return nil
 }
 
-var _ todo.Repository = (*mockRepo)(nil)
+var _ todo.TodoRepository = (*mockRepo)(nil)

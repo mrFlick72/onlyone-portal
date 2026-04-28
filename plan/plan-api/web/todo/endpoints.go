@@ -22,11 +22,11 @@ type todoRepresentation struct {
 }
 
 type TodoEndpoints struct {
-	repository todo.Repository
+	repository todo.TodoRepository
 	factory    server.ContextFactoryConverter
 }
 
-func RegisterEndpoints(r *gin.Engine, factory server.ContextFactoryConverter, repo todo.Repository) {
+func RegisterEndpoints(r *gin.Engine, factory server.ContextFactoryConverter, repo todo.TodoRepository) {
 	e := &TodoEndpoints{repository: repo, factory: factory}
 	g := r.Group("/todo-service")
 	g.GET("/todo", e.getAll)
