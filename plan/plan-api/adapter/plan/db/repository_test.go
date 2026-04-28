@@ -4,11 +4,10 @@ package db
 
 import (
 	"fmt"
+	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/plan"
 	"os"
 	"testing"
 
-	domainplan "github.com/mrflick72/onlyone-portal/plan/plan-service/domain/plan"
-	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/todo"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/pkg/clock"
 	"github.com/stretchr/testify/assert"
 )
@@ -54,9 +53,9 @@ func TestGetPlanNotFound(t *testing.T) {
 }
 
 func TestAddANewTodo(t *testing.T) {
-	plan := aNewPlan()
+	aPlan := aNewPlan()
 
-	planId, err := repo.CreateNewPlan(plan)
+	planId, err := repo.CreateNewPlan(aPlan)
 	assertNoError(t, err, "insert failed")
 
 	aTodo := aNewTodoWith("A Content")
@@ -67,15 +66,15 @@ func TestAddANewTodo(t *testing.T) {
 	err = repo.AddTodo(planId, anotherTodo)
 	assertNoError(t, err, "adding the todo failed")
 
-	expected := domainplan.Plan{
+	expected := plan.Plan{
 		Id:       planId,
-		UserName: plan.UserName,
-		Title:    plan.Title,
+		UserName: aPlan.UserName,
+		Title:    aPlan.Title,
 		Date:     clock.ToDay(),
-		Todos:    []*todo.Todo{&aTodo, &anotherTodo},
+		Todos:    []*plan.Todo{&aTodo, &anotherTodo},
 	}
 
-	actual, err := repo.GetPlan(planId, plan.UserName)
+	actual, err := repo.GetPlan(planId, aPlan.UserName)
 	assertNoError(t, err, "get failed")
 	assertEqualPlan(t, expected, actual)
 }
@@ -83,33 +82,33 @@ func TestAddANewTodo(t *testing.T) {
 func TestGetAllPlanByWithNoPlans(t *testing.T) {
 	plans, err := repo.GetAllPlanBy("unknown-user")
 	assertNoError(t, err, "get all failed")
-	assert.Equal(t, make([]*domainplan.Plan, 0), plans)
+	assert.Equal(t, make([]*plan.Plan, 0), plans)
 }
 
 func TestGetAllPlanBy(t *testing.T) {
 	userName := "all-plans-user"
 
-	firstPlanId, err := repo.CreateNewPlan(domainplan.Plan{Title: "first plan", UserName: userName, Date: clock.ToDay(), Todos: []*todo.Todo{}})
+	firstPlanId, err := repo.CreateNewPlan(plan.Plan{Title: "first plan", UserName: userName, Date: clock.ToDay(), Todos: []*plan.Todo{}})
 	assertNoError(t, err, "insert first plan failed")
 
 	aTodo := aNewTodoWith("A Content")
 	assertNoError(t, repo.AddTodo(firstPlanId, aTodo), "adding todo to first plan failed")
 
-	secondPlanId, err := repo.CreateNewPlan(domainplan.Plan{Title: "second plan", UserName: userName, Date: clock.ToDay(), Todos: []*todo.Todo{}})
+	secondPlanId, err := repo.CreateNewPlan(plan.Plan{Title: "second plan", UserName: userName, Date: clock.ToDay(), Todos: []*plan.Todo{}})
 	assertNoError(t, err, "insert second plan failed")
 
 	plans, err := repo.GetAllPlanBy(userName)
 	assertNoError(t, err, "get all failed")
 	assert.Equal(t, 2, len(plans))
 
-	assertEqualPlan(t, domainplan.Plan{Id: firstPlanId, Title: "first plan", UserName: userName, Date: clock.ToDay(), Todos: []*todo.Todo{}}, plans[0])
-	assertEqualPlan(t, domainplan.Plan{Id: secondPlanId, Title: "second plan", UserName: userName, Date: clock.ToDay(), Todos: []*todo.Todo{}}, plans[1])
+	assertEqualPlan(t, plan.Plan{Id: firstPlanId, Title: "first plan", UserName: userName, Date: clock.ToDay(), Todos: []*plan.Todo{}}, plans[0])
+	assertEqualPlan(t, plan.Plan{Id: secondPlanId, Title: "second plan", UserName: userName, Date: clock.ToDay(), Todos: []*plan.Todo{}}, plans[1])
 }
 
 func TestRemoveANewTodo(t *testing.T) {
-	plan := aNewPlan()
+	aPlan := aNewPlan()
 
-	planId, err := repo.CreateNewPlan(plan)
+	planId, err := repo.CreateNewPlan(aPlan)
 	assertNoError(t, err, "insert failed")
 
 	aTodo := aNewTodoWith("A Content")
@@ -123,15 +122,15 @@ func TestRemoveANewTodo(t *testing.T) {
 	err = repo.RemoveTodo(planId, anotherTodo.Id)
 	assertNoError(t, err, "removing the todo failed")
 
-	expected := domainplan.Plan{
+	expected := plan.Plan{
 		Id:       planId,
-		UserName: plan.UserName,
-		Title:    plan.Title,
+		UserName: aPlan.UserName,
+		Title:    aPlan.Title,
 		Date:     clock.ToDay(),
-		Todos:    []*todo.Todo{&aTodo},
+		Todos:    []*plan.Todo{&aTodo},
 	}
 
-	actual, err := repo.GetPlan(planId, plan.UserName)
+	actual, err := repo.GetPlan(planId, aPlan.UserName)
 	assertNoError(t, err, "get failed")
 	assertEqualPlan(t, expected, actual)
 }

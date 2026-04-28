@@ -4,13 +4,12 @@ package db
 
 import (
 	"database/sql"
-	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/todo"
 	"os"
 	"testing"
 
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
-	domainplan "github.com/mrflick72/onlyone-portal/plan/plan-service/domain/plan"
+	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/plan"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/pkg/clock"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,17 +36,17 @@ func initDatabase(conn *sql.DB) {
 	}
 }
 
-func aNewPlan() domainplan.Plan {
-	return domainplan.Plan{
+func aNewPlan() plan.Plan {
+	return plan.Plan{
 		Title:    "a test plan",
 		UserName: "user-name",
 		Date:     clock.ToDay(),
-		Todos:    []*todo.Todo{},
+		Todos:    []*plan.Todo{},
 	}
 }
 
-func aNewTodoWith(content string) todo.Todo {
-	return todo.Todo{
+func aNewTodoWith(content string) plan.Todo {
+	return plan.Todo{
 		Id:       uuid.New().String(),
 		UserName: "user-name",
 		Date:     clock.ToDay(),
@@ -69,7 +68,7 @@ func assertValidUUID(t *testing.T, id string) {
 	assert.NoError(t, err, "returned id should be a valid UUID")
 }
 
-func assertEqualPlan(t *testing.T, expected domainplan.Plan, actual *domainplan.Plan) {
+func assertEqualPlan(t *testing.T, expected plan.Plan, actual *plan.Plan) {
 	t.Helper()
 	assert.Equal(t, expected, *actual)
 }

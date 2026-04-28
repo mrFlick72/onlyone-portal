@@ -3,11 +3,10 @@ package db
 import (
 	"database/sql"
 	"errors"
+	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/plan"
 
 	"github.com/google/uuid"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
-	domainplan "github.com/mrflick72/onlyone-portal/plan/plan-service/domain/plan"
-	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/todo"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/pkg/database"
 )
 
@@ -17,12 +16,8 @@ type PlanPostgresRepository struct {
 	ConnectionString string
 }
 
-func NewPlanRepository(dsn string) *PlanPostgresRepository {
-	return &PlanPostgresRepository{ConnectionString: dsn}
-}
-
-func (r *PlanPostgresRepository) GetAllPlanBy(userName string) ([]*domainplan.Plan, error) {
-	result := make([]*domainplan.Plan, 0)
+func (r *PlanPostgresRepository) GetAllPlanBy(userName string) ([]*plan.Plan, error) {
+	result := make([]*plan.Plan, 0)
 
 	db, err := database.GetDatabaseConnectionFor(r.ConnectionString)
 	if err != nil {
@@ -43,7 +38,7 @@ func (r *PlanPostgresRepository) GetAllPlanBy(userName string) ([]*domainplan.Pl
 	return result, err
 }
 
-func (r *PlanPostgresRepository) GetPlan(idPlanId string, userName string) (*domainplan.Plan, error) {
+func (r *PlanPostgresRepository) GetPlan(idPlanId string, userName string) (*plan.Plan, error) {
 	db, err := database.GetDatabaseConnectionFor(r.ConnectionString)
 	if err != nil {
 		return nil, err
@@ -56,21 +51,21 @@ func (r *PlanPostgresRepository) GetPlan(idPlanId string, userName string) (*dom
 
 	rows, err := query.Query(idPlanId, userName)
 	logger.LogErrorFor(err)
-	result := buildPlans(rows)
+	results := buildPlans(rows)
 
 	database.CloseResources(rows, query, db)
 
-	if len(result) == 0 {
+	if len(results) == 0 {
 		return nil, errors.New("plan with id " + idPlanId + " not found")
 	}
 
-	plan := result[0]
-	plan.Todos, err = r.loadTodosFor(idPlanId)
-	return plan, err
+	result := results[0]
+	result.Todos, err = r.loadTodosFor(idPlanId)
+	return result, err
 }
 
-func (r *PlanPostgresRepository) loadTodosFor(planId string) ([]*todo.Todo, error) {
-	result := make([]*todo.Todo, 0)
+func (r *PlanPostgresRepository) loadTodosFor(planId string) ([]*plan.Todo, error) {
+	result := make([]*plan.Todo, 0)
 
 	db, err := database.GetDatabaseConnectionFor(r.ConnectionString)
 	if err != nil {
@@ -86,7 +81,7 @@ func (r *PlanPostgresRepository) loadTodosFor(planId string) ([]*todo.Todo, erro
 	logger.LogErrorFor(err)
 
 	for rows.Next() {
-		var t todo.Todo
+		var t plan.Todo
 		rows.Scan(&t.Id, &t.UserName, &t.Date, &t.Content)
 		t.Date = t.Date.UTC()
 		result = append(result, &t)
@@ -96,19 +91,19 @@ func (r *PlanPostgresRepository) loadTodosFor(planId string) ([]*todo.Todo, erro
 	return result, err
 }
 
-func buildPlans(rows *sql.Rows) []*domainplan.Plan {
-	result := make([]*domainplan.Plan, 0)
+func buildPlans(rows *sql.Rows) []*plan.Plan {
+	result := make([]*plan.Plan, 0)
 	for rows.Next() {
-		var p domainplan.Plan
+		var p plan.Plan
 		rows.Scan(&p.Id, &p.UserName, &p.Title, &p.Date)
 		p.Date = p.Date.UTC()
-		p.Todos = []*todo.Todo{}
+		p.Todos = []*plan.Todo{}
 		result = append(result, &p)
 	}
 	return result
 }
 
-func (r *PlanPostgresRepository) CreateNewPlan(p domainplan.Plan) (string, error) {
+func (r *PlanPostgresRepository) CreateNewPlan(p plan.Plan) (string, error) {
 	db, err := database.GetDatabaseConnectionFor(r.ConnectionString)
 	if err != nil {
 		return "", err
@@ -128,7 +123,7 @@ func (r *PlanPostgresRepository) CreateNewPlan(p domainplan.Plan) (string, error
 	return planId, err
 }
 
-func (r *PlanPostgresRepository) AddTodo(idPlanId string, t todo.Todo) error {
+func (r *PlanPostgresRepository) AddTodo(idPlanId string, t plan.Todo) error {
 	db, err := database.GetDatabaseConnectionFor(r.ConnectionString)
 	if err != nil {
 		return err
