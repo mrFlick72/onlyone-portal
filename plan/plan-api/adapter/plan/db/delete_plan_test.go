@@ -6,19 +6,18 @@ import (
 	"testing"
 
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/internal/test"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDeletePlan(t *testing.T) {
 	aPlan := test.ANewPlan()
 	planId, err := repo.CreateNewPlan(aPlan)
-	test.AssertNoError(t, err, "insert plan failed")
+	require.NoError(t, err)
 
-	aTodo := test.ANewTodoWith("A Content")
-	test.AssertNoError(t, repo.AddTodo(planId, aTodo), "add todo failed")
-	test.AssertNoError(t, repo.DeletePlan(planId, aPlan.UserName), "delete plan failed")
+	require.NoError(t, repo.AddTodo(planId, test.ANewTodoWith("A Content")))
+	require.NoError(t, repo.DeletePlan(planId, aPlan.UserName))
 
 	_, err = repo.GetPlan(planId, aPlan.UserName)
-	if err == nil {
-		t.Error("expected error for deleted plan, got nil")
-	}
+	assert.Error(t, err)
 }

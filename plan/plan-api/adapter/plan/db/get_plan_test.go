@@ -6,22 +6,22 @@ import (
 	"testing"
 
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/internal/test"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetEmptyPlan(t *testing.T) {
-	plan := test.ANewPlan()
-	planId, err := repo.CreateNewPlan(plan)
-	test.AssertNoError(t, err, "insert failed")
+	p := test.ANewPlan()
+	planId, err := repo.CreateNewPlan(p)
+	require.NoError(t, err)
 
-	plan.Id = planId
-	actual, err := repo.GetPlan(planId, plan.UserName)
-	test.AssertNoError(t, err, "get failed")
-	test.AssertEqualPlan(t, plan, actual)
+	p.Id = planId
+	actual, err := repo.GetPlan(planId, p.UserName)
+	require.NoError(t, err)
+	assert.Equal(t, p, *actual)
 }
 
 func TestGetPlanNotFound(t *testing.T) {
 	_, err := repo.GetPlan("non-existent-id", "user-name")
-	if err == nil {
-		t.Error("expected error for non-existent plan, got nil")
-	}
+	assert.Error(t, err)
 }
