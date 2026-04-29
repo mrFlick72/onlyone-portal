@@ -2,6 +2,7 @@ package plan
 
 import (
 	"encoding/json"
+	"github.com/mrflick72/onlyone-portal/plan/plan-service/internal/test"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -14,7 +15,7 @@ import (
 )
 
 func TestAddTodo(t *testing.T) {
-	p := aTestPlan()
+	p := test.ANewPlan()
 	repo := &mockRepo{}
 	repo.On("AddTodo", p.Id, mock.MatchedBy(func(t plan.Todo) bool {
 		return t.UserName == testUser && t.Content == "do something" && t.Date == clock.ParseDateFor("2026-04-29")

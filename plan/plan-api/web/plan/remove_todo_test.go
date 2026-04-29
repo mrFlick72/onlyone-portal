@@ -1,6 +1,7 @@
 package plan
 
 import (
+	"github.com/mrflick72/onlyone-portal/plan/plan-service/internal/test"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,13 +10,13 @@ import (
 )
 
 func TestRemoveTodo(t *testing.T) {
-	p := aTestPlan()
+	aPlan := test.ANewPlan()
 	todoId := "test-todo-id"
 	repo := &mockRepo{}
-	repo.On("RemoveTodo", p.Id, todoId).Return(nil)
+	repo.On("RemoveTodo", aPlan.Id, todoId).Return(nil)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodDelete, "/api/plan/"+p.Id+"/todo/"+todoId, nil)
+	req, _ := http.NewRequest(http.MethodDelete, "/api/plan/"+aPlan.Id+"/todo/"+todoId, nil)
 	setupRouter(repo).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNoContent, w.Code)
