@@ -11,12 +11,19 @@ jobs:
       run:
         working-directory: plan/plan-api
     services:
-      localstack:
-        image: localstack/localstack:3.2
+      postgres:
+        image: postgres:16-alpine
         ports:
-          - "4566-4599:4566-4599"
+          - "5432:5432"
         env:
-          SERVICES: dynamodb
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: checkout
         uses: actions/checkout@v6
@@ -32,8 +39,6 @@ jobs:
 
       - name: Run tests
         env:
-          AWS_ACCESS_KEY_ID: test
-          AWS_SECRET_ACCESS_KEY: test
-          AWS_DEFAULT_REGION: us-east-1
+          CONFIG_FILE_LOCATION: test/application.yml
         run: |
           go test -tags test ./...
