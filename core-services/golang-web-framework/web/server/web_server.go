@@ -1,24 +1,29 @@
 package server
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/otel"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/magangement"
-
-	"github.com/gin-gonic/gin"
 )
 
 var configurationManager = config.GetConfigurationManagerInstance()
 var web_server_logger = logging.GetLoggerInstanceForComponentByTypeName("WebServerProvisioner")
 
 type WebServerProvisioner struct {
-	router *gin.Engine
+	router   *gin.Engine
+	shutdown otel.ShutdownFunc
 }
 
 func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
@@ -26,10 +31,29 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 		return wsp.router
 	}
 
-	router := gin.Default()
+	shutdown, err := otel.Setup(context.Background())
+	if err != nil {
+		web_server_logger.LogErrorfFor("OTel setup failed (continuing without tracing): %v", err)
+		shutdown = func(_ context.Context) error { return nil }
+	}
+	wsp.shutdown = shutdown
 
+	router := gin.New()
+
+	// 1. OTel: root server span wraps all subsequent middleware + handlers.
+	//    /management/* health probes are filtered to avoid polluting traces.
+	serviceName := configurationManager.GetConfigFor("otel.service-name")
+	router.Use(otelgin.Middleware(serviceName,
+		otelgin.WithFilter(func(req *http.Request) bool {
+			return !strings.HasPrefix(req.URL.Path, "/management/")
+		}),
+	))
+
+	// 2. Standard Gin middleware (inside the trace span)
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
+
+	// 3. CORS
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     strings.Split(configurationManager.GetConfigFor("cors.allowed.origins"), ","),
 		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "OPTIONS"},
@@ -38,19 +62,29 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 		MaxAge:           60 * time.Minute,
 	}))
 
+	// 4. JWT/OAuth2 (auth failures visible as span events)
 	web_server_logger.LogInfofFor("Setting up OAuth2 middleware")
 	router.Use(security.SetUpOAuth2())
 
 	magangement.RegisterEndpoints(router)
 
 	wsp.router = router
-
 	return router
+}
+
+// Shutdown flushes OTel spans. Call after StartEngine() returns on process exit.
+func (wsp *WebServerProvisioner) Shutdown(ctx context.Context) error {
+	if wsp.shutdown != nil {
+		return wsp.shutdown(ctx)
+	}
+	return nil
 }
 
 func (wsp *WebServerProvisioner) StartEngine() error {
 	port := configurationManager.GetConfigFor("server.port")
 	serverBinder := fmt.Sprintf("0.0.0.0:%s", port)
+	defer wsp.Shutdown(context.Background())
+
 	if err := wsp.router.Run(serverBinder); err != nil {
 		web_server_logger.LogErrorfFor("failed to run server: %v", err)
 	}
