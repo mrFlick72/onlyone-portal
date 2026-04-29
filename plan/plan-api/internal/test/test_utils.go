@@ -5,14 +5,12 @@ package test
 import (
 	"database/sql"
 	"os"
-	"testing"
 
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/plan"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/pkg/clock"
-	"github.com/stretchr/testify/assert"
 )
 
 var logger = logging.GetLoggerInstanceForComponentByTypeName("TestUtils")
@@ -55,23 +53,4 @@ func ANewTodoWith(content string) plan.Todo {
 		Date:     clock.ToDay(),
 		Content:  content,
 	}
-}
-
-func AssertNoError(t *testing.T, err error, msg string) {
-	t.Helper()
-	if err != nil {
-		t.Errorf("%s: %v", msg, err)
-	}
-}
-
-func AssertValidUUID(t *testing.T, id string) {
-	t.Helper()
-	assert.NotEmpty(t, id)
-	_, err := uuid.Parse(id)
-	assert.NoError(t, err, "returned id should be a valid UUID")
-}
-
-func AssertEqualPlan(t *testing.T, expected plan.Plan, actual *plan.Plan) {
-	t.Helper()
-	assert.Equal(t, expected, *actual)
 }

@@ -5,12 +5,16 @@ package db
 import (
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/internal/test"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateNewPlan(t *testing.T) {
-	plan := test.ANewPlan()
-	planId, err := repo.CreateNewPlan(plan)
-	test.AssertNoError(t, err, "insert failed")
-	test.AssertValidUUID(t, planId)
+	planId, err := repo.CreateNewPlan(test.ANewPlan())
+	require.NoError(t, err)
+	assert.NotEmpty(t, planId)
+	_, err = uuid.Parse(planId)
+	assert.NoError(t, err, "returned id should be a valid UUID")
 }
