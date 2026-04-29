@@ -13,16 +13,22 @@ import (
 )
 
 func TestUpdateTodo(t *testing.T) {
-	td := &plan.Todo{Id: "test-todo-id", UserName: testUser, Date: clock.ToDay(), Content: "old content"}
 	p := aTestPlan()
-	p.Todos = []*plan.Todo{td}
-	router := setupRouter(&mockRepo{plans: []*plan.Plan{p}})
+	todoId := "test-todo-id"
+	repo := &mockRepo{}
+	repo.On("UpdateTodo", p.Id, plan.Todo{
+		Id:       todoId,
+		UserName: testUser,
+		Date:     clock.ParseDateFor("2026-04-29"),
+		Content:  "updated content",
+	}).Return(nil)
 
 	body, _ := json.Marshal(todoRepresentation{Date: "2026-04-29", Content: "updated content"})
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodPut, "/api/plan/"+p.Id+"/todo/"+td.Id, strings.NewReader(string(body)))
+	req, _ := http.NewRequest(http.MethodPut, "/api/plan/"+p.Id+"/todo/"+todoId, strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
-	router.ServeHTTP(w, req)
+	setupRouter(repo).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNoContent, w.Code)
+	repo.AssertExpectations(t)
 }

@@ -13,24 +13,28 @@ import (
 
 func TestGetAllPlans(t *testing.T) {
 	p := aTestPlan()
-	router := setupRouter(&mockRepo{plans: []*plan.Plan{p}})
+	repo := &mockRepo{}
+	repo.On("GetAllPlanBy", testUser).Return([]*plan.Plan{p}, nil)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/api/plan", nil)
-	router.ServeHTTP(w, req)
+	setupRouter(repo).ServeHTTP(w, req)
 
 	expected, _ := json.Marshal([]planRepresentation{toPlanRepresentation(p)})
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, string(expected), strings.TrimSpace(w.Body.String()))
+	repo.AssertExpectations(t)
 }
 
 func TestGetAllPlansWhenEmpty(t *testing.T) {
-	router := setupRouter(&mockRepo{})
+	repo := &mockRepo{}
+	repo.On("GetAllPlanBy", testUser).Return([]*plan.Plan{}, nil)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/api/plan", nil)
-	router.ServeHTTP(w, req)
+	setupRouter(repo).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "[]", strings.TrimSpace(w.Body.String()))
+	repo.AssertExpectations(t)
 }

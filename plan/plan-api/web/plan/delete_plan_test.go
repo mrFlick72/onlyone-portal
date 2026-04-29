@@ -5,17 +5,18 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/plan"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDeletePlan(t *testing.T) {
 	p := aTestPlan()
-	router := setupRouter(&mockRepo{plans: []*plan.Plan{p}})
+	repo := &mockRepo{}
+	repo.On("DeletePlan", p.Id, testUser).Return(nil)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodDelete, "/api/plan/"+p.Id, nil)
-	router.ServeHTTP(w, req)
+	setupRouter(repo).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNoContent, w.Code)
+	repo.AssertExpectations(t)
 }
