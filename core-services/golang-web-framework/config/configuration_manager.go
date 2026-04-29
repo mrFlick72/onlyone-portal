@@ -36,7 +36,7 @@ func initViperInstance() *viper.Viper {
 	viperInstance.SetConfigType("yaml")
 
 	if err := viperInstance.ReadInConfig(); err != nil {
-		fmt.Printf("Error reading config file, %s: error details: %s",CONFIG_FILE_LOCATION,  err)
+		fmt.Printf("Error reading config file, %s: error details: %s", CONFIG_FILE_LOCATION, err)
 	}
 
 	return viperInstance
@@ -44,4 +44,8 @@ func initViperInstance() *viper.Viper {
 
 func (manager *ConfigurationManager) GetConfigFor(configKey string) string {
 	return manager.viper.GetString(configKey)
+}
+
+func (manager *ConfigurationManager) GetConfigBoolFor(configKey string) bool {
+	return manager.viper.GetBool(configKey)
 }

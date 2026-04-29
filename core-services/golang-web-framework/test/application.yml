@@ -10,3 +10,14 @@ user:
 logger:
   level: info
   file-name: logs.log
+
+cors:
+  allowed:
+    origins: "http://local.onlyone-portal.com:8070"
+
+otel:
+  enabled: false
+  service-name: test-service
+  protocol: http
+  endpoint: localhost:4318
+  insecure: true
