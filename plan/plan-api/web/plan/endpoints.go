@@ -1,13 +1,18 @@
 package plan
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/plan"
+	"github.com/mrflick72/onlyone-portal/plan/plan-service/pkg/clock"
 )
 
-var logger = logging.GetLoggerInstanceForComponentByTypeName("TodoEndpoints")
+var logger = logging.GetLoggerInstanceForComponentByTypeName("PlanEndpoints")
 
 type todoRepresentation struct {
 	Id       string `json:"id"`
@@ -16,13 +21,21 @@ type todoRepresentation struct {
 	Content  string `json:"content"`
 }
 
-type TodoEndpoints struct {
+type planRepresentation struct {
+	Id       string               `json:"id"`
+	UserName string               `json:"user_name"`
+	Title    string               `json:"title"`
+	Date     string               `json:"date"`
+	Todos    []todoRepresentation `json:"todos"`
+}
+
+type PlanEndpoints struct {
 	repository plan.PlanRepository
 	factory    server.ContextFactoryConverter
 }
 
 func RegisterEndpoints(r *gin.Engine, factory server.ContextFactoryConverter, repo plan.PlanRepository) {
-	e := &TodoEndpoints{repository: repo, factory: factory}
+	e := &PlanEndpoints{repository: repo, factory: factory}
 	g := r.Group("/api")
 	g.GET("/plan", e.getAll)
 	g.GET("/plan/:id", e.getOne)
@@ -33,92 +46,168 @@ func RegisterEndpoints(r *gin.Engine, factory server.ContextFactoryConverter, re
 	g.DELETE("/plan/:id", e.delete)
 }
 
-func (e *TodoEndpoints) getAll(c *gin.Context) {
-	//ctx := e.factory.CreateContextFromGin(c)
-	//user, err := security.GetCurrentUser(ctx)
-	//if err != nil {
-	//	c.Status(http.StatusUnauthorized)
-	//	return
-	//}
-	//
-	//todos, err := e.repository.GetAllTodo(*user.UserName)
-	//if err != nil {
-	//	logger.LogErrorFor(err)
-	//	c.Status(http.StatusInternalServerError)
-	//	return
-	//}
-	//c.JSON(http.StatusOK, toRepresentationList(todos))
+func (e *PlanEndpoints) getAll(c *gin.Context) {
+	ctx := e.factory.CreateContextFromGin(c)
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+	plans, err := e.repository.GetAllPlanBy(*user.UserName)
+	if err != nil {
+		logger.LogErrorFor(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	c.JSON(http.StatusOK, toPlanRepresentationList(plans))
 }
 
-func (e *TodoEndpoints) getOne(c *gin.Context) {
-	//t, err := e.repository.GetTodo(c.Param("id"))
-	//if err != nil || t == nil {
-	//	c.Status(http.StatusNotFound)
-	//	return
-	//}
-	//c.JSON(http.StatusOK, toRepresentation(t))
+func (e *PlanEndpoints) getOne(c *gin.Context) {
+	ctx := e.factory.CreateContextFromGin(c)
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+	p, err := e.repository.GetPlan(c.Param("id"), *user.UserName)
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	c.JSON(http.StatusOK, toPlanRepresentation(p))
 }
 
-func (e *TodoEndpoints) save(c *gin.Context) {
-	//var rep todoRepresentation
-	//if err := c.ShouldBindJSON(&rep); err != nil {
-	//	logger.LogErrorFor(err)
-	//	c.Status(http.StatusBadRequest)
-	//	return
-	//}
-	//rep.Id = uuid.NewString()
-	//
-	//if err := e.repository.SaveTodo(toDomain(&rep)); err != nil {
-	//	logger.LogErrorFor(err)
-	//	c.Status(http.StatusInternalServerError)
-	//	return
-	//}
-	//c.Status(http.StatusCreated)
+func (e *PlanEndpoints) save(c *gin.Context) {
+	ctx := e.factory.CreateContextFromGin(c)
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+	var rep planRepresentation
+	if err := c.ShouldBindJSON(&rep); err != nil {
+		logger.LogErrorFor(err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+	planId, err := e.repository.CreateNewPlan(toPlanDomain(&rep, *user.UserName))
+	if err != nil {
+		logger.LogErrorFor(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"id": planId})
 }
 
-func (e *TodoEndpoints) delete(c *gin.Context) {
-	//if err := e.repository.RemoveTodo(c.Param("id")); err != nil {
-	//	logger.LogErrorFor(err)
-	//	c.Status(http.StatusInternalServerError)
-	//	return
-	//}
-	//c.Status(http.StatusNoContent)
+func (e *PlanEndpoints) addTodo(c *gin.Context) {
+	ctx := e.factory.CreateContextFromGin(c)
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+	var rep todoRepresentation
+	if err := c.ShouldBindJSON(&rep); err != nil {
+		logger.LogErrorFor(err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+	t := plan.Todo{
+		Id:       uuid.NewString(),
+		UserName: *user.UserName,
+		Date:     clock.ParseDateFor(rep.Date),
+		Content:  rep.Content,
+	}
+	if err := e.repository.AddTodo(c.Param("id"), t); err != nil {
+		logger.LogErrorFor(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	c.Status(http.StatusCreated)
 }
 
-func (e *TodoEndpoints) addTodo(context *gin.Context) {
-
+func (e *PlanEndpoints) removeTodo(c *gin.Context) {
+	if err := e.repository.RemoveTodo(c.Param("id"), c.Param("todoId")); err != nil {
+		logger.LogErrorFor(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
 
-func (e *TodoEndpoints) updateTodo(context *gin.Context) {
-
+func (e *PlanEndpoints) updateTodo(c *gin.Context) {
+	ctx := e.factory.CreateContextFromGin(c)
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+	var rep todoRepresentation
+	if err := c.ShouldBindJSON(&rep); err != nil {
+		logger.LogErrorFor(err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+	t := plan.Todo{
+		Id:       c.Param("todoId"),
+		UserName: *user.UserName,
+		Date:     clock.ParseDateFor(rep.Date),
+		Content:  rep.Content,
+	}
+	if err := e.repository.UpdateTodo(c.Param("id"), t); err != nil {
+		logger.LogErrorFor(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
 
-func (e *TodoEndpoints) removeTodo(context *gin.Context) {
-
+func (e *PlanEndpoints) delete(c *gin.Context) {
+	ctx := e.factory.CreateContextFromGin(c)
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+	if err := e.repository.DeletePlan(c.Param("id"), *user.UserName); err != nil {
+		logger.LogErrorFor(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
 
-//func toRepresentationList(todos []*todo.Todo) []todoRepresentation {
-//	result := make([]todoRepresentation, 0, len(todos))
-//	for _, t := range todos {
-//		result = append(result, toRepresentation(t))
-//	}
-//	return result
-//}
+func toPlanRepresentationList(plans []*plan.Plan) []planRepresentation {
+	result := make([]planRepresentation, 0, len(plans))
+	for _, p := range plans {
+		result = append(result, toPlanRepresentation(p))
+	}
+	return result
+}
 
-//func toRepresentation(t *todo.Todo) todoRepresentation {
-//	return todoRepresentation{
-//		Id:       t.Id,
-//		UserName: t.UserName,
-//		Date:     clock.FormatDateFor(t.Date),
-//		Content:  t.Content,
-//	}
-//}
+func toPlanRepresentation(p *plan.Plan) planRepresentation {
+	todos := make([]todoRepresentation, 0, len(p.Todos))
+	for _, t := range p.Todos {
+		todos = append(todos, todoRepresentation{
+			Id:       t.Id,
+			UserName: t.UserName,
+			Date:     clock.FormatDateFor(t.Date),
+			Content:  t.Content,
+		})
+	}
+	return planRepresentation{
+		Id:       p.Id,
+		UserName: p.UserName,
+		Title:    p.Title,
+		Date:     clock.FormatDateFor(p.Date),
+		Todos:    todos,
+	}
+}
 
-//func toDomain(rep *todoRepresentation) *todo.Todo {
-//	return &todo.Todo{
-//		Id:       rep.Id,
-//		UserName: rep.UserName,
-//		Date:     clock.ParseDateFor(rep.Date),
-//		Content:  rep.Content,
-//	}
-//}
+func toPlanDomain(rep *planRepresentation, userName string) plan.Plan {
+	return plan.Plan{
+		UserName: userName,
+		Title:    rep.Title,
+		Date:     clock.ParseDateFor(rep.Date),
+	}
+}

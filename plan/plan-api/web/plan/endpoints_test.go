@@ -2,22 +2,24 @@ package plan
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
-	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/todo"
+	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/plan"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/pkg/clock"
 	"github.com/stretchr/testify/assert"
 )
 
 const testUser = "valerio.vaudi"
 
-func setupRouter(repo todo.TodoRepository) *gin.Engine {
+func setupRouter(repo plan.PlanRepository) *gin.Engine {
 	r := gin.Default()
 	r.Use(func(c *gin.Context) {
 		userName := testUser
@@ -28,119 +30,224 @@ func setupRouter(repo todo.TodoRepository) *gin.Engine {
 	return r
 }
 
-func TestGetAllTodo(t *testing.T) {
-	td := aTestTodo()
-	router := setupRouter(&mockRepo{todos: []*todo.Todo{td}})
+func aTestPlan() *plan.Plan {
+	return &plan.Plan{
+		Id:       "test-plan-id",
+		UserName: testUser,
+		Title:    "test plan",
+		Date:     clock.ToDay(),
+		Todos:    []*plan.Todo{},
+	}
+}
+
+// --- GET /api/plan ---
+
+func TestGetAllPlans(t *testing.T) {
+	p := aTestPlan()
+	router := setupRouter(&mockRepo{plans: []*plan.Plan{p}})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, "/todo-service/todo", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/api/plan", nil)
 	router.ServeHTTP(w, req)
 
-	expected, _ := json.Marshal([]todoRepresentation{toRepresentation(td)})
+	expected, _ := json.Marshal([]planRepresentation{toPlanRepresentation(p)})
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, string(expected), strings.TrimSpace(w.Body.String()))
 }
 
-func TestGetAllTodoWhenEmpty(t *testing.T) {
+func TestGetAllPlansWhenEmpty(t *testing.T) {
 	router := setupRouter(&mockRepo{})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, "/todo-service/todo", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/api/plan", nil)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "[]", strings.TrimSpace(w.Body.String()))
 }
 
-func TestGetOneTodo(t *testing.T) {
-	td := aTestTodo()
-	router := setupRouter(&mockRepo{todos: []*todo.Todo{td}})
+// --- GET /api/plan/:id ---
+
+func TestGetOnePlan(t *testing.T) {
+	p := aTestPlan()
+	router := setupRouter(&mockRepo{plans: []*plan.Plan{p}})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, "/todo-service/todo/"+td.Id, nil)
+	req, _ := http.NewRequest(http.MethodGet, "/api/plan/"+p.Id, nil)
 	router.ServeHTTP(w, req)
 
-	expected, _ := json.Marshal(toRepresentation(td))
+	expected, _ := json.Marshal(toPlanRepresentation(p))
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, string(expected), strings.TrimSpace(w.Body.String()))
 }
 
-func TestGetOneTodoNotFound(t *testing.T) {
+func TestGetOnePlanNotFound(t *testing.T) {
 	router := setupRouter(&mockRepo{})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, "/todo-service/todo/nonexistent", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/api/plan/nonexistent", nil)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
-func TestSaveTodo(t *testing.T) {
+// --- POST /api/plan ---
+
+func TestSavePlan(t *testing.T) {
 	router := setupRouter(&mockRepo{})
 
-	body, _ := json.Marshal(todoRepresentation{UserName: testUser, Date: "2026-04-26", Content: "a content"})
+	body, _ := json.Marshal(planRepresentation{Title: "new plan", Date: "2026-04-29"})
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodPost, "/todo-service/todo", strings.NewReader(string(body)))
+	req, _ := http.NewRequest(http.MethodPost, "/api/plan", strings.NewReader(string(body)))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+	var resp map[string]string
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	_, err := uuid.Parse(resp["id"])
+	assert.NoError(t, err, "response id should be a valid UUID")
+}
+
+// --- PUT /api/plan/:id/todo ---
+
+func TestAddTodo(t *testing.T) {
+	p := aTestPlan()
+	router := setupRouter(&mockRepo{plans: []*plan.Plan{p}})
+
+	body, _ := json.Marshal(todoRepresentation{Date: "2026-04-29", Content: "do something"})
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodPut, "/api/plan/"+p.Id+"/todo", strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 }
 
-func TestDeleteTodo(t *testing.T) {
-	td := aTestTodo()
-	router := setupRouter(&mockRepo{todos: []*todo.Todo{td}})
+// --- DELETE /api/plan/:id/todo/:todoId ---
+
+func TestRemoveTodo(t *testing.T) {
+	td := &plan.Todo{Id: "test-todo-id", UserName: testUser, Date: clock.ToDay(), Content: "do something"}
+	p := aTestPlan()
+	p.Todos = []*plan.Todo{td}
+	router := setupRouter(&mockRepo{plans: []*plan.Plan{p}})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodDelete, "/todo-service/todo/"+td.Id, nil)
+	req, _ := http.NewRequest(http.MethodDelete, "/api/plan/"+p.Id+"/todo/"+td.Id, nil)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNoContent, w.Code)
 }
 
-func aTestTodo() *todo.Todo {
-	return &todo.Todo{Id: "test-id-1", UserName: testUser, Date: clock.ToDay(), Content: "a content"}
+// --- PUT /api/plan/:id/todo/:todoId ---
+
+func TestUpdateTodo(t *testing.T) {
+	td := &plan.Todo{Id: "test-todo-id", UserName: testUser, Date: clock.ToDay(), Content: "old content"}
+	p := aTestPlan()
+	p.Todos = []*plan.Todo{td}
+	router := setupRouter(&mockRepo{plans: []*plan.Plan{p}})
+
+	body, _ := json.Marshal(todoRepresentation{Date: "2026-04-29", Content: "updated content"})
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodPut, "/api/plan/"+p.Id+"/todo/"+td.Id, strings.NewReader(string(body)))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
 }
+
+// --- DELETE /api/plan/:id ---
+
+func TestDeletePlan(t *testing.T) {
+	p := aTestPlan()
+	router := setupRouter(&mockRepo{plans: []*plan.Plan{p}})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodDelete, "/api/plan/"+p.Id, nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+}
+
+// --- mock ---
 
 type mockRepo struct {
-	todos []*todo.Todo
+	plans []*plan.Plan
 }
 
-func (m *mockRepo) GetAllTodo(userName string) ([]*todo.Todo, error) {
-	var result []*todo.Todo
-	for _, t := range m.todos {
-		if t.UserName == userName {
-			result = append(result, t)
+func (m *mockRepo) GetAllPlanBy(userName string) ([]*plan.Plan, error) {
+	result := make([]*plan.Plan, 0)
+	for _, p := range m.plans {
+		if p.UserName == userName {
+			result = append(result, p)
 		}
-	}
-	if result == nil {
-		result = []*todo.Todo{}
 	}
 	return result, nil
 }
 
-func (m *mockRepo) GetTodo(id string) (*todo.Todo, error) {
-	for _, t := range m.todos {
-		if t.Id == id {
-			return t, nil
+func (m *mockRepo) GetPlan(id string, userName string) (*plan.Plan, error) {
+	for _, p := range m.plans {
+		if p.Id == id && p.UserName == userName {
+			return p, nil
 		}
 	}
-	return nil, nil
+	return nil, errors.New("not found")
 }
 
-func (m *mockRepo) SaveTodo(t *todo.Todo) error {
-	m.todos = append(m.todos, t)
-	return nil
+func (m *mockRepo) CreateNewPlan(p plan.Plan) (string, error) {
+	id := uuid.NewString()
+	p.Id = id
+	p.Todos = []*plan.Todo{}
+	m.plans = append(m.plans, &p)
+	return id, nil
 }
 
-func (m *mockRepo) RemoveTodo(id string) error {
-	for i, t := range m.todos {
-		if t.Id == id {
-			m.todos = append(m.todos[:i], m.todos[i+1:]...)
+func (m *mockRepo) AddTodo(planId string, t plan.Todo) error {
+	for _, p := range m.plans {
+		if p.Id == planId {
+			p.Todos = append(p.Todos, &t)
 			return nil
 		}
 	}
+	return errors.New("plan not found")
+}
+
+func (m *mockRepo) UpdateTodo(planId string, t plan.Todo) error {
+	for _, p := range m.plans {
+		if p.Id == planId {
+			for i, td := range p.Todos {
+				if td.Id == t.Id {
+					p.Todos[i] = &t
+					return nil
+				}
+			}
+		}
+	}
+	return errors.New("todo not found")
+}
+
+func (m *mockRepo) RemoveTodo(planId string, todoId string) error {
+	for _, p := range m.plans {
+		if p.Id == planId {
+			for i, t := range p.Todos {
+				if t.Id == todoId {
+					p.Todos = append(p.Todos[:i], p.Todos[i+1:]...)
+					return nil
+				}
+			}
+		}
+	}
 	return nil
 }
 
-var _ todo.TodoRepository = (*mockRepo)(nil)
+func (m *mockRepo) DeletePlan(planId string, userName string) error {
+	for i, p := range m.plans {
+		if p.Id == planId && p.UserName == userName {
+			m.plans = append(m.plans[:i], m.plans[i+1:]...)
+			return nil
+		}
+	}
+	return errors.New("plan not found")
+}
+
+var _ plan.PlanRepository = (*mockRepo)(nil)
