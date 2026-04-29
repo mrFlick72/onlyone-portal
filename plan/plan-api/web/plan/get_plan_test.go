@@ -16,7 +16,7 @@ import (
 func TestGetOnePlan(t *testing.T) {
 	aPlan := test.ANewPlan()
 	repo := &mockRepo{}
-	repo.On("GetPlan", aPlan.Id, testUser).Return(aPlan, nil)
+	repo.On("GetPlan", aPlan.Id, testUser).Return(&aPlan, nil)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/api/plan/"+aPlan.Id, nil)
