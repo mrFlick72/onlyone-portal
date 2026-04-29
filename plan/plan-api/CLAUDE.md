@@ -21,9 +21,11 @@ path is set via the `CONFIG_FILE_LOCATION` env var.
 ## Commands
 
 ```bash
-# ⚠ main.go and web/plan/endpoints_test.go currently do NOT compile — see "Known broken state" below
-go test -tags test ./adapter/plan/db/...      # integration tests — the only tests that currently work
-go test -tags test -run TestGetPlan ./adapter/plan/db/...  # single integration test
+go build -o app .
+go test ./web/...                                          # unit tests — no database, no build tag
+go test -tags test ./adapter/...                          # integration tests — require Postgres
+go test -tags test ./...                                  # all tests
+go test -tags test -run TestGetPlan ./adapter/plan/db/... # single integration test
 ```
 
 ## Architecture
@@ -110,30 +112,28 @@ All methods implemented:
 - `buildPlans(rows)` — row mapper; initialises with `make([]*Plan, 0)` (never nil); normalises date to UTC; sets `Todos` to `[]*Todo{}`
 - All methods open a new connection per call via `database.GetDatabaseConnectionFor` and defer cleanup with `database.CloseResources`
 
-## Web Routes (`web/plan/endpoints.go`)
+## Web Layer (`web/plan/endpoints.go`)
 
-Routes are registered but all handler bodies are empty stubs — logic is commented out:
+| Method | Path | Handler | Status |
+|--------|------|---------|--------|
+| GET | `/api/plan` | `getAll` | calls `GetAllPlanBy(*user.UserName)` → 200 JSON array |
+| GET | `/api/plan/:id` | `getOne` | calls `GetPlan(id, *user.UserName)` → 200 JSON / 404 |
+| POST | `/api/plan` | `save` | calls `CreateNewPlan(...)` → 201 `{"id": "<uuid>"}` |
+| PUT | `/api/plan/:id/todo` | `addTodo` | generates todo UUID; calls `AddTodo(planId, todo)` → 201 |
+| DELETE | `/api/plan/:id/todo/:todoId` | `removeTodo` | calls `RemoveTodo(planId, todoId)` → 204 |
+| PUT | `/api/plan/:id/todo/:todoId` | `updateTodo` | stub — no repo backing yet |
+| DELETE | `/api/plan/:id` | `delete` | stub — no repo backing yet |
 
-| Method | Path | Handler |
-|--------|------|---------|
-| GET | `/api/plan` | `getAll` — stub |
-| GET | `/api/plan/:id` | `getOne` — stub |
-| POST | `/api/plan` | `save` — stub |
-| PUT | `/api/plan/:id/todo` | `addTodo` — stub |
-| PUT | `/api/plan/:id/todo/:todoId` | `updateTodo` — stub |
-| DELETE | `/api/plan/:id/todo/:todoId` | `removeTodo` — stub |
-| DELETE | `/api/plan/:id` | `delete` — stub |
+**Representation types** (in `web/plan/`):
+- `planRepresentation` — `{id, user_name, title, date, todos[]}` — used for GET responses
+- `todoRepresentation` — `{id, user_name, date, content}` — used inside plan and as PUT body
 
-The `todoRepresentation` struct and `TodoEndpoints` wiring are in place; only the handler bodies need implementing.
+**Handler conventions:**
+- `user_name` is always taken from the JWT (`security.GetCurrentUser`), never from the request body
+- Todo UUIDs are generated in the handler (`uuid.NewString()`); plan UUIDs are generated inside the repo
+- `clock.ParseDateFor` / `clock.FormatDateFor` handle `"YYYY-MM-DD"` ↔ `time.Time` conversion for dates in JSON
 
-## Known Broken State
-
-Two files do not compile and must be fixed before `go build` or `go test ./web/...` will work:
-
-| File | Problem |
-|------|---------|
-| `main.go` | Imports `adapter/todo/db` and `web/todo` — both packages were removed. Needs to be rewritten to wire `adapter/plan/db` + `web/plan`. |
-| `web/plan/endpoints_test.go` | Imports `domain/todo` (removed) and mocks `todo.TodoRepository` (old interface). Needs to be rewritten for `plan.PlanRepository`. |
+**Unit test mock** (`web/plan/endpoints_test.go`) implements `plan.PlanRepository` in-memory; compile-time checked with `var _ plan.PlanRepository = (*mockRepo)(nil)`.
 
 ## Configuration
 
@@ -168,7 +168,7 @@ A ready-to-use local config is at `test/application.yml`.
 
 ## Testing
 
-**Unit tests** (`web/plan/`) — currently broken; `endpoints_test.go` must be rewritten first (see "Known Broken State").
+**Unit tests** (`web/plan/`) — use `httptest` + in-memory mock; no database, no build tag:
 
 **Integration tests** (`adapter/plan/db/`) — require Postgres and `-tags test`:
 

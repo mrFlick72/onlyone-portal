@@ -1,9 +1,9 @@
 package main
 
 import (
-	tododb "github.com/mrflick72/onlyone-portal/plan/plan-service/adapter/todo/db"
+	plandb "github.com/mrflick72/onlyone-portal/plan/plan-service/adapter/plan/db"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/config"
-	todoapi "github.com/mrflick72/onlyone-portal/plan/plan-service/web/todo"
+	planapi "github.com/mrflick72/onlyone-portal/plan/plan-service/web/plan"
 
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 )
@@ -13,7 +13,7 @@ func main() {
 	ginEngine := engine.ConfigureEngine()
 	factory := &server.GinContextToPlainContextFactory{}
 
-	todoapi.RegisterEndpoints(ginEngine, factory, tododb.NewTodoRepository(config.NewPostgresDSN()))
+	planapi.RegisterEndpoints(ginEngine, factory, plandb.NewPlanRepository(config.NewPostgresDSN()))
 
 	engine.StartEngine()
 }

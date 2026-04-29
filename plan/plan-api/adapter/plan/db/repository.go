@@ -123,6 +123,23 @@ func (r *PlanPostgresRepository) CreateNewPlan(p plan.Plan) (string, error) {
 	return planId, err
 }
 
+func (r *PlanPostgresRepository) DeletePlan(idPlanId string, userName string) error {
+	db, err := database.GetDatabaseConnectionFor(r.ConnectionString)
+	if err != nil {
+		return err
+	}
+
+	query, err := db.Prepare("DELETE FROM plan WHERE id = $1 AND user_name = $2")
+	if err != nil {
+		return err
+	}
+
+	_, err = query.Exec(idPlanId, userName)
+	logger.LogErrorFor(err)
+	database.CloseResources(nil, query, db)
+	return err
+}
+
 func (r *PlanPostgresRepository) AddTodo(idPlanId string, t plan.Todo) error {
 	db, err := database.GetDatabaseConnectionFor(r.ConnectionString)
 	if err != nil {
@@ -135,6 +152,23 @@ func (r *PlanPostgresRepository) AddTodo(idPlanId string, t plan.Todo) error {
 	}
 
 	_, err = query.Exec(t.Id, idPlanId, t.UserName, t.Date, t.Content)
+	logger.LogErrorFor(err)
+	database.CloseResources(nil, query, db)
+	return err
+}
+
+func (r *PlanPostgresRepository) UpdateTodo(idPlanId string, t plan.Todo) error {
+	db, err := database.GetDatabaseConnectionFor(r.ConnectionString)
+	if err != nil {
+		return err
+	}
+
+	query, err := db.Prepare("UPDATE todo SET content = $1, date = $2 WHERE id = $3 AND plan_id = $4")
+	if err != nil {
+		return err
+	}
+
+	_, err = query.Exec(t.Content, t.Date, t.Id, idPlanId)
 	logger.LogErrorFor(err)
 	database.CloseResources(nil, query, db)
 	return err

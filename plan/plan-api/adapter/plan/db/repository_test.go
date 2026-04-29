@@ -105,6 +105,39 @@ func TestGetAllPlanBy(t *testing.T) {
 	assertEqualPlan(t, plan.Plan{Id: secondPlanId, Title: "second plan", UserName: userName, Date: clock.ToDay(), Todos: []*plan.Todo{}}, plans[1])
 }
 
+func TestUpdateTodo(t *testing.T) {
+	aPlan := aNewPlan()
+	planId, err := repo.CreateNewPlan(aPlan)
+	assertNoError(t, err, "insert plan failed")
+
+	aTodo := aNewTodoWith("Original Content")
+	assertNoError(t, repo.AddTodo(planId, aTodo), "add todo failed")
+
+	updatedTodo := plan.Todo{Id: aTodo.Id, UserName: aTodo.UserName, Date: clock.ToDay(), Content: "Updated Content"}
+	assertNoError(t, repo.UpdateTodo(planId, updatedTodo), "update todo failed")
+
+	actual, err := repo.GetPlan(planId, aPlan.UserName)
+	assertNoError(t, err, "get plan failed")
+	assert.Equal(t, 1, len(actual.Todos))
+	assert.Equal(t, "Updated Content", actual.Todos[0].Content)
+}
+
+func TestDeletePlan(t *testing.T) {
+	aPlan := aNewPlan()
+	planId, err := repo.CreateNewPlan(aPlan)
+	assertNoError(t, err, "insert plan failed")
+
+	aTodo := aNewTodoWith("A Content")
+	assertNoError(t, repo.AddTodo(planId, aTodo), "add todo failed")
+
+	assertNoError(t, repo.DeletePlan(planId, aPlan.UserName), "delete plan failed")
+
+	_, err = repo.GetPlan(planId, aPlan.UserName)
+	if err == nil {
+		t.Error("expected error for deleted plan, got nil")
+	}
+}
+
 func TestRemoveANewTodo(t *testing.T) {
 	aPlan := aNewPlan()
 
