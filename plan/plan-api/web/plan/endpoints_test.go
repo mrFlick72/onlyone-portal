@@ -1,14 +1,12 @@
 package plan
 
 import (
-	"errors"
-
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/plan"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/pkg/clock"
+	"github.com/stretchr/testify/mock"
 )
 
 const testUser = "valerio.vaudi"
@@ -35,82 +33,40 @@ func aTestPlan() *plan.Plan {
 }
 
 type mockRepo struct {
-	plans []*plan.Plan
+	mock.Mock
 }
 
 func (m *mockRepo) GetAllPlanBy(userName string) ([]*plan.Plan, error) {
-	result := make([]*plan.Plan, 0)
-	for _, p := range m.plans {
-		if p.UserName == userName {
-			result = append(result, p)
-		}
-	}
-	return result, nil
+	args := m.Called(userName)
+	return args.Get(0).([]*plan.Plan), args.Error(1)
 }
 
 func (m *mockRepo) GetPlan(id string, userName string) (*plan.Plan, error) {
-	for _, p := range m.plans {
-		if p.Id == id && p.UserName == userName {
-			return p, nil
-		}
-	}
-	return nil, errors.New("not found")
+	args := m.Called(id, userName)
+	return args.Get(0).(*plan.Plan), args.Error(1)
 }
 
 func (m *mockRepo) CreateNewPlan(p plan.Plan) (string, error) {
-	id := uuid.NewString()
-	p.Id = id
-	p.Todos = []*plan.Todo{}
-	m.plans = append(m.plans, &p)
-	return id, nil
+	args := m.Called(p)
+	return args.String(0), args.Error(1)
 }
 
 func (m *mockRepo) AddTodo(planId string, t plan.Todo) error {
-	for _, p := range m.plans {
-		if p.Id == planId {
-			p.Todos = append(p.Todos, &t)
-			return nil
-		}
-	}
-	return errors.New("plan not found")
+	args := m.Called(planId, t)
+	return args.Error(0)
 }
 
 func (m *mockRepo) UpdateTodo(planId string, t plan.Todo) error {
-	for _, p := range m.plans {
-		if p.Id == planId {
-			for i, td := range p.Todos {
-				if td.Id == t.Id {
-					p.Todos[i] = &t
-					return nil
-				}
-			}
-		}
-	}
-	return errors.New("todo not found")
+	args := m.Called(planId, t)
+	return args.Error(0)
 }
 
 func (m *mockRepo) RemoveTodo(planId string, todoId string) error {
-	for _, p := range m.plans {
-		if p.Id == planId {
-			for i, t := range p.Todos {
-				if t.Id == todoId {
-					p.Todos = append(p.Todos[:i], p.Todos[i+1:]...)
-					return nil
-				}
-			}
-		}
-	}
-	return nil
+	args := m.Called(planId, todoId)
+	return args.Error(0)
 }
 
 func (m *mockRepo) DeletePlan(planId string, userName string) error {
-	for i, p := range m.plans {
-		if p.Id == planId && p.UserName == userName {
-			m.plans = append(m.plans[:i], m.plans[i+1:]...)
-			return nil
-		}
-	}
-	return errors.New("plan not found")
+	args := m.Called(planId, userName)
+	return args.Error(0)
 }
-
-var _ plan.PlanRepository = (*mockRepo)(nil)

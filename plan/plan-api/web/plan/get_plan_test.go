@@ -2,6 +2,7 @@ package plan
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -13,23 +14,27 @@ import (
 
 func TestGetOnePlan(t *testing.T) {
 	p := aTestPlan()
-	router := setupRouter(&mockRepo{plans: []*plan.Plan{p}})
+	repo := &mockRepo{}
+	repo.On("GetPlan", p.Id, testUser).Return(p, nil)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/api/plan/"+p.Id, nil)
-	router.ServeHTTP(w, req)
+	setupRouter(repo).ServeHTTP(w, req)
 
 	expected, _ := json.Marshal(toPlanRepresentation(p))
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, string(expected), strings.TrimSpace(w.Body.String()))
+	repo.AssertExpectations(t)
 }
 
 func TestGetOnePlanNotFound(t *testing.T) {
-	router := setupRouter(&mockRepo{})
+	repo := &mockRepo{}
+	repo.On("GetPlan", "nonexistent", testUser).Return((*plan.Plan)(nil), errors.New("not found"))
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/api/plan/nonexistent", nil)
-	router.ServeHTTP(w, req)
+	setupRouter(repo).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
+	repo.AssertExpectations(t)
 }
