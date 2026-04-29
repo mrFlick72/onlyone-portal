@@ -1,6 +1,6 @@
 //go:build test
 
-package db
+package test
 
 import (
 	"database/sql"
@@ -9,23 +9,26 @@ import (
 
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/plan"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/pkg/clock"
 	"github.com/stretchr/testify/assert"
 )
 
-const testDSN = "host=localhost dbname=postgres user=postgres password=postgres sslmode=disable"
+var logger = logging.GetLoggerInstanceForComponentByTypeName("TestUtils")
 
-func clearDatabase() {
-	conn, _ := sql.Open("postgres", testDSN)
+const TestDSN = "host=localhost dbname=postgres user=postgres password=postgres sslmode=disable"
+
+func ClearDatabase() {
+	conn, _ := sql.Open("postgres", TestDSN)
 	defer conn.Close()
-	initDatabase(conn)
+	InitDatabase(conn)
 	if _, err := conn.Exec("TRUNCATE TABLE todo, plan"); err != nil {
 		logger.LogErrorFor(err)
 	}
 }
 
-func initDatabase(conn *sql.DB) {
+func InitDatabase(conn *sql.DB) {
 	content, err := os.ReadFile("../../../scripts/init.sql")
 	if err != nil {
 		logger.LogErrorfFor("File not found: %v", err)
@@ -36,7 +39,7 @@ func initDatabase(conn *sql.DB) {
 	}
 }
 
-func aNewPlan() plan.Plan {
+func ANewPlan() plan.Plan {
 	return plan.Plan{
 		Title:    "a test plan",
 		UserName: "user-name",
@@ -45,7 +48,7 @@ func aNewPlan() plan.Plan {
 	}
 }
 
-func aNewTodoWith(content string) plan.Todo {
+func ANewTodoWith(content string) plan.Todo {
 	return plan.Todo{
 		Id:       uuid.New().String(),
 		UserName: "user-name",
@@ -54,21 +57,21 @@ func aNewTodoWith(content string) plan.Todo {
 	}
 }
 
-func assertNoError(t *testing.T, err error, msg string) {
+func AssertNoError(t *testing.T, err error, msg string) {
 	t.Helper()
 	if err != nil {
 		t.Errorf("%s: %v", msg, err)
 	}
 }
 
-func assertValidUUID(t *testing.T, id string) {
+func AssertValidUUID(t *testing.T, id string) {
 	t.Helper()
 	assert.NotEmpty(t, id)
 	_, err := uuid.Parse(id)
 	assert.NoError(t, err, "returned id should be a valid UUID")
 }
 
-func assertEqualPlan(t *testing.T, expected plan.Plan, actual *plan.Plan) {
+func AssertEqualPlan(t *testing.T, expected plan.Plan, actual *plan.Plan) {
 	t.Helper()
 	assert.Equal(t, expected, *actual)
 }

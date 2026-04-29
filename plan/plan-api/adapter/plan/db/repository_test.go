@@ -5,6 +5,7 @@ package db
 import (
 	"fmt"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/plan"
+	"github.com/mrflick72/onlyone-portal/plan/plan-service/internal/test"
 	"os"
 	"testing"
 
@@ -12,12 +13,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var repo = PlanPostgresRepository{ConnectionString: testDSN}
+var repo = PlanPostgresRepository{ConnectionString: test.TestDSN}
 
 func TestMain(m *testing.M) {
 	// global setup
 	fmt.Println("setup before all tests")
-	clearDatabase()
+	test.ClearDatabase()
 
 	code := m.Run()
 
@@ -28,21 +29,21 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreateNewPlan(t *testing.T) {
-	plan := aNewPlan()
+	plan := test.ANewPlan()
 	planId, err := repo.CreateNewPlan(plan)
-	assertNoError(t, err, "insert failed")
-	assertValidUUID(t, planId)
+	test.AssertNoError(t, err, "insert failed")
+	test.AssertValidUUID(t, planId)
 }
 
 func TestGetEmptyPlan(t *testing.T) {
-	plan := aNewPlan()
+	plan := test.ANewPlan()
 	planId, err := repo.CreateNewPlan(plan)
-	assertNoError(t, err, "insert failed")
+	test.AssertNoError(t, err, "insert failed")
 
 	plan.Id = planId
 	actual, err := repo.GetPlan(planId, plan.UserName)
-	assertNoError(t, err, "get failed")
-	assertEqualPlan(t, plan, actual)
+	test.AssertNoError(t, err, "get failed")
+	test.AssertEqualPlan(t, plan, actual)
 }
 
 func TestGetPlanNotFound(t *testing.T) {
@@ -53,18 +54,18 @@ func TestGetPlanNotFound(t *testing.T) {
 }
 
 func TestAddANewTodo(t *testing.T) {
-	aPlan := aNewPlan()
+	aPlan := test.ANewPlan()
 
 	planId, err := repo.CreateNewPlan(aPlan)
-	assertNoError(t, err, "insert failed")
+	test.AssertNoError(t, err, "insert failed")
 
-	aTodo := aNewTodoWith("A Content")
+	aTodo := test.ANewTodoWith("A Content")
 	err = repo.AddTodo(planId, aTodo)
-	assertNoError(t, err, "adding the todo failed")
+	test.AssertNoError(t, err, "adding the todo failed")
 
-	anotherTodo := aNewTodoWith("Another Content")
+	anotherTodo := test.ANewTodoWith("Another Content")
 	err = repo.AddTodo(planId, anotherTodo)
-	assertNoError(t, err, "adding the todo failed")
+	test.AssertNoError(t, err, "adding the todo failed")
 
 	expected := plan.Plan{
 		Id:       planId,
@@ -75,13 +76,13 @@ func TestAddANewTodo(t *testing.T) {
 	}
 
 	actual, err := repo.GetPlan(planId, aPlan.UserName)
-	assertNoError(t, err, "get failed")
-	assertEqualPlan(t, expected, actual)
+	test.AssertNoError(t, err, "get failed")
+	test.AssertEqualPlan(t, expected, actual)
 }
 
 func TestGetAllPlanByWithNoPlans(t *testing.T) {
 	plans, err := repo.GetAllPlanBy("unknown-user")
-	assertNoError(t, err, "get all failed")
+	test.AssertNoError(t, err, "get all failed")
 	assert.Equal(t, make([]*plan.Plan, 0), plans)
 }
 
@@ -89,48 +90,47 @@ func TestGetAllPlanBy(t *testing.T) {
 	userName := "all-plans-user"
 
 	firstPlanId, err := repo.CreateNewPlan(plan.Plan{Title: "first plan", UserName: userName, Date: clock.ToDay(), Todos: []*plan.Todo{}})
-	assertNoError(t, err, "insert first plan failed")
+	test.AssertNoError(t, err, "insert first plan failed")
 
-	aTodo := aNewTodoWith("A Content")
-	assertNoError(t, repo.AddTodo(firstPlanId, aTodo), "adding todo to first plan failed")
+	aTodo := test.ANewTodoWith("A Content")
+	test.AssertNoError(t, repo.AddTodo(firstPlanId, aTodo), "adding todo to first plan failed")
 
 	secondPlanId, err := repo.CreateNewPlan(plan.Plan{Title: "second plan", UserName: userName, Date: clock.ToDay(), Todos: []*plan.Todo{}})
-	assertNoError(t, err, "insert second plan failed")
+	test.AssertNoError(t, err, "insert second plan failed")
 
 	plans, err := repo.GetAllPlanBy(userName)
-	assertNoError(t, err, "get all failed")
+	test.AssertNoError(t, err, "get all failed")
 	assert.Equal(t, 2, len(plans))
 
-	assertEqualPlan(t, plan.Plan{Id: firstPlanId, Title: "first plan", UserName: userName, Date: clock.ToDay(), Todos: []*plan.Todo{}}, plans[0])
-	assertEqualPlan(t, plan.Plan{Id: secondPlanId, Title: "second plan", UserName: userName, Date: clock.ToDay(), Todos: []*plan.Todo{}}, plans[1])
+	test.AssertEqualPlan(t, plan.Plan{Id: firstPlanId, Title: "first plan", UserName: userName, Date: clock.ToDay(), Todos: []*plan.Todo{}}, plans[0])
+	test.AssertEqualPlan(t, plan.Plan{Id: secondPlanId, Title: "second plan", UserName: userName, Date: clock.ToDay(), Todos: []*plan.Todo{}}, plans[1])
 }
 
 func TestUpdateTodo(t *testing.T) {
-	aPlan := aNewPlan()
+	aPlan := test.ANewPlan()
 	planId, err := repo.CreateNewPlan(aPlan)
-	assertNoError(t, err, "insert plan failed")
+	test.AssertNoError(t, err, "insert plan failed")
 
-	aTodo := aNewTodoWith("Original Content")
-	assertNoError(t, repo.AddTodo(planId, aTodo), "add todo failed")
+	aTodo := test.ANewTodoWith("Original Content")
+	test.AssertNoError(t, repo.AddTodo(planId, aTodo), "add todo failed")
 
 	updatedTodo := plan.Todo{Id: aTodo.Id, UserName: aTodo.UserName, Date: clock.ToDay(), Content: "Updated Content"}
-	assertNoError(t, repo.UpdateTodo(planId, updatedTodo), "update todo failed")
+	test.AssertNoError(t, repo.UpdateTodo(planId, updatedTodo), "update todo failed")
 
 	actual, err := repo.GetPlan(planId, aPlan.UserName)
-	assertNoError(t, err, "get plan failed")
+	test.AssertNoError(t, err, "get plan failed")
 	assert.Equal(t, 1, len(actual.Todos))
 	assert.Equal(t, "Updated Content", actual.Todos[0].Content)
 }
 
 func TestDeletePlan(t *testing.T) {
-	aPlan := aNewPlan()
+	aPlan := test.ANewPlan()
 	planId, err := repo.CreateNewPlan(aPlan)
-	assertNoError(t, err, "insert plan failed")
+	test.AssertNoError(t, err, "insert plan failed")
 
-	aTodo := aNewTodoWith("A Content")
-	assertNoError(t, repo.AddTodo(planId, aTodo), "add todo failed")
-
-	assertNoError(t, repo.DeletePlan(planId, aPlan.UserName), "delete plan failed")
+	aTodo := test.ANewTodoWith("A Content")
+	test.AssertNoError(t, repo.AddTodo(planId, aTodo), "add todo failed")
+	test.AssertNoError(t, repo.DeletePlan(planId, aPlan.UserName), "delete plan failed")
 
 	_, err = repo.GetPlan(planId, aPlan.UserName)
 	if err == nil {
@@ -139,21 +139,21 @@ func TestDeletePlan(t *testing.T) {
 }
 
 func TestRemoveANewTodo(t *testing.T) {
-	aPlan := aNewPlan()
+	aPlan := test.ANewPlan()
 
 	planId, err := repo.CreateNewPlan(aPlan)
-	assertNoError(t, err, "insert failed")
+	test.AssertNoError(t, err, "insert failed")
 
-	aTodo := aNewTodoWith("A Content")
+	aTodo := test.ANewTodoWith("A Content")
 	err = repo.AddTodo(planId, aTodo)
-	assertNoError(t, err, "adding the todo failed")
+	test.AssertNoError(t, err, "adding the todo failed")
 
-	anotherTodo := aNewTodoWith("Another Content")
+	anotherTodo := test.ANewTodoWith("Another Content")
 	err = repo.AddTodo(planId, anotherTodo)
-	assertNoError(t, err, "adding the todo failed")
+	test.AssertNoError(t, err, "adding the todo failed")
 
 	err = repo.RemoveTodo(planId, anotherTodo.Id)
-	assertNoError(t, err, "removing the todo failed")
+	test.AssertNoError(t, err, "removing the todo failed")
 
 	expected := plan.Plan{
 		Id:       planId,
@@ -164,6 +164,6 @@ func TestRemoveANewTodo(t *testing.T) {
 	}
 
 	actual, err := repo.GetPlan(planId, aPlan.UserName)
-	assertNoError(t, err, "get failed")
-	assertEqualPlan(t, expected, actual)
+	test.AssertNoError(t, err, "get failed")
+	test.AssertEqualPlan(t, expected, actual)
 }
