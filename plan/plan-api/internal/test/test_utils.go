@@ -39,6 +39,7 @@ func InitDatabase(conn *sql.DB) {
 
 func ANewPlan() plan.Plan {
 	return plan.Plan{
+		Id:       uuid.New().String(),
 		Title:    "a test plan",
 		UserName: "user-name",
 		Date:     clock.ToDay(),
