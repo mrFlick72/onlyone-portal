@@ -5,7 +5,6 @@ import (
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/plan"
-	"github.com/mrflick72/onlyone-portal/plan/plan-service/pkg/clock"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -20,16 +19,6 @@ func setupRouter(repo plan.PlanRepository) *gin.Engine {
 	})
 	RegisterEndpoints(r, &server.GinContextToPlainContextFactory{}, repo)
 	return r
-}
-
-func aTestPlan() *plan.Plan {
-	return &plan.Plan{
-		Id:       "test-plan-id",
-		UserName: testUser,
-		Title:    "test plan",
-		Date:     clock.ToDay(),
-		Todos:    []*plan.Todo{},
-	}
 }
 
 type mockRepo struct {
