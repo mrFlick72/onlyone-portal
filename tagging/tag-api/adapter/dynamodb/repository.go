@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/domain"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/awsclient"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
@@ -24,7 +25,7 @@ type TagDynamoDBRepository struct {
 func NewTagDynamoDBRepository() *TagDynamoDBRepository {
 	var logger = logging.GetLoggerInstanceForComponentByTypeName("dynamodb.TagDynamoDBRepository")
 
-	cfg, err := aws_config.LoadDefaultConfig(
+	cfg, err := awsclient.LoadDefaultConfig(
 		context.TODO(),
 		aws_config.WithRegion("eu-central-1"),
 	)
@@ -62,7 +63,7 @@ func (r *TagDynamoDBRepository) SaveTag(ctx context.Context, tag *domain.Tag) er
 			"user_name":        &types.AttributeValueMemberS{Value: *user.UserName},
 		},
 	}
-	_, err = r.Client.PutItem(context.TODO(), input)
+	_, err = r.Client.PutItem(ctx, input)
 
 	return err
 }
@@ -82,7 +83,7 @@ func (r *TagDynamoDBRepository) GetTagBy(ctx context.Context, key string) (*doma
 		},
 		KeyConditionExpression: aws.String("user_name =:user_name AND search_tag_key =:search_tag_key"),
 	}
-	result, err := r.Client.Query(context.TODO(), input)
+	result, err := r.Client.Query(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +112,7 @@ func (r *TagDynamoDBRepository) FindAllTags(ctx context.Context) ([]domain.Tag, 
 		},
 		KeyConditionExpression: aws.String("user_name = :username"),
 	}
-	result, err := r.Client.Query(context.TODO(), input)
+	result, err := r.Client.Query(ctx, input)
 	if err != nil {
 		return nil, err
 	}
