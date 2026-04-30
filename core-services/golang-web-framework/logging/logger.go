@@ -2,10 +2,12 @@ package logging
 
 import (
 	"fmt"
-	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
 	"reflect"
 	"sync"
+
+	"go.opentelemetry.io/contrib/bridges/otelzap"
+	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"go.uber.org/zap"
@@ -63,7 +65,6 @@ func resolveLevel(level string) zapcore.Level {
 }
 
 func logInit(f *os.File) *zap.SugaredLogger {
-
 	pe := zap.NewProductionEncoderConfig()
 	pe.EncodeTime = zapcore.ISO8601TimeEncoder
 
@@ -72,29 +73,31 @@ func logInit(f *os.File) *zap.SugaredLogger {
 
 	level := resolveLevel(manager.GetConfigFor("logger.level"))
 
-	var core zapcore.Core
+	var cores []zapcore.Core
 	if f == nil {
-		core = zapcore.NewTee(
+		cores = []zapcore.Core{
 			zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), level),
-		)
-
+		}
 	} else {
 		lumberjackLogger := &lumberjack.Logger{
-			Filename:   f.Name(), // log file path
-			MaxSize:    1,        // MB before rotation
-			MaxBackups: 5,        // number of old files to retain
-			MaxAge:     30,       // days
-			Compress:   true,     // gzip old files
+			Filename:   f.Name(),
+			MaxSize:    1,
+			MaxBackups: 5,
+			MaxAge:     30,
+			Compress:   true,
 		}
-
-		core = zapcore.NewTee(
+		cores = []zapcore.Core{
 			zapcore.NewCore(fileEncoder, zapcore.AddSync(lumberjackLogger), level),
 			zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), level),
-		)
-
+		}
 	}
 
-	l := zap.New(core,
+	if manager.GetConfigBoolFor("otel.enabled") {
+		serviceName := manager.GetConfigFor("otel.service-name")
+		cores = append(cores, otelzap.NewCore(serviceName))
+	}
+
+	l := zap.New(zapcore.NewTee(cores...),
 		zap.AddCaller(),
 		zap.AddCallerSkip(1),
 	)
