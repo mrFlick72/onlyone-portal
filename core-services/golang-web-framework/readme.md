@@ -15,6 +15,7 @@ Shared Go library used by all Gin-based services (budget-api, tag-api, account-a
 | `web/magangement` | `.../web/magangement` | Health endpoint registration |
 | `otel` | `.../otel` | OTel provider setup — `Setup(ctx)`, `SetupTracerProvider(ctx)` |
 | `httpclient` | `.../httpclient` | OTel-aware HTTP client — `NewHTTPClient()` |
+| `awsclient` | `.../awsclient` | OTel-aware AWS SDK v2 config loader — `LoadDefaultConfig(ctx, opts...)` |
 | `cache` | `.../cache` | Cache provider interface |
 | `cache/in_memory` | `.../cache/in_memory` | Ristretto in-memory cache implementation |
 | `pkg/money` | `.../pkg/money` | Money/decimal helpers |
@@ -112,6 +113,34 @@ resp, err := client.Do(req)
 ```
 
 Using `http.NewRequest` (no context) silently disables propagation even with the instrumented transport.
+
+---
+
+## OTel-aware AWS SDK v2 client (`awsclient` package)
+
+Use `awsclient.LoadDefaultConfig(ctx, opts...)` instead of `aws_config.LoadDefaultConfig` when creating any AWS service client (DynamoDB, S3, etc.).
+
+```go
+import (
+    aws_config "github.com/aws/aws-sdk-go-v2/config"
+    aws_dynamodb "github.com/aws/aws-sdk-go-v2/service/dynamodb"
+    awsclient "github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/awsclient"
+)
+
+cfg, err := awsclient.LoadDefaultConfig(ctx, aws_config.WithRegion("eu-central-1"))
+client := aws_dynamodb.NewFromConfig(cfg)
+```
+
+Behaviour driven by config:
+- `otel.enabled: true` → appends `otelaws.AppendMiddlewares` to the SDK API middleware chain; each AWS call becomes a traced child span with service, operation, and region attributes.
+- `otel.enabled: false` → returns a plain `aws.Config` with no overhead.
+
+**Required**: pass the request `ctx` to every AWS API call so the middleware can read the active span:
+
+```go
+result, err := client.PutItem(ctx, input)   // correct — span propagated
+result, err := client.PutItem(context.TODO(), input)  // wrong — span lost
+```
 
 ---
 

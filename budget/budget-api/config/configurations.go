@@ -12,6 +12,7 @@ import (
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
 	"github.com/mrflick72/budget/budget-api/domain/budget/revenue"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/awsclient"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/httpclient"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
@@ -30,7 +31,7 @@ func NewSearchTagRepository() tags.SearchTagRepository {
 }
 
 func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
-	cfg, err := aws_config.LoadDefaultConfig(
+	cfg, err := awsclient.LoadDefaultConfig(
 		context.TODO(),
 		aws_config.WithRegion("eu-central-1"),
 	)
@@ -77,7 +78,7 @@ func NewBudgetExpenseActionsFacade() expense.BudgetExpenseActions {
 }
 
 func NewRevenueRepository() revenue.RevenueRepository {
-	cfg, err := aws_config.LoadDefaultConfig(
+	cfg, err := awsclient.LoadDefaultConfig(
 		context.TODO(),
 		aws_config.WithRegion("eu-central-1"),
 	)

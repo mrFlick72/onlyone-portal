@@ -117,6 +117,12 @@ github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../
 - When `otel.enabled: false`: returns a plain `&http.Client{}`
 - **Requirement**: build requests with `http.NewRequestWithContext(ctx, ...)` — the transport reads the active span from the request context; `http.NewRequest` silently disables propagation
 
+**OTel-aware AWS SDK v2 client (`awsclient` package):**
+- Use `awsclient.LoadDefaultConfig(ctx, opts...)` instead of `aws_config.LoadDefaultConfig` when creating DynamoDB / other AWS clients
+- When `otel.enabled: true`: appends `otelaws.AppendMiddlewares` to the SDK API middleware chain — each AWS API call becomes a traced child span
+- When `otel.enabled: false`: returns a plain `aws.Config` with no overhead
+- **Requirement**: pass the request `ctx` to every AWS API call (e.g. `client.PutItem(ctx, input)`, not `context.TODO()`) so the middleware can read the active span
+
 **Config**: all Gin services load a YAML config file via Viper; path set in `CONFIG_FILE_LOCATION` env var. Access string values via `config.GetConfigurationManagerInstance().GetConfigFor("key")`, booleans via `GetConfigBoolFor("key")`.
 
 ## Service Routes Summary
