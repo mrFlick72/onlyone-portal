@@ -43,24 +43,26 @@ otel:
 - The `otelgin` middleware is position-first in the chain so the server span covers CORS and JWT auth time. Health probes (`/management/*`) are excluded from tracing.
 - Call `provisioner.Shutdown(ctx)` on process exit to flush buffered spans/metrics/logs. `StartEngine()` registers a `defer` shutdown automatically.
 
-### Local dev with Docker (OTel Collector + Jaeger)
+### Local dev with Docker (`grafana/otel-lgtm`)
 
+`grafana/otel-lgtm` is an all-in-one image that bundles the complete LGTM stack — OTel Collector, Loki, Grafana, Tempo, and Mimir (Prometheus-compatible metrics) — into a single container. No separate config files needed.
+
+**`local/docker-compose.yml`**
 ```yaml
-# docker-compose.yml excerpt
 services:
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+  lgtm:
+    image: grafana/otel-lgtm:latest
     ports:
-      - "4317:4317"   # gRPC
-      - "4318:4318"   # HTTP
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    ports:
-      - "16686:16686" # UI
+      - "3000:3000"   # Grafana UI
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
 ```
 
+**Service `application.yml` for local dev**
 ```yaml
-# service application.yml for local dev
 otel:
   enabled: true
   service-name: tag-api
@@ -68,3 +70,10 @@ otel:
   endpoint: localhost:4318
   insecure: true
 ```
+
+Start it:
+```bash
+docker compose -f local/docker-compose.yml up -d
+```
+
+Grafana UI is at `http://localhost:3000`. All datasources (Tempo, Mimir, Loki) are pre-configured and wired together — trace → logs correlation works out of the box via the `traceID` field.
