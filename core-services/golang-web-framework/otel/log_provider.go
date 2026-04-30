@@ -13,12 +13,11 @@ import (
 )
 
 func setupLoggerProvider(ctx context.Context, cfg otelConfig, res *resource.Resource) (ShutdownFunc, error) {
-	logger.LogInfofFor("Setting up OTel LoggerProvider: service=%s protocol=%s endpoint=%s", cfg.ServiceName, cfg.Protocol, cfg.Endpoint)
+	logger.LogInfofFor("Setting up OTel LoggerProvider: service=%s protocol=%s endpoint=%s", cfg.ServiceName, cfg.Protocol, cfg.Logs.Endpoint)
 
 	exp, err := buildLogExporter(ctx, cfg)
 	if err != nil {
-		logger.LogErrorfFor("tracing: log exporter: %w", err)
-		return nil, fmt.Errorf("tracing: log exporter: %w", err)
+		return nil, fmt.Errorf("otel: log exporter: %w", err)
 	}
 
 	lp := sdklog.NewLoggerProvider(
@@ -36,19 +35,18 @@ func setupLoggerProvider(ctx context.Context, cfg otelConfig, res *resource.Reso
 func buildLogExporter(ctx context.Context, cfg otelConfig) (sdklog.Exporter, error) {
 	switch cfg.Protocol {
 	case "grpc":
-		opts := []otlploggrpc.Option{otlploggrpc.WithEndpoint(cfg.Endpoint)}
+		opts := []otlploggrpc.Option{otlploggrpc.WithEndpoint(cfg.Logs.Endpoint)}
 		if cfg.Insecure {
 			opts = append(opts, otlploggrpc.WithTLSCredentials(insecure.NewCredentials()))
 		}
 		return otlploggrpc.New(ctx, opts...)
 	case "http", "":
-		opts := []otlploghttp.Option{otlploghttp.WithEndpoint(cfg.Endpoint)}
+		opts := []otlploghttp.Option{otlploghttp.WithEndpoint(cfg.Logs.Endpoint)}
 		if cfg.Insecure {
 			opts = append(opts, otlploghttp.WithInsecure())
 		}
 		return otlploghttp.New(ctx, opts...)
 	default:
-		logger.LogErrorfFor("unsupported protocol %q (must be \"http\" or \"grpc\")", cfg.Protocol)
 		return nil, fmt.Errorf("unsupported protocol %q (must be \"http\" or \"grpc\")", cfg.Protocol)
 	}
 }

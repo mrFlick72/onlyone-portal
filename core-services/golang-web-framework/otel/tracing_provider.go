@@ -32,7 +32,7 @@ func SetupTracerProvider(ctx context.Context) (ShutdownFunc, error) {
 }
 
 func setupTraceProvider(ctx context.Context, cfg otelConfig, res *resource.Resource) (ShutdownFunc, error) {
-	logger.LogInfofFor("Setting up OTel TracerProvider: service=%s protocol=%s endpoint=%s", cfg.ServiceName, cfg.Protocol, cfg.Endpoint)
+	logger.LogInfofFor("Setting up OTel TracerProvider: service=%s protocol=%s endpoint=%s", cfg.ServiceName, cfg.Protocol, cfg.Traces.Endpoint)
 
 	exp, err := buildExporter(ctx, cfg)
 	if err != nil {
@@ -59,13 +59,13 @@ func setupTraceProvider(ctx context.Context, cfg otelConfig, res *resource.Resou
 func buildExporter(ctx context.Context, cfg otelConfig) (sdktrace.SpanExporter, error) {
 	switch cfg.Protocol {
 	case "grpc":
-		opts := []otlptracegrpc.Option{otlptracegrpc.WithEndpoint(cfg.Endpoint)}
+		opts := []otlptracegrpc.Option{otlptracegrpc.WithEndpoint(cfg.Traces.Endpoint)}
 		if cfg.Insecure {
 			opts = append(opts, otlptracegrpc.WithTLSCredentials(insecure.NewCredentials()))
 		}
 		return otlptracegrpc.New(ctx, opts...)
 	case "http", "":
-		opts := []otlptracehttp.Option{otlptracehttp.WithEndpoint(cfg.Endpoint)}
+		opts := []otlptracehttp.Option{otlptracehttp.WithEndpoint(cfg.Traces.Endpoint)}
 		if cfg.Insecure {
 			opts = append(opts, otlptracehttp.WithInsecure())
 		}
