@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/resource"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 // ShutdownFunc flushes and closes OTel providers. Must be called on process exit.
@@ -60,9 +60,11 @@ func Setup(ctx context.Context) (ShutdownFunc, error) {
 }
 
 func buildResource(cfg otelConfig) (*resource.Resource, error) {
+	// Empty schema URL lets Merge inherit the URL from resource.Default() without
+	// conflicting with whichever semconv version the SDK ships with.
 	res, err := resource.Merge(
 		resource.Default(),
-		resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceName(cfg.ServiceName)),
+		resource.NewWithAttributes("", attribute.String("service.name", cfg.ServiceName)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("otel: resource: %w", err)

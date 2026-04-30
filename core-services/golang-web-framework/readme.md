@@ -32,8 +32,13 @@ otel:
   enabled: false             # true to enable OpenTelemetry (traces, metrics, logs)
   service-name: my-service   # reported as service.name in all telemetry signals
   protocol: http             # http (default, port 4318) | grpc (port 4317)
-  endpoint: localhost:4318   # OTel Collector host:port
   insecure: true             # true for local/dev (no TLS); false for production
+  traces:
+    endpoint: localhost:4318  # OTel Collector traces host:port
+  metrics:
+    endpoint: localhost:4318  # OTel Collector metrics host:port
+  logs:
+    endpoint: localhost:4318  # OTel Collector logs host:port
 ```
 
 ### OpenTelemetry notes
@@ -67,8 +72,13 @@ otel:
   enabled: true
   service-name: tag-api
   protocol: http
-  endpoint: localhost:4318
   insecure: true
+  traces:
+    endpoint: localhost:4318
+  metrics:
+    endpoint: localhost:4318
+  logs:
+    endpoint: localhost:4318
 ```
 
 Start it:
