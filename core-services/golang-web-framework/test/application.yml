@@ -19,10 +19,5 @@ otel:
   enabled: false
   service-name: test-service
   protocol: http
+  endpoint: localhost:4318
   insecure: true
-  traces:
-    endpoint: localhost:4318
-  metrics:
-    endpoint: localhost:4318
-  logs:
-    endpoint: localhost:4318

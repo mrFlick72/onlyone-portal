@@ -59,12 +59,16 @@ func Setup(ctx context.Context) (ShutdownFunc, error) {
 	return combineShutdowns(shutdowns), nil
 }
 
+// buildResource constructs the OTel Resource with service name, host, and SDK
+// telemetry attributes. Using resource.New with explicit detectors avoids the
+// schema URL conflict that resource.Merge(resource.Default(), ...) produces when
+// the SDK's bundled semconv version differs from a pinned import.
 func buildResource(cfg otelConfig) (*resource.Resource, error) {
-	// Empty schema URL lets Merge inherit the URL from resource.Default() without
-	// conflicting with whichever semconv version the SDK ships with.
-	res, err := resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes("", attribute.String("service.name", cfg.ServiceName)),
+	res, err := resource.New(context.Background(),
+		resource.WithFromEnv(),
+		resource.WithTelemetrySDK(),
+		resource.WithHost(),
+		resource.WithAttributes(attribute.String("service.name", cfg.ServiceName)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("otel: resource: %w", err)
