@@ -13,7 +13,7 @@ import (
 )
 
 func setupMeterProvider(ctx context.Context, cfg otelConfig, res *resource.Resource) (ShutdownFunc, error) {
-	logger.LogInfofFor("Setting up OTel MeterProvider: service=%s protocol=%s endpoint=%s", cfg.ServiceName, cfg.Protocol, cfg.Metrics.Endpoint)
+	logger.LogInfofFor("Setting up OTel MeterProvider: service=%s protocol=%s endpoint=%s", cfg.ServiceName, cfg.Protocol, cfg.Endpoint)
 
 	exp, err := buildMetricExporter(ctx, cfg)
 	if err != nil {
@@ -35,13 +35,13 @@ func setupMeterProvider(ctx context.Context, cfg otelConfig, res *resource.Resou
 func buildMetricExporter(ctx context.Context, cfg otelConfig) (metric.Exporter, error) {
 	switch cfg.Protocol {
 	case "grpc":
-		opts := []otlpmetricgrpc.Option{otlpmetricgrpc.WithEndpoint(cfg.Metrics.Endpoint)}
+		opts := []otlpmetricgrpc.Option{otlpmetricgrpc.WithEndpoint(cfg.Endpoint)}
 		if cfg.Insecure {
 			opts = append(opts, otlpmetricgrpc.WithTLSCredentials(insecure.NewCredentials()))
 		}
 		return otlpmetricgrpc.New(ctx, opts...)
 	case "http", "":
-		opts := []otlpmetrichttp.Option{otlpmetrichttp.WithEndpoint(cfg.Metrics.Endpoint)}
+		opts := []otlpmetrichttp.Option{otlpmetrichttp.WithEndpoint(cfg.Endpoint)}
 		if cfg.Insecure {
 			opts = append(opts, otlpmetrichttp.WithInsecure())
 		}

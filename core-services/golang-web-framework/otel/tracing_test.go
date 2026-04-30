@@ -48,7 +48,7 @@ func TestSetupTracerProvider_WhenDisabled_ReturnsNoop(t *testing.T) {
 }
 
 func TestBuildExporter_HTTP_Succeeds(t *testing.T) {
-	cfg := otelConfig{Protocol: "http", Traces: signalConfig{Endpoint: "localhost:4318"}, Insecure: true}
+	cfg := otelConfig{Protocol: "http", Endpoint: "localhost:4318", Insecure: true}
 	exp, err := buildExporter(context.Background(), cfg)
 
 	assert.NoError(t, err)
@@ -57,7 +57,7 @@ func TestBuildExporter_HTTP_Succeeds(t *testing.T) {
 }
 
 func TestBuildExporter_GRPC_Succeeds(t *testing.T) {
-	cfg := otelConfig{Protocol: "grpc", Traces: signalConfig{Endpoint: "localhost:4317"}, Insecure: true}
+	cfg := otelConfig{Protocol: "grpc", Endpoint: "localhost:4317", Insecure: true}
 	exp, err := buildExporter(context.Background(), cfg)
 
 	assert.NoError(t, err)
@@ -66,7 +66,7 @@ func TestBuildExporter_GRPC_Succeeds(t *testing.T) {
 }
 
 func TestBuildExporter_DefaultsToHTTP(t *testing.T) {
-	cfg := otelConfig{Protocol: "", Traces: signalConfig{Endpoint: "localhost:4318"}, Insecure: true}
+	cfg := otelConfig{Protocol: "", Endpoint: "localhost:4318", Insecure: true}
 	exp, err := buildExporter(context.Background(), cfg)
 
 	assert.NoError(t, err)
@@ -75,7 +75,7 @@ func TestBuildExporter_DefaultsToHTTP(t *testing.T) {
 }
 
 func TestBuildExporter_UnsupportedProtocol_ReturnsError(t *testing.T) {
-	cfg := otelConfig{Protocol: "kafka", Traces: signalConfig{Endpoint: "localhost:9092"}}
+	cfg := otelConfig{Protocol: "kafka", Endpoint: "localhost:9092"}
 	exp, err := buildExporter(context.Background(), cfg)
 
 	assert.Error(t, err)
@@ -86,7 +86,7 @@ func TestBuildExporter_UnsupportedProtocol_ReturnsError(t *testing.T) {
 // --- MeterProvider ---
 
 func TestBuildMetricExporter_HTTP_Succeeds(t *testing.T) {
-	cfg := otelConfig{Protocol: "http", Metrics: signalConfig{Endpoint: "localhost:4318"}, Insecure: true}
+	cfg := otelConfig{Protocol: "http", Endpoint: "localhost:4318", Insecure: true}
 	exp, err := buildMetricExporter(context.Background(), cfg)
 
 	assert.NoError(t, err)
@@ -95,7 +95,7 @@ func TestBuildMetricExporter_HTTP_Succeeds(t *testing.T) {
 }
 
 func TestBuildMetricExporter_GRPC_Succeeds(t *testing.T) {
-	cfg := otelConfig{Protocol: "grpc", Metrics: signalConfig{Endpoint: "localhost:4317"}, Insecure: true}
+	cfg := otelConfig{Protocol: "grpc", Endpoint: "localhost:4317", Insecure: true}
 	exp, err := buildMetricExporter(context.Background(), cfg)
 
 	assert.NoError(t, err)
@@ -104,7 +104,7 @@ func TestBuildMetricExporter_GRPC_Succeeds(t *testing.T) {
 }
 
 func TestBuildMetricExporter_UnsupportedProtocol_ReturnsError(t *testing.T) {
-	cfg := otelConfig{Protocol: "kafka", Metrics: signalConfig{Endpoint: "localhost:9092"}}
+	cfg := otelConfig{Protocol: "kafka", Endpoint: "localhost:9092"}
 	exp, err := buildMetricExporter(context.Background(), cfg)
 
 	assert.Error(t, err)
@@ -115,7 +115,7 @@ func TestBuildMetricExporter_UnsupportedProtocol_ReturnsError(t *testing.T) {
 // --- LoggerProvider ---
 
 func TestBuildLogExporter_HTTP_Succeeds(t *testing.T) {
-	cfg := otelConfig{Protocol: "http", Logs: signalConfig{Endpoint: "localhost:4318"}, Insecure: true}
+	cfg := otelConfig{Protocol: "http", Endpoint: "localhost:4318", Insecure: true}
 	exp, err := buildLogExporter(context.Background(), cfg)
 
 	assert.NoError(t, err)
@@ -124,7 +124,7 @@ func TestBuildLogExporter_HTTP_Succeeds(t *testing.T) {
 }
 
 func TestBuildLogExporter_GRPC_Succeeds(t *testing.T) {
-	cfg := otelConfig{Protocol: "grpc", Logs: signalConfig{Endpoint: "localhost:4317"}, Insecure: true}
+	cfg := otelConfig{Protocol: "grpc", Endpoint: "localhost:4317", Insecure: true}
 	exp, err := buildLogExporter(context.Background(), cfg)
 
 	assert.NoError(t, err)
@@ -133,7 +133,7 @@ func TestBuildLogExporter_GRPC_Succeeds(t *testing.T) {
 }
 
 func TestBuildLogExporter_UnsupportedProtocol_ReturnsError(t *testing.T) {
-	cfg := otelConfig{Protocol: "kafka", Logs: signalConfig{Endpoint: "localhost:9092"}}
+	cfg := otelConfig{Protocol: "kafka", Endpoint: "localhost:9092"}
 	exp, err := buildLogExporter(context.Background(), cfg)
 
 	assert.Error(t, err)
