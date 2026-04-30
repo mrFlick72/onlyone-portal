@@ -94,7 +94,7 @@ func logInit(f *os.File) *zap.SugaredLogger {
 
 	if manager.GetConfigBoolFor("otel.enabled") {
 		serviceName := manager.GetConfigFor("otel.service-name")
-		cores = append(cores, otelzap.NewCore(serviceName))
+		cores = append(cores, &levelledCore{Core: otelzap.NewCore(serviceName), level: level})
 	}
 
 	l := zap.New(zapcore.NewTee(cores...),
