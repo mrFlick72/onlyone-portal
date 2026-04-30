@@ -17,7 +17,7 @@ budget/budget-exporter/     # Python — data export job
 budget/analytic/            # Python — analytics/visualization scripts
 tagging/tag-api/            # Go (Gin) — transaction tagging (DynamoDB)
 plan/plan-service/          # Go (Echo) — todo/plan management (MySQL) — does NOT use the shared framework
-core-services/golang-web-framework/  # Shared Go library (Gin, JWT, CORS, logging, caching)
+core-services/golang-web-framework/  # Shared Go library (Gin, JWT, CORS, logging, caching, OTel, HTTP client)
 idp/                        # OAuth2 token helper scripts for local dev
 ```
 
@@ -88,10 +88,14 @@ All Gin-based services (budget-api, tag-api, account-api) depend on this via a l
 github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../core-services/golang-web-framework
 ```
 
-**What `server.WebServerProvisioner` auto-configures:**
-- CORS (origins from config key `cors.allowed.origins`)
-- JWT validation middleware (`security.SetUpOAuth2()`) — reads `idp.jwks-endpoint` and `user.required-role`
-- Health endpoint at `GET /management/health` → `{"status": "UP"}` (no auth required)
+**What `server.WebServerProvisioner` auto-configures** (middleware order):
+1. OTel `otelgin` server span — wraps the full request; `/management/*` excluded
+2. `gin.Logger()` / `gin.Recovery()`
+3. CORS (origins from config key `cors.allowed.origins`)
+4. JWT validation middleware (`security.SetUpOAuth2()`) — reads `idp.jwks-endpoint` and `user.required-role`
+5. Health endpoint at `GET /management/health` → `{"status": "UP"}` (no auth required)
+
+`StartEngine()` defers `Shutdown(ctx)` to flush OTel providers on exit.
 
 **JWT middleware behavior:**
 - Skips `/management/*` paths and `OPTIONS` requests automatically
@@ -99,7 +103,21 @@ github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../
 - Retrieve in handlers via `security.GetCurrentUser(ctx)` after converting Gin context with `server.GinContextToPlainContextFactory`
 - JWT claims used: `user_name` (string) and `authorities` ([]string)
 
-**Config**: all Gin services load a YAML config file via Viper; path set in `CONFIG_FILE_LOCATION` env var. Access values via `config.GetConfigurationManagerInstance().GetConfigFor("key")`.
+**OpenTelemetry (`otel` package):**
+- `otel.Setup(ctx)` is called automatically by `WebServerProvisioner.ConfigureEngine()`; services do not call it directly
+- Initialises global `TracerProvider`, `MeterProvider`, `LoggerProvider` — all three signals to the same `otel.endpoint`
+- `otel.enabled: false` (default) → no providers installed, zero overhead
+- Config keys: `otel.enabled`, `otel.service-name`, `otel.protocol` (`http`/`grpc`), `otel.endpoint`, `otel.insecure`
+- Resource includes `service.name`, `host.name`, `telemetry.sdk.*`, and `OTEL_RESOURCE_ATTRIBUTES` env var
+- W3C TraceContext + Baggage propagation registered globally
+
+**OTel-aware HTTP client (`httpclient` package):**
+- Use `httpclient.NewHTTPClient()` for every outbound service-to-service HTTP call
+- When `otel.enabled: true`: wraps transport with `otelhttp.NewTransport` — injects `traceparent`/`tracestate` and creates a client span
+- When `otel.enabled: false`: returns a plain `&http.Client{}`
+- **Requirement**: build requests with `http.NewRequestWithContext(ctx, ...)` — the transport reads the active span from the request context; `http.NewRequest` silently disables propagation
+
+**Config**: all Gin services load a YAML config file via Viper; path set in `CONFIG_FILE_LOCATION` env var. Access string values via `config.GetConfigurationManagerInstance().GetConfigFor("key")`, booleans via `GetConfigBoolFor("key")`.
 
 ## Service Routes Summary
 
@@ -117,7 +135,7 @@ Budget-api and revenue-api routes: see `budget/CLAUDE.md`.
 
 ## Key Cross-Service Dependencies
 
-- `budget-api` → `tag-api` (REST, config key `tag-api.base-url`; cached with Ristretto)
+- `budget-api` → `tag-api` (REST, config key `tag-api.base-url`; cached with Ristretto; OTel trace propagation via `httpclient.NewHTTPClient()`)
 - `account-api` → vauthenticator IDP (REST, config key `idp.base-url`)
 - `budget-api`, `tag-api` → DynamoDB (region hardcoded to `eu-central-1`)
 - `plan-service` → MySQL
