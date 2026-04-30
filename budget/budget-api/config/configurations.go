@@ -2,7 +2,6 @@ package config
 
 import (
 	"context"
-	"net/http"
 
 	aws_config "github.com/aws/aws-sdk-go-v2/config"
 	aws_dynamodb "github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -14,6 +13,7 @@ import (
 	"github.com/mrflick72/budget/budget-api/domain/budget/revenue"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/httpclient"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 )
 
@@ -22,7 +22,7 @@ var logger = logging.GetLoggerInstance()
 
 func NewSearchTagRepository() tags.SearchTagRepository {
 	delegate := rest.NewRestSearchTagRepository(
-		&http.Client{},
+		httpclient.NewHTTPClient(),
 		configurationManager.GetConfigFor("tag-api.base-url"),
 	)
 
