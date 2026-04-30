@@ -13,10 +13,11 @@ import (
 )
 
 func setupLoggerProvider(ctx context.Context, cfg otelConfig, res *resource.Resource) (ShutdownFunc, error) {
-	tracingLogger.LogInfofFor("Setting up OTel LoggerProvider: service=%s protocol=%s endpoint=%s", cfg.ServiceName, cfg.Protocol, cfg.Endpoint)
+	logger.LogInfofFor("Setting up OTel LoggerProvider: service=%s protocol=%s endpoint=%s", cfg.ServiceName, cfg.Protocol, cfg.Endpoint)
 
 	exp, err := buildLogExporter(ctx, cfg)
 	if err != nil {
+		logger.LogErrorfFor("tracing: log exporter: %w", err)
 		return nil, fmt.Errorf("tracing: log exporter: %w", err)
 	}
 
@@ -27,7 +28,7 @@ func setupLoggerProvider(ctx context.Context, cfg otelConfig, res *resource.Reso
 	global.SetLoggerProvider(lp)
 
 	return func(ctx context.Context) error {
-		tracingLogger.LogInfofFor("Shutting down OTel LoggerProvider")
+		logger.LogInfofFor("Shutting down OTel LoggerProvider")
 		return lp.Shutdown(ctx)
 	}, nil
 }
@@ -47,6 +48,7 @@ func buildLogExporter(ctx context.Context, cfg otelConfig) (sdklog.Exporter, err
 		}
 		return otlploghttp.New(ctx, opts...)
 	default:
+		logger.LogErrorfFor("unsupported protocol %q (must be \"http\" or \"grpc\")", cfg.Protocol)
 		return nil, fmt.Errorf("unsupported protocol %q (must be \"http\" or \"grpc\")", cfg.Protocol)
 	}
 }
