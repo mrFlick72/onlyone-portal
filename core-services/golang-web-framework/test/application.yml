@@ -1,5 +1,6 @@
 server:
   port: 3050
+  read-timeout: 45s
 
 idp:
   jwks-endpoint: http://local.api.vauthenticator.com:9090/oauth2/jwks
