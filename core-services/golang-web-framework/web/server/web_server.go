@@ -46,28 +46,12 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 		return wsp.router
 	}
 
-	// Lifecycle context for background goroutines (e.g. JWKS refresh).
-	// Cancelled in Shutdown so they exit cleanly on process exit.
-	ctx, cancel := context.WithCancel(context.Background())
-	wsp.cancelCtx = cancel
-
-	shutdown, err := otel.Setup(ctx)
-	if err != nil {
-		web_server_logger.LogErrorfFor("OTel setup failed (continuing without tracing): %v", err)
-		shutdown = func(_ context.Context) error { return nil }
-	}
-	wsp.shutdown = shutdown
-
 	router := gin.New()
+	wsp.router = router
 
 	// 1. OTel: root server span wraps all subsequent middleware + handlers.
+	otelCtx, otelCtxCancel := wsp.otelSetup()
 	//    /management/* health probes are filtered to avoid polluting traces.
-	serviceName := configurationManager.GetConfigFor("otel.service-name")
-	router.Use(otelgin.Middleware(serviceName,
-		otelgin.WithFilter(func(req *http.Request) bool {
-			return !strings.HasPrefix(req.URL.Path, "/management/")
-		}),
-	))
 
 	// 2. Standard Gin middleware (inside the trace span)
 	router.Use(gin.Logger())
@@ -86,18 +70,40 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	//    JWKS misconfiguration is fatal at boot — without it every request would
 	//    either be rejected or, worse, silently pass without verification.
 	web_server_logger.LogInfofFor("Setting up OAuth2 middleware")
-	oauth2, err := security.SetUpOAuth2(ctx)
+	oauth2, err := security.SetUpOAuth2(otelCtx)
 	if err != nil {
 		web_server_logger.LogErrorfFor("OAuth2 setup failed: %v", err)
-		cancel()
+		otelCtxCancel()
 		panic(fmt.Errorf("oauth2 setup: %w", err))
 	}
 	router.Use(oauth2)
 
 	magangement.RegisterEndpoints(router)
 
-	wsp.router = router
 	return router
+}
+
+func (wsp *WebServerProvisioner) otelSetup() (context.Context, context.CancelFunc) {
+	serviceName := configurationManager.GetConfigFor("otel.service-name")
+	// Lifecycle context for background goroutines (e.g. JWKS refresh).
+	// Cancelled in Shutdown so they exit cleanly on process exit.
+	ctx, cancel := context.WithCancel(context.Background())
+	wsp.cancelCtx = cancel
+
+	shutdown, err := otel.Setup(ctx)
+	if err != nil {
+		web_server_logger.LogErrorfFor("OTel setup failed (continuing without tracing): %v", err)
+		shutdown = func(_ context.Context) error { return nil }
+	}
+	wsp.shutdown = shutdown
+
+	wsp.router.Use(otelgin.Middleware(serviceName,
+		otelgin.WithFilter(func(req *http.Request) bool {
+			return !strings.HasPrefix(req.URL.Path, "/management/")
+		}),
+	))
+
+	return ctx, cancel
 }
 
 // Shutdown cancels background goroutines (JWKS refresh) and flushes OTel spans.
