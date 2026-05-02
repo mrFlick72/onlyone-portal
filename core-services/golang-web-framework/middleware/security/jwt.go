@@ -1,10 +1,13 @@
 package security
 
 import (
-	"time"
+	"context"
+	"fmt"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lestrrat-go/jwx/v3/jwk"
+	"github.com/lestrrat-go/jwx/v3/jws"
 	"github.com/lestrrat-go/jwx/v3/jwt"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"go.xrfang.cn/wild"
@@ -12,14 +15,20 @@ import (
 
 var configurationManager = config.GetConfigurationManagerInstance()
 
-func SetUpOAuth2() gin.HandlerFunc {
-	jwk := Jwk{
-		Url: configurationManager.GetConfigFor("idp.jwks-endpoint"),
-	}
+// SetUpOAuth2 fetches the IDP JWKS (with periodic background refresh bound to
+// ctx) and returns a Gin middleware that verifies bearer tokens against it.
+func SetUpOAuth2(ctx context.Context) (gin.HandlerFunc, error) {
+	jwksURL := configurationManager.GetConfigFor("idp.jwks-endpoint")
 	role := configurationManager.GetConfigFor("user.required-role")
-	sets, _ := jwk.JwkSets()
+
+	keySet, err := NewCachedJwkSet(ctx, jwksURL)
+	if err != nil {
+		jwt_logger.LogErrorfFor("oauth2 setup: %v", err)
+		return nil, fmt.Errorf("oauth2 setup: %w", err)
+	}
+
 	jwt_logger.LogInfofFor("OAuth2 middleware set up with role: %s", role)
-	return NewOAuth2Middleware(sets, role, []string{"/management/*"})
+	return NewOAuth2Middleware(keySet, role, []string{"/management/*"}), nil
 }
 
 func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string, ignored []string) gin.HandlerFunc {
@@ -40,35 +49,40 @@ func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string, ignored []stri
 			return
 		}
 
-		authorization := authorizationHeaderFor(ctx)
-		jwt_logger.LogDebugfFor("verifying token: %s\n", authorization)
-		jwt, err := jwt.Parse([]byte(authorization), jwt.WithVerify(false))
-		if err != nil {
-			jwt_logger.LogErrorfFor("failed to parse jwt token: %v\n", err)
-			ctx.Status(401)
-			ctx.Abort()
-			return
-		}
-
-		exp, ok := jwt.Expiration()
+		bearer, ok := bearerTokenFor(ctx)
 		if !ok {
-			jwt_logger.LogErrorfFor("failed to fetch exp from token: %v\n", err)
+			jwt_logger.LogErrorFor("missing or malformed Authorization header")
 			ctx.Status(401)
 			ctx.Abort()
 			return
 		}
 
-		if time.Now().After(exp) {
-			jwt_logger.LogErrorfFor("token is expired: %v\n", err)
+		token, err := jwt.Parse([]byte(bearer),
+			jwt.WithKeySet(keySet, jws.WithInferAlgorithmFromKey(true)),
+		)
+		if err != nil {
+			jwt_logger.LogErrorfFor("failed to verify jwt token: %v\n", err)
 			ctx.Status(401)
 			ctx.Abort()
 			return
 		}
 
-		userName := getClaimFromToken(jwt, "user_name")
+		userName := getClaimFromToken(token, "user_name")
+		if userName == nil {
+			jwt_logger.LogErrorFor("token missing required claim: user_name")
+			ctx.Status(401)
+			ctx.Abort()
+			return
+		}
 		jwt_logger.LogInfofFor("authenticating user: %s\n", *userName)
 
-		authorities := getClaimListFromToken(jwt, "authorities")
+		authorities := getClaimListFromToken(token, "authorities")
+		if authorities == nil {
+			jwt_logger.LogErrorfFor("token missing required claim: authorities (user %s)", *userName)
+			ctx.Status(403)
+			ctx.Abort()
+			return
+		}
 		jwt_logger.LogInfofFor("user %s has those authority %s\n", *userName, *authorities)
 
 		if ok := contains(toStringSlice(*authorities), allowedAuthority); !ok {
@@ -76,14 +90,13 @@ func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string, ignored []stri
 			ctx.Status(403)
 			ctx.Abort()
 			return
-		} else {
-			jwt_logger.LogInfofFor("user %s has required authority: %s\nThe user has %s", *userName, allowedAuthority, *authorities)
 		}
+		jwt_logger.LogInfofFor("user %s has required authority: %s", *userName, allowedAuthority)
 
 		ctx.Set("user", User{
 			UserName:    userName,
 			Authorities: toStringSlice(*authorities),
-			AccessToken: &authorization,
+			AccessToken: &bearer,
 		})
 
 		jwt_logger.LogInfofFor("authenticated user: %s\n", *userName)
@@ -138,8 +151,14 @@ func toStringSlice(slice []string) *[]string {
 	return &result
 }
 
-func authorizationHeaderFor(ctx *gin.Context) string {
-	authorization := ctx.GetHeader("Authorization")
-	authorization = authorization[7:] // remove "Bearer "
-	return authorization
+// bearerTokenFor extracts the token from an "Authorization: Bearer <token>"
+// header. Returns (token, true) when the prefix is present and the token is
+// non-empty, otherwise ("", false). Never panics on malformed input.
+func bearerTokenFor(ctx *gin.Context) (string, bool) {
+	header := ctx.GetHeader("Authorization")
+	token, ok := strings.CutPrefix(header, "Bearer ")
+	if !ok || token == "" {
+		return "", false
+	}
+	return token, true
 }

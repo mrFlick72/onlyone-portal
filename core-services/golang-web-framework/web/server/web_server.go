@@ -22,8 +22,9 @@ var configurationManager = config.GetConfigurationManagerInstance()
 var web_server_logger = logging.GetLoggerInstanceForComponentByTypeName("WebServerProvisioner")
 
 type WebServerProvisioner struct {
-	router   *gin.Engine
-	shutdown otel.ShutdownFunc
+	router    *gin.Engine
+	shutdown  otel.ShutdownFunc
+	cancelCtx context.CancelFunc
 }
 
 func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
@@ -31,7 +32,12 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 		return wsp.router
 	}
 
-	shutdown, err := otel.Setup(context.Background())
+	// Lifecycle context for background goroutines (e.g. JWKS refresh).
+	// Cancelled in Shutdown so they exit cleanly on process exit.
+	ctx, cancel := context.WithCancel(context.Background())
+	wsp.cancelCtx = cancel
+
+	shutdown, err := otel.Setup(ctx)
 	if err != nil {
 		web_server_logger.LogErrorfFor("OTel setup failed (continuing without tracing): %v", err)
 		shutdown = func(_ context.Context) error { return nil }
@@ -62,9 +68,17 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 		MaxAge:           60 * time.Minute,
 	}))
 
-	// 4. JWT/OAuth2 (auth failures visible as span events)
+	// 4. JWT/OAuth2 (auth failures visible as span events).
+	//    JWKS misconfiguration is fatal at boot — without it every request would
+	//    either be rejected or, worse, silently pass without verification.
 	web_server_logger.LogInfofFor("Setting up OAuth2 middleware")
-	router.Use(security.SetUpOAuth2())
+	oauth2, err := security.SetUpOAuth2(ctx)
+	if err != nil {
+		web_server_logger.LogErrorfFor("OAuth2 setup failed: %v", err)
+		cancel()
+		panic(fmt.Errorf("oauth2 setup: %w", err))
+	}
+	router.Use(oauth2)
 
 	magangement.RegisterEndpoints(router)
 
@@ -72,8 +86,12 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	return router
 }
 
-// Shutdown flushes OTel spans. Call after StartEngine() returns on process exit.
+// Shutdown cancels background goroutines (JWKS refresh) and flushes OTel spans.
+// Call after StartEngine() returns on process exit.
 func (wsp *WebServerProvisioner) Shutdown(ctx context.Context) error {
+	if wsp.cancelCtx != nil {
+		wsp.cancelCtx()
+	}
 	if wsp.shutdown != nil {
 		return wsp.shutdown(ctx)
 	}
