@@ -53,6 +53,57 @@ func TestWhenARequestIsNoAuthorized(t *testing.T) {
 	assert.Equal(t, http.StatusForbidden, w.Code)
 }
 
+// A token contains wrong authorities
+func TestWhenTokenContainsWrongAuthorities(t *testing.T) {
+	router := SetupAuthenticatedTestWebServer([]string{})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/sample", nil)
+	req.Header.Set("Authorization", testutils.CreateTestToken([]string{"WRONG"}))
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+}
+
+// jwt.Parse validates `exp` by default; an expired token must be rejected
+// without an explicit time check in the middleware.
+func TestWhenATokenIsExpired(t *testing.T) {
+	router := SetupAuthenticatedTestWebServer([]string{})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/sample", nil)
+	req.Header.Set("Authorization", testutils.CreateExpiredTestToken([]string{"ROLE_USER"}))
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+// A request without an Authorization header must be rejected — and must not
+// crash the goroutine via the old `authorization[7:]` slice panic.
+func TestWhenAuthorizationHeaderIsMissing(t *testing.T) {
+	router := SetupAuthenticatedTestWebServer([]string{})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/sample", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+// A token signed by a key that is not in the JWKS must be rejected — proves
+// signature verification is actually enabled (was previously a no-op via
+// jwt.WithVerify(false)).
+func TestWhenTokenIsSignedByForeignKey(t *testing.T) {
+	router := SetupAuthenticatedTestWebServer([]string{})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/sample", nil)
+	req.Header.Set("Authorization", testutils.CreateTokenSignedByForeignKey([]string{"ROLE_USER"}))
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
 func TestWhenAuthorizationEvaluationIsSkipped(t *testing.T) {
 	router := SetupAuthenticatedTestWebServer([]string{"/api/sample"})
 
