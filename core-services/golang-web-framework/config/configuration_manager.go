@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -48,4 +49,14 @@ func (manager *ConfigurationManager) GetConfigFor(configKey string) string {
 
 func (manager *ConfigurationManager) GetConfigBoolFor(configKey string) bool {
 	return manager.viper.GetBool(configKey)
+}
+
+// GetConfigDurationFor reads configKey as a Go duration string ("30s", "2m",
+// "500ms", ...). Returns defaultValue when the key is missing or unparseable.
+func (manager *ConfigurationManager) GetConfigDurationFor(configKey string, defaultValue time.Duration) time.Duration {
+	d := manager.viper.GetDuration(configKey)
+	if d == 0 {
+		return defaultValue
+	}
+	return d
 }

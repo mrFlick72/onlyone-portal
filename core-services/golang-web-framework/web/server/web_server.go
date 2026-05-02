@@ -2,9 +2,12 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -16,6 +19,17 @@ import (
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/otel"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/magangement"
+)
+
+// HTTP server timeout defaults. Tunable via config keys server.read-timeout,
+// server.write-timeout, server.idle-timeout, server.read-header-timeout,
+// server.shutdown-timeout (Go duration strings, e.g. "30s", "2m").
+const (
+	defaultReadHeaderTimeout = 5 * time.Second
+	defaultReadTimeout       = 30 * time.Second
+	defaultWriteTimeout      = 30 * time.Second
+	defaultIdleTimeout       = 120 * time.Second
+	defaultShutdownTimeout   = 10 * time.Second
 )
 
 var configurationManager = config.GetConfigurationManagerInstance()
@@ -98,13 +112,56 @@ func (wsp *WebServerProvisioner) Shutdown(ctx context.Context) error {
 	return nil
 }
 
+// StartEngine listens on server.port and blocks until the process receives
+// SIGINT/SIGTERM or the listener fails. On signal, in-flight requests are
+// drained for up to server.shutdown-timeout (default 10s) before OTel and
+// JWKS background goroutines are stopped.
 func (wsp *WebServerProvisioner) StartEngine() error {
-	port := configurationManager.GetConfigFor("server.port")
-	serverBinder := fmt.Sprintf("0.0.0.0:%s", port)
 	defer wsp.Shutdown(context.Background())
 
-	if err := wsp.router.Run(serverBinder); err != nil {
-		web_server_logger.LogErrorfFor("failed to run server: %v", err)
+	port := configurationManager.GetConfigFor("server.port")
+	addr := fmt.Sprintf("0.0.0.0:%s", port)
+
+	srv := &http.Server{
+		Addr:              addr,
+		Handler:           wsp.router,
+		ReadHeaderTimeout: configurationManager.GetConfigDurationFor("server.read-header-timeout", defaultReadHeaderTimeout),
+		ReadTimeout:       configurationManager.GetConfigDurationFor("server.read-timeout", defaultReadTimeout),
+		WriteTimeout:      configurationManager.GetConfigDurationFor("server.write-timeout", defaultWriteTimeout),
+		IdleTimeout:       configurationManager.GetConfigDurationFor("server.idle-timeout", defaultIdleTimeout),
+	}
+
+	serverErr := make(chan error, 1)
+	go func() {
+		web_server_logger.LogInfofFor("listening on %s", addr)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serverErr <- err
+			return
+		}
+		serverErr <- nil
+	}()
+
+	sigCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	select {
+	case err := <-serverErr:
+		if err != nil {
+			web_server_logger.LogErrorfFor("server failed: %v", err)
+			return fmt.Errorf("server: %w", err)
+		}
+		return nil
+	case <-sigCtx.Done():
+		web_server_logger.LogInfofFor("shutdown signal received, draining connections")
+	}
+
+	shutdownTimeout := configurationManager.GetConfigDurationFor("server.shutdown-timeout", defaultShutdownTimeout)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		web_server_logger.LogErrorfFor("graceful shutdown failed: %v", err)
+		return fmt.Errorf("server shutdown: %w", err)
 	}
 	return nil
 }
