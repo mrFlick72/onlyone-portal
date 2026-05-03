@@ -23,6 +23,10 @@ func NewOauth2WebServerConfigurer(wsp *WebServerProvisioner) WebServerConfigurer
 	return configurer
 }
 
+func (configurer *OAuth2WebServerConfigurer) Name() string {
+	return "oauth2"
+}
+
 func (configurer *OAuth2WebServerConfigurer) Configure() error {
 	oauth2, err := security.SetUpOAuth2(configurer.ctx)
 	if err != nil {
