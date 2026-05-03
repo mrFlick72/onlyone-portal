@@ -55,10 +55,15 @@ func (configurer *OTelConfigurer) Configure() error {
 	return nil
 }
 
-func (configurer *OTelConfigurer) Dispose() error {
+// Dispose cancels the lifetime ctx (stopping background OTel goroutines) and
+// flushes the providers within the caller-supplied deadline. The ctx parameter
+// is the shutdown deadline, NOT configurer.ctx — the latter is the lifetime
+// ctx passed to otel.Setup at boot, which by definition has no useful deadline
+// for the flush.
+func (configurer *OTelConfigurer) Dispose(ctx context.Context) error {
 	defer configurer.cancelCtx()
 	if configurer.shutdown != nil {
-		return configurer.shutdown(configurer.ctx)
+		return configurer.shutdown(ctx)
 	}
 	return nil
 }

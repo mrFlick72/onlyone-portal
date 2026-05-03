@@ -36,7 +36,7 @@ func (configurer *OAuth2Configurer) Configure() error {
 	return nil
 }
 
-func (configurer *OAuth2Configurer) Dispose() error {
+func (configurer *OAuth2Configurer) Dispose(_ context.Context) error {
 	configurer.cancelCtx()
 	return nil
 }
