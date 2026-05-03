@@ -58,7 +58,8 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 
 	// 1. OTel: root server span wraps all subsequent middleware + handlers.
 	otelConfigurer := NewOtelWebServerConfigurer(engine)
-	err, otelCtx := otelConfigurer.Configure(context.TODO())
+	serverContext := context.TODO()
+	err, otelCtx := otelConfigurer.Configure(serverContext)
 	if err != nil {
 		// todo fire an event that trigger the server shutdown
 	}
