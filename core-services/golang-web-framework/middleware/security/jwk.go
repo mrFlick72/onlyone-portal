@@ -3,10 +3,12 @@ package security
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/lestrrat-go/httprc/v3"
 	"github.com/lestrrat-go/jwx/v3/jwk"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/httpclient"
 )
 
 const (
@@ -22,7 +24,9 @@ const (
 // is bounded by jwkBootFetchTimeout so an unreachable JWKS endpoint fails
 // boot fast rather than hanging indefinitely.
 func NewCachedJwkSet(ctx context.Context, jwksURL string) (jwk.Set, error) {
-	cache, err := jwk.NewCache(ctx, httprc.NewClient())
+	cache, err := jwk.NewCache(ctx, httprc.NewClient(
+		httprc.WithHTTPClient(httpclient.NewHTTPClient()),
+	))
 	if err != nil {
 		jwk_logger.LogErrorfFor("jwk: new cache: %v", err)
 		return nil, fmt.Errorf("jwk: new cache: %w", err)
@@ -41,4 +45,8 @@ func NewCachedJwkSet(ctx context.Context, jwksURL string) (jwk.Set, error) {
 		return nil, fmt.Errorf("jwk: cached set %q: %w", jwksURL, err)
 	}
 	return cachedSet, nil
+}
+
+func jwkFetchSpanName(_ string, _ *http.Request) string {
+	return "JWKS refresh"
 }

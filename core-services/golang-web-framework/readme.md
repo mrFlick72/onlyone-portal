@@ -103,6 +103,7 @@ client := httpclient.NewHTTPClient()
 Behaviour driven by config:
 - `otel.enabled: true` → transport wraps `http.DefaultTransport` with `otelhttp.NewTransport`: injects `traceparent`/`tracestate` headers and creates a client span.
 - `otel.enabled: false` → returns a plain `&http.Client{}` with no overhead.
+- Callers can pass `otelhttp.Option` values to customize span names or attributes for a specific outbound client.
 
 **Required**: build requests with `http.NewRequestWithContext(ctx, method, url, body)` so the transport can read the active span from the context:
 
@@ -113,6 +114,8 @@ resp, err := client.Do(req)
 ```
 
 Using `http.NewRequest` (no context) silently disables propagation even with the instrumented transport.
+
+The OAuth2 JWKS cache uses this client for auth-server key refreshes. With tracing enabled, refresh requests appear as `JWKS refresh` spans with `jwk.refresh.min_interval_ms`.
 
 ---
 
