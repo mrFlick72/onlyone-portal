@@ -6,11 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
@@ -41,6 +39,7 @@ This is one utility interface to allow the server to inject behaviour like OAuth
 This special feature can not simply apply a middleware
 */
 type WebServerConfigurer interface {
+	Name() string
 	Configure() error
 	Dispose() error
 }
@@ -53,40 +52,27 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	engine := gin.New()
 	wsp.engine = engine
 
-	// 1. Standard Gin middleware (inside the trace span)
-	engine.Use(gin.Logger())
-	engine.Use(gin.Recovery())
-
-	// 2. CORS
-	engine.Use(corsCofigurer())
-
-	// 3. custom configurer.
+	// Order matters: OTel first so its server span wraps every later middleware
+	// + handler; standard middleware (Logger/Recovery/CORS) inside the span so
+	// panics and access logs are observed; OAuth2 last so auth failures show up
+	// as span events on the already-open server span.
 	configurers := []WebServerConfigurer{
 		NewOtelWebServerConfigurer(wsp),
+		NewStandardMiddlewareConfigurer(wsp),
 		NewOauth2WebServerConfigurer(wsp),
 	}
 	for _, configurer := range configurers {
+		web_server_logger.LogInfofFor("configuring %s", configurer.Name())
 		if err := configurer.Configure(); err != nil {
-			web_server_logger.LogErrorfFor("OTel configure failed: %v", err)
+			web_server_logger.LogErrorfFor("%s configure failed: %v", configurer.Name(), err)
 			wsp.Shutdown()
-			panic(fmt.Errorf("otel configure: %w", err))
+			panic(fmt.Errorf("%s configure: %w", configurer.Name(), err))
 		}
 	}
 
-	//    /management/* health probes are filtered to avoid polluting traces.
 	magangement.RegisterEndpoints(engine)
 
 	return engine
-}
-
-func corsCofigurer() gin.HandlerFunc {
-	return cors.New(cors.Config{
-		AllowOrigins:     strings.Split(configurationManager.GetConfigFor("cors.allowed.origins"), ","),
-		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type", "Accept"},
-		AllowCredentials: true,
-		MaxAge:           60 * time.Minute,
-	})
 }
 
 // Shutdown cancels background goroutines (JWKS refresh) and flushes OTel spans.

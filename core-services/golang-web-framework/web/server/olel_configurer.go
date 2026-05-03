@@ -27,6 +27,10 @@ func NewOtelWebServerConfigurer(wsp *WebServerProvisioner) WebServerConfigurer {
 	return configurer
 }
 
+func (configurer *OtelWebServerConfigurer) Name() string {
+	return "otel"
+}
+
 // Configure installs the global OTel providers and registers the otelgin
 // middleware. Provider setup is non-fatal: on failure we log and fall back to
 // a no-op shutdown so the service still boots without tracing.
@@ -38,6 +42,8 @@ func (configurer *OtelWebServerConfigurer) Configure() error {
 	}
 	configurer.shutdown = shutdown
 
+	// /management/* health probes are filtered out so liveness/readiness
+	// pings don't pollute traces.
 	serviceName := configurationManager.GetConfigFor("otel.service-name")
 	configurer.wsp.engine.Use(otelgin.Middleware(serviceName,
 		otelgin.WithFilter(func(req *http.Request) bool {
