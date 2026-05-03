@@ -33,10 +33,7 @@ var web_server_logger = logging.GetLoggerInstanceForComponentByTypeName("WebServ
 
 type WebServerProvisioner struct {
 	engine           *gin.Engine
-	wsp              *WebServerProvisioner
 	cancelContextFns []WebServerConfigurer
-	serverContext    context.Context
-	cancelContextFn  context.CancelFunc
 }
 
 /*
@@ -53,48 +50,30 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 		return wsp.engine
 	}
 
-	serverContext, cancelContextFn := context.WithCancel(context.Background())
 	engine := gin.New()
 	wsp.engine = engine
-	wsp.serverContext = serverContext
-	wsp.cancelContextFn = cancelContextFn
 
-	// 1. OTel: root server span wraps all subsequent middleware + handlers.
-	otelConfigurer := NewOtelWebServerConfigurer(wsp)
-	err := otelConfigurer.Configure()
-	if err != nil {
-		err := wsp.Shutdown()
-		web_server_logger.LogErrorfFor("Error: %v", err)
-		if err != nil {
-			web_server_logger.LogErrorfFor("Error: %v", err)
-			return nil
-		}
-	}
-	//    /management/* health probes are filtered to avoid polluting traces.
-
-	// 2. Standard Gin middleware (inside the trace span)
+	// 1. Standard Gin middleware (inside the trace span)
 	engine.Use(gin.Logger())
 	engine.Use(gin.Recovery())
 
-	// 3. CORS
+	// 2. CORS
 	engine.Use(corsCofigurer())
 
-	// 4. JWT/OAuth2 (auth failures visible as span events).
-	//    JWKS misconfiguration is fatal at boot — without it every request would
-	//    either be rejected or, worse, silently pass without verification.
-	web_server_logger.LogInfofFor("Setting up OAuth2 middleware")
-	oauth2WebServerConfigurer := NewOauth2WebServerConfigurer(wsp)
-	err = oauth2WebServerConfigurer.Configure()
-	if err != nil {
-		web_server_logger.LogErrorfFor("Error: %v", err)
-		wsp.Shutdown()
-		if err != nil {
-			web_server_logger.LogErrorfFor("Error: %v", err)
-			return nil
+	// 3. custom configurer.
+	configurers := []WebServerConfigurer{
+		NewOtelWebServerConfigurer(wsp),
+		NewOauth2WebServerConfigurer(wsp),
+	}
+	for _, configurer := range configurers {
+		if err := configurer.Configure(); err != nil {
+			web_server_logger.LogErrorfFor("OTel configure failed: %v", err)
+			wsp.Shutdown()
+			panic(fmt.Errorf("otel configure: %w", err))
 		}
-
 	}
 
+	//    /management/* health probes are filtered to avoid polluting traces.
 	magangement.RegisterEndpoints(engine)
 
 	return engine
@@ -116,12 +95,10 @@ func (wsp *WebServerProvisioner) Shutdown() error {
 	web_server_logger.LogInfofFor("Server Shutdown has been started ....")
 	web_server_logger.LogInfofFor("There are %d configurer to be disposed", len(wsp.cancelContextFns))
 	for _, configurer := range wsp.cancelContextFns {
-		err := configurer.Dispose()
-		if err != nil {
+		if err := configurer.Dispose(); err != nil {
 			web_server_logger.LogErrorfFor("Error without trows error in order to try to clean up as much resources as possible: %v", err)
 		}
 	}
-	wsp.cancelContextFn()
 	web_server_logger.LogInfofFor("Server Shutdown completed ....")
 
 	return nil

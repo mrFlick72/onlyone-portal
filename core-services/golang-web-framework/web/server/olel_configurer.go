@@ -17,14 +17,8 @@ type OtelWebServerConfigurer struct {
 
 func NewOtelWebServerConfigurer(wsp *WebServerProvisioner) WebServerConfigurer {
 	ctx, cancel := context.WithCancel(context.Background())
-	shutdown, err := otel.Setup(ctx)
-	if err != nil {
-		web_server_logger.LogErrorfFor("OTel setup failed (continuing without tracing): %v", err)
-		shutdown = func(_ context.Context) error { return nil }
-	}
 	configurer := &OtelWebServerConfigurer{
 		wsp:       wsp,
-		shutdown:  shutdown,
 		ctx:       ctx,
 		cancelCtx: cancel,
 	}
@@ -33,11 +27,18 @@ func NewOtelWebServerConfigurer(wsp *WebServerProvisioner) WebServerConfigurer {
 	return configurer
 }
 
+// Configure installs the global OTel providers and registers the otelgin
+// middleware. Provider setup is non-fatal: on failure we log and fall back to
+// a no-op shutdown so the service still boots without tracing.
 func (configurer *OtelWebServerConfigurer) Configure() error {
-	serviceName := configurationManager.GetConfigFor("otel.service-name")
-	// Lifecycle context for background goroutines (e.g. JWKS refresh).
-	// Cancelled in Shutdown so they exit cleanly on process exit.
+	shutdown, err := otel.Setup(configurer.ctx)
+	if err != nil {
+		web_server_logger.LogErrorfFor("OTel setup failed (continuing without tracing): %v", err)
+		shutdown = func(_ context.Context) error { return nil }
+	}
+	configurer.shutdown = shutdown
 
+	serviceName := configurationManager.GetConfigFor("otel.service-name")
 	configurer.wsp.engine.Use(otelgin.Middleware(serviceName,
 		otelgin.WithFilter(func(req *http.Request) bool {
 			return !strings.HasPrefix(req.URL.Path, "/management/")
@@ -48,10 +49,11 @@ func (configurer *OtelWebServerConfigurer) Configure() error {
 }
 
 func (configurer *OtelWebServerConfigurer) Dispose() error {
-	err := configurer.shutdown(configurer.ctx)
-	if err != nil {
-		//todo add an error log message
-		return err
+	if configurer.shutdown != nil {
+		if err := configurer.shutdown(configurer.ctx); err != nil {
+			configurer.cancelCtx()
+			return err
+		}
 	}
 	configurer.cancelCtx()
 	return nil
