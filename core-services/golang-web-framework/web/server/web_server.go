@@ -75,16 +75,20 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	return engine
 }
 
-// Shutdown cancels background goroutines (JWKS refresh) and flushes OTel spans.
-// Call after StartEngine() returns on process exit.
+// Shutdown disposes every registered configurer (cancelling background
+// goroutines like JWKS refresh and flushing OTel spans) and resets the
+// provisioner so it can be reconfigured. A second call is a no-op because the
+// slice has been emptied. Call after StartEngine() returns on process exit.
 func (wsp *WebServerProvisioner) Shutdown() error {
 	web_server_logger.LogInfofFor("Server Shutdown has been started ....")
 	web_server_logger.LogInfofFor("There are %d configurer to be disposed", len(wsp.cancelContextFns))
 	for _, configurer := range wsp.cancelContextFns {
 		if err := configurer.Dispose(); err != nil {
-			web_server_logger.LogErrorfFor("Error without trows error in order to try to clean up as much resources as possible: %v", err)
+			web_server_logger.LogErrorfFor("configurer dispose failed (continuing to clean up): %v", err)
 		}
 	}
+	wsp.cancelContextFns = nil
+	wsp.engine = nil
 	web_server_logger.LogInfofFor("Server Shutdown completed ....")
 
 	return nil
