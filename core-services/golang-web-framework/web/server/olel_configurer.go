@@ -22,12 +22,15 @@ func NewOtelWebServerConfigurer(wsp *WebServerProvisioner) WebServerConfigurer {
 		web_server_logger.LogErrorfFor("OTel setup failed (continuing without tracing): %v", err)
 		shutdown = func(_ context.Context) error { return nil }
 	}
-	return &OtelWebServerConfigurer{
+	configurer := &OtelWebServerConfigurer{
 		wsp:       wsp,
 		shutdown:  shutdown,
 		ctx:       ctx,
 		cancelCtx: cancel,
 	}
+	wsp.cancelContextFns = append(wsp.cancelContextFns, configurer)
+
+	return configurer
 }
 
 func (configurer *OtelWebServerConfigurer) Configure() error {

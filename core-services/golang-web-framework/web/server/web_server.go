@@ -34,7 +34,7 @@ var web_server_logger = logging.GetLoggerInstanceForComponentByTypeName("WebServ
 type WebServerProvisioner struct {
 	engine           *gin.Engine
 	wsp              *WebServerProvisioner
-	cancelContextFns []*context.CancelFunc
+	cancelContextFns []WebServerConfigurer
 	serverContext    context.Context
 	cancelContextFn  context.CancelFunc
 }
@@ -63,7 +63,12 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	otelConfigurer := NewOtelWebServerConfigurer(wsp)
 	err := otelConfigurer.Configure()
 	if err != nil {
-		// todo fire an event that trigger the server shutdown
+		err := wsp.Shutdown()
+		web_server_logger.LogErrorfFor("Error: %v", err)
+		if err != nil {
+			web_server_logger.LogErrorfFor("Error: %v", err)
+			return nil
+		}
 	}
 	//    /management/* health probes are filtered to avoid polluting traces.
 
@@ -81,7 +86,13 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	oauth2WebServerConfigurer := NewOauth2WebServerConfigurer(wsp)
 	err = oauth2WebServerConfigurer.Configure()
 	if err != nil {
-		// todo fire an event that trigger the server shutdown
+		web_server_logger.LogErrorfFor("Error: %v", err)
+		wsp.Shutdown()
+		if err != nil {
+			web_server_logger.LogErrorfFor("Error: %v", err)
+			return nil
+		}
+
 	}
 
 	magangement.RegisterEndpoints(engine)
@@ -101,8 +112,18 @@ func corsCofigurer() gin.HandlerFunc {
 
 // Shutdown cancels background goroutines (JWKS refresh) and flushes OTel spans.
 // Call after StartEngine() returns on process exit.
-func (wsp *WebServerProvisioner) Shutdown(ctx context.Context) error {
+func (wsp *WebServerProvisioner) Shutdown() error {
+	web_server_logger.LogInfofFor("Server Shutdown has been started ....")
+	web_server_logger.LogInfofFor("There are %d configurer to be disposed", len(wsp.cancelContextFns))
+	for _, configurer := range wsp.cancelContextFns {
+		err := configurer.Dispose()
+		if err != nil {
+			web_server_logger.LogErrorfFor("Error without trows error in order to try to clean up as much resources as possible: %v", err)
+		}
+	}
 	wsp.cancelContextFn()
+	web_server_logger.LogInfofFor("Server Shutdown completed ....")
+
 	return nil
 }
 
@@ -111,7 +132,7 @@ func (wsp *WebServerProvisioner) Shutdown(ctx context.Context) error {
 // drained for up to server.shutdown-timeout (default 10s) before OTel and
 // JWKS background goroutines are stopped.
 func (wsp *WebServerProvisioner) StartEngine() error {
-	defer wsp.Shutdown(context.Background())
+	defer wsp.Shutdown()
 
 	port := configurationManager.GetConfigFor("server.port")
 	addr := fmt.Sprintf("0.0.0.0:%s", port)
