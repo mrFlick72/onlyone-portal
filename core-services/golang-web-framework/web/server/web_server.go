@@ -42,8 +42,8 @@ This is one utility interface to allow the server to inject behaviour like OAuth
 This special feature can not simply apply a middleware
 */
 type WebServerConfigurer interface {
-	Configure(ctx context.Context) (error, context.Context)
-	Dispose(ctx context.Context) error
+	Configure() error
+	Dispose() error
 }
 
 func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
@@ -59,7 +59,7 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 
 	// 1. OTel: root server span wraps all subsequent middleware + handlers.
 	otelConfigurer := NewOtelWebServerConfigurer(engine)
-	err, _ := otelConfigurer.Configure(serverContext)
+	err := otelConfigurer.Configure()
 	if err != nil {
 		// todo fire an event that trigger the server shutdown
 	}
@@ -77,7 +77,7 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	//    either be rejected or, worse, silently pass without verification.
 	web_server_logger.LogInfofFor("Setting up OAuth2 middleware")
 	oauth2WebServerConfigurer := NewOauth2WebServerConfigurer(engine)
-	err, _ = oauth2WebServerConfigurer.Configure(serverContext)
+	err = oauth2WebServerConfigurer.Configure()
 	if err != nil {
 		// todo fire an event that trigger the server shutdown
 	}

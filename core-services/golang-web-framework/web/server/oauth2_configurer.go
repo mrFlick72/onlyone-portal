@@ -11,6 +11,7 @@ import (
 type OAuth2WebServerConfigurer struct {
 	engine    *gin.Engine
 	shutdown  otel.ShutdownFunc
+	ctx       context.Context
 	cancelCtx context.CancelFunc
 }
 
@@ -23,22 +24,28 @@ func NewOauth2WebServerConfigurer(engine *gin.Engine) WebServerConfigurer {
 	}
 	return &OAuth2WebServerConfigurer{
 		engine:    engine,
+		ctx:       ctx,
 		shutdown:  shutdown,
 		cancelCtx: cancel,
 	}
 }
 
-func (configurer *OAuth2WebServerConfigurer) Configure(ctx context.Context) (error, context.Context) {
-	oauth2, err := security.SetUpOAuth2(ctx)
+func (configurer *OAuth2WebServerConfigurer) Configure() error {
+	oauth2, err := security.SetUpOAuth2(context.Background())
 	if err != nil {
 		web_server_logger.LogErrorfFor("OAuth2 setup failed: %v", err)
 		panic(fmt.Errorf("oauth2 setup: %w", err))
 	}
 	configurer.engine.Use(oauth2)
-	return nil, ctx
+	return nil
 }
 
-func (configurer *OAuth2WebServerConfigurer) Dispose(ctx context.Context) error {
+func (configurer *OAuth2WebServerConfigurer) Dispose() error {
+	err := configurer.shutdown(configurer.ctx)
+	if err != nil {
+		//todo add an error log message
+		return err
+	}
 	configurer.cancelCtx()
 	return nil
 }

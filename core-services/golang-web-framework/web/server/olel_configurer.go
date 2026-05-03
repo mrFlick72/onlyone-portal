@@ -12,6 +12,7 @@ import (
 type OtelWebServerConfigurer struct {
 	engine    *gin.Engine
 	shutdown  otel.ShutdownFunc
+	ctx       context.Context
 	cancelCtx context.CancelFunc
 }
 
@@ -25,11 +26,12 @@ func NewOtelWebServerConfigurer(engine *gin.Engine) WebServerConfigurer {
 	return &OtelWebServerConfigurer{
 		engine:    engine,
 		shutdown:  shutdown,
+		ctx:       ctx,
 		cancelCtx: cancel,
 	}
 }
 
-func (configurer *OtelWebServerConfigurer) Configure(ctx context.Context) (error, context.Context) {
+func (configurer *OtelWebServerConfigurer) Configure() error {
 	serviceName := configurationManager.GetConfigFor("otel.service-name")
 	// Lifecycle context for background goroutines (e.g. JWKS refresh).
 	// Cancelled in Shutdown so they exit cleanly on process exit.
@@ -40,10 +42,15 @@ func (configurer *OtelWebServerConfigurer) Configure(ctx context.Context) (error
 		}),
 	))
 
-	return nil, ctx
+	return nil
 }
 
-func (configurer *OtelWebServerConfigurer) Dispose(ctx context.Context) error {
+func (configurer *OtelWebServerConfigurer) Dispose() error {
+	err := configurer.shutdown(configurer.ctx)
+	if err != nil {
+		//todo add an error log message
+		return err
+	}
 	configurer.cancelCtx()
 	return nil
 }
