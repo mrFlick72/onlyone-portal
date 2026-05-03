@@ -65,9 +65,9 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 		web_server_logger.LogInfofFor("configuring %s", configurer.Name())
 		if err := configurer.Configure(); err != nil {
 			web_server_logger.LogErrorfFor("%s configure failed: %v", configurer.Name(), err)
-			ctx, cancel := context.WithTimeout(context.Background(), defaultShutdownTimeout)
-			defer cancel()
+			ctx, cancel := newShutdownContext()
 			wsp.Shutdown(ctx)
+			cancel()
 			panic(fmt.Errorf("%s configure: %w", configurer.Name(), err))
 		}
 	}
@@ -77,25 +77,37 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	return engine
 }
 
+// newShutdownContext returns a deadline-bounded context for any path that
+// triggers Shutdown — graceful (SIGTERM), the ConfigureEngine panic path, and
+// the StartEngine safety-net defer. Centralising it keeps server.shutdown-timeout
+// the single source of truth for the shutdown budget.
+func newShutdownContext() (context.Context, context.CancelFunc) {
+	timeout := configurationManager.GetConfigDurationFor("server.shutdown-timeout", defaultShutdownTimeout)
+	return context.WithTimeout(context.Background(), timeout)
+}
+
 // Shutdown disposes every registered configurer (cancelling background
 // goroutines like JWKS refresh and flushing OTel spans) and resets the
 // provisioner so it can be reconfigured. The ctx bounds disposal — in
 // particular it caps how long the OTel exporter is allowed to flush before
 // the process exits. A second call is a no-op because the slice has been
-// emptied. Call after StartEngine() returns on process exit.
+// emptied. Returns the joined errors of every Dispose that failed, so the
+// caller (and the process exit code) can reflect a partial shutdown.
 func (wsp *WebServerProvisioner) Shutdown(ctx context.Context) error {
 	web_server_logger.LogInfofFor("Server Shutdown has been started ....")
 	web_server_logger.LogInfofFor("There are %d configurer to be disposed", len(wsp.configurers))
+	var errs []error
 	for _, configurer := range wsp.configurers {
 		if err := configurer.Dispose(ctx); err != nil {
 			web_server_logger.LogErrorfFor("configurer dispose failed (continuing to clean up): %v", err)
+			errs = append(errs, fmt.Errorf("%s dispose: %w", configurer.Name(), err))
 		}
 	}
 	wsp.configurers = nil
 	wsp.engine = nil
 	web_server_logger.LogInfofFor("Server Shutdown completed ....")
 
-	return nil
+	return errors.Join(errs...)
 }
 
 // StartEngine listens on server.port and blocks until the process receives
@@ -108,7 +120,7 @@ func (wsp *WebServerProvisioner) StartEngine() error {
 	// path below clears the configurer slice, so on the happy path this defer
 	// iterates an empty slice.
 	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), defaultShutdownTimeout)
+		ctx, cancel := newShutdownContext()
 		defer cancel()
 		wsp.Shutdown(ctx)
 	}()
@@ -149,8 +161,7 @@ func (wsp *WebServerProvisioner) StartEngine() error {
 		web_server_logger.LogInfofFor("shutdown signal received, draining connections")
 	}
 
-	shutdownTimeout := configurationManager.GetConfigDurationFor("server.shutdown-timeout", defaultShutdownTimeout)
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	shutdownCtx, cancel := newShutdownContext()
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
