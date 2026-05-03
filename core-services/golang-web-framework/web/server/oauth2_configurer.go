@@ -26,8 +26,7 @@ func NewOauth2WebServerConfigurer(wsp *WebServerProvisioner) WebServerConfigurer
 func (configurer *OAuth2WebServerConfigurer) Configure() error {
 	oauth2, err := security.SetUpOAuth2(configurer.ctx)
 	if err != nil {
-		web_server_logger.LogErrorfFor("OAuth2 setup failed: %v", err)
-		panic(fmt.Errorf("oauth2 setup: %w", err))
+		return fmt.Errorf("oauth2 setup: %w", err)
 	}
 	configurer.wsp.engine.Use(oauth2)
 	return nil
