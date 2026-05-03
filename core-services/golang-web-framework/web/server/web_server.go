@@ -32,9 +32,11 @@ var configurationManager = config.GetConfigurationManagerInstance()
 var web_server_logger = logging.GetLoggerInstanceForComponentByTypeName("WebServerProvisioner")
 
 type WebServerProvisioner struct {
-	engine          *gin.Engine
-	serverContext   context.Context
-	cancelContextFn context.CancelFunc
+	engine           *gin.Engine
+	wsp              *WebServerProvisioner
+	cancelContextFns []*context.CancelFunc
+	serverContext    context.Context
+	cancelContextFn  context.CancelFunc
 }
 
 /*
@@ -58,7 +60,7 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	wsp.cancelContextFn = cancelContextFn
 
 	// 1. OTel: root server span wraps all subsequent middleware + handlers.
-	otelConfigurer := NewOtelWebServerConfigurer(engine)
+	otelConfigurer := NewOtelWebServerConfigurer(wsp)
 	err := otelConfigurer.Configure()
 	if err != nil {
 		// todo fire an event that trigger the server shutdown
@@ -76,7 +78,7 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	//    JWKS misconfiguration is fatal at boot — without it every request would
 	//    either be rejected or, worse, silently pass without verification.
 	web_server_logger.LogInfofFor("Setting up OAuth2 middleware")
-	oauth2WebServerConfigurer := NewOauth2WebServerConfigurer(engine)
+	oauth2WebServerConfigurer := NewOauth2WebServerConfigurer(wsp)
 	err = oauth2WebServerConfigurer.Configure()
 	if err != nil {
 		// todo fire an event that trigger the server shutdown
