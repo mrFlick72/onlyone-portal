@@ -3,19 +3,18 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/otel"
 )
 
 type OAuth2WebServerConfigurer struct {
-	engine    *gin.Engine
+	wsp       *WebServerProvisioner
 	shutdown  otel.ShutdownFunc
 	ctx       context.Context
 	cancelCtx context.CancelFunc
 }
 
-func NewOauth2WebServerConfigurer(engine *gin.Engine) WebServerConfigurer {
+func NewOauth2WebServerConfigurer(wsp *WebServerProvisioner) WebServerConfigurer {
 	ctx, cancel := context.WithCancel(context.Background())
 	shutdown, err := otel.Setup(ctx)
 	if err != nil {
@@ -23,7 +22,7 @@ func NewOauth2WebServerConfigurer(engine *gin.Engine) WebServerConfigurer {
 		shutdown = func(_ context.Context) error { return nil }
 	}
 	return &OAuth2WebServerConfigurer{
-		engine:    engine,
+		wsp:       wsp,
 		ctx:       ctx,
 		shutdown:  shutdown,
 		cancelCtx: cancel,
@@ -36,7 +35,7 @@ func (configurer *OAuth2WebServerConfigurer) Configure() error {
 		web_server_logger.LogErrorfFor("OAuth2 setup failed: %v", err)
 		panic(fmt.Errorf("oauth2 setup: %w", err))
 	}
-	configurer.engine.Use(oauth2)
+	configurer.wsp.engine.Use(oauth2)
 	return nil
 }
 
