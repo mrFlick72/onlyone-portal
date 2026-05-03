@@ -49,7 +49,7 @@ func TestSetupTracerProvider_WhenDisabled_ReturnsNoop(t *testing.T) {
 
 func TestBuildExporter_HTTP_Succeeds(t *testing.T) {
 	cfg := otelConfig{Protocol: "http", Endpoint: "localhost:4318", Insecure: true}
-	exp, err := buildExporter(context.Background(), cfg)
+	exp, err := buildTracExporter(context.Background(), cfg)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, exp)
@@ -58,7 +58,7 @@ func TestBuildExporter_HTTP_Succeeds(t *testing.T) {
 
 func TestBuildExporter_GRPC_Succeeds(t *testing.T) {
 	cfg := otelConfig{Protocol: "grpc", Endpoint: "localhost:4317", Insecure: true}
-	exp, err := buildExporter(context.Background(), cfg)
+	exp, err := buildTracExporter(context.Background(), cfg)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, exp)
@@ -67,7 +67,7 @@ func TestBuildExporter_GRPC_Succeeds(t *testing.T) {
 
 func TestBuildExporter_DefaultsToHTTP(t *testing.T) {
 	cfg := otelConfig{Protocol: "", Endpoint: "localhost:4318", Insecure: true}
-	exp, err := buildExporter(context.Background(), cfg)
+	exp, err := buildTracExporter(context.Background(), cfg)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, exp)
@@ -76,7 +76,7 @@ func TestBuildExporter_DefaultsToHTTP(t *testing.T) {
 
 func TestBuildExporter_UnsupportedProtocol_ReturnsError(t *testing.T) {
 	cfg := otelConfig{Protocol: "kafka", Endpoint: "localhost:9092"}
-	exp, err := buildExporter(context.Background(), cfg)
+	exp, err := buildTracExporter(context.Background(), cfg)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unsupported protocol")

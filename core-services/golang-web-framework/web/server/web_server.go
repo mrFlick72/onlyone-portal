@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
-	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/magangement"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/management"
 )
 
 // HTTP server timeout defaults. Tunable via config keys server.read-timeout,
@@ -27,7 +27,7 @@ const (
 )
 
 var configurationManager = config.GetConfigurationManagerInstance()
-var web_server_logger = logging.GetLoggerInstanceForComponentByTypeName("WebServerProvisioner")
+var webServerLogger = logging.GetLoggerInstanceForComponentByTypeName("WebServerProvisioner")
 
 type WebServerProvisioner struct {
 	engine      *gin.Engine
@@ -62,9 +62,9 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 		NewOAuth2Configurer(wsp),
 	}
 	for _, configurer := range configurers {
-		web_server_logger.LogInfofFor("configuring %s", configurer.Name())
+		webServerLogger.LogInfofFor("configuring %s", configurer.Name())
 		if err := configurer.Configure(); err != nil {
-			web_server_logger.LogErrorfFor("%s configure failed: %v", configurer.Name(), err)
+			webServerLogger.LogErrorfFor("%s configure failed: %v", configurer.Name(), err)
 			ctx, cancel := newShutdownContext()
 			wsp.Shutdown(ctx)
 			cancel()
@@ -72,7 +72,7 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 		}
 	}
 
-	magangement.RegisterEndpoints(engine)
+	management.RegisterEndpoints(engine)
 
 	return engine
 }
@@ -94,18 +94,18 @@ func newShutdownContext() (context.Context, context.CancelFunc) {
 // emptied. Returns the joined errors of every Dispose that failed, so the
 // caller (and the process exit code) can reflect a partial shutdown.
 func (wsp *WebServerProvisioner) Shutdown(ctx context.Context) error {
-	web_server_logger.LogInfofFor("Server Shutdown has been started ....")
-	web_server_logger.LogInfofFor("There are %d configurer to be disposed", len(wsp.configurers))
+	webServerLogger.LogInfofFor("Server Shutdown has been started ....")
+	webServerLogger.LogInfofFor("There are %d configurer to be disposed", len(wsp.configurers))
 	var errs []error
 	for _, configurer := range wsp.configurers {
 		if err := configurer.Dispose(ctx); err != nil {
-			web_server_logger.LogErrorfFor("configurer dispose failed (continuing to clean up): %v", err)
+			webServerLogger.LogErrorfFor("configurer dispose failed (continuing to clean up): %v", err)
 			errs = append(errs, fmt.Errorf("%s dispose: %w", configurer.Name(), err))
 		}
 	}
 	wsp.configurers = nil
 	wsp.engine = nil
-	web_server_logger.LogInfofFor("Server Shutdown completed ....")
+	webServerLogger.LogInfofFor("Server Shutdown completed ....")
 
 	return errors.Join(errs...)
 }
@@ -139,7 +139,7 @@ func (wsp *WebServerProvisioner) StartEngine() error {
 
 	serverErr := make(chan error, 1)
 	go func() {
-		web_server_logger.LogInfofFor("listening on %s", addr)
+		webServerLogger.LogInfofFor("listening on %s", addr)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			serverErr <- err
 			return
@@ -153,19 +153,19 @@ func (wsp *WebServerProvisioner) StartEngine() error {
 	select {
 	case err := <-serverErr:
 		if err != nil {
-			web_server_logger.LogErrorfFor("server failed: %v", err)
+			webServerLogger.LogErrorfFor("server failed: %v", err)
 			return fmt.Errorf("server: %w", err)
 		}
 		return nil
 	case <-sigCtx.Done():
-		web_server_logger.LogInfofFor("shutdown signal received, draining connections")
+		webServerLogger.LogInfofFor("shutdown signal received, draining connections")
 	}
 
 	shutdownCtx, cancel := newShutdownContext()
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		web_server_logger.LogErrorfFor("graceful shutdown failed: %v", err)
+		webServerLogger.LogErrorfFor("graceful shutdown failed: %v", err)
 		return fmt.Errorf("server shutdown: %w", err)
 	}
 	return wsp.Shutdown(shutdownCtx)
