@@ -15,29 +15,29 @@ type OAuth2Configurer struct {
 
 func NewOAuth2Configurer(wsp *WebServerProvisioner) WebServerConfigurer {
 	ctx, cancel := context.WithCancel(context.Background())
-	configurer := &OAuth2Configurer{
+	c := &OAuth2Configurer{
 		wsp:       wsp,
 		ctx:       ctx,
 		cancelCtx: cancel,
 	}
-	wsp.configurers = append(wsp.configurers, configurer)
-	return configurer
+	wsp.configurers = append(wsp.configurers, c)
+	return c
 }
 
-func (configurer *OAuth2Configurer) Name() string {
+func (c *OAuth2Configurer) Name() string {
 	return "oauth2"
 }
 
-func (configurer *OAuth2Configurer) Configure() error {
-	oauth2, err := security.SetUpOAuth2(configurer.ctx)
+func (c *OAuth2Configurer) Configure() error {
+	oauth2, err := security.SetUpOAuth2(c.ctx)
 	if err != nil {
 		return fmt.Errorf("oauth2 setup: %w", err)
 	}
-	configurer.wsp.engine.Use(oauth2)
+	c.wsp.engine.Use(oauth2)
 	return nil
 }
 
-func (configurer *OAuth2Configurer) Dispose(_ context.Context) error {
-	configurer.cancelCtx()
+func (c *OAuth2Configurer) Dispose(_ context.Context) error {
+	c.cancelCtx()
 	return nil
 }

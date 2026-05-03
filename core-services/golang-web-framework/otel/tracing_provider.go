@@ -34,7 +34,7 @@ func SetupTracerProvider(ctx context.Context) (ShutdownFunc, error) {
 func setupTraceProvider(ctx context.Context, cfg otelConfig, res *resource.Resource) (ShutdownFunc, error) {
 	logger.LogInfofFor("Setting up OTel TracerProvider: service=%s protocol=%s endpoint=%s", cfg.ServiceName, cfg.Protocol, cfg.Endpoint)
 
-	exp, err := buildExporter(ctx, cfg)
+	exp, err := buildTracExporter(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("otel: span exporter: %w", err)
 	}
@@ -56,7 +56,7 @@ func setupTraceProvider(ctx context.Context, cfg otelConfig, res *resource.Resou
 	}, nil
 }
 
-func buildExporter(ctx context.Context, cfg otelConfig) (sdktrace.SpanExporter, error) {
+func buildTracExporter(ctx context.Context, cfg otelConfig) (sdktrace.SpanExporter, error) {
 	switch cfg.Protocol {
 	case "grpc":
 		opts := []otlptracegrpc.Option{otlptracegrpc.WithEndpoint(cfg.Endpoint)}

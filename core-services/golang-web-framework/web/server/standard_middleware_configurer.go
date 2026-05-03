@@ -19,23 +19,23 @@ type StandardMiddlewareConfigurer struct {
 }
 
 func NewStandardMiddlewareConfigurer(wsp *WebServerProvisioner) WebServerConfigurer {
-	configurer := &StandardMiddlewareConfigurer{wsp: wsp}
-	wsp.configurers = append(wsp.configurers, configurer)
-	return configurer
+	c := &StandardMiddlewareConfigurer{wsp: wsp}
+	wsp.configurers = append(wsp.configurers, c)
+	return c
 }
 
-func (configurer *StandardMiddlewareConfigurer) Name() string {
+func (c *StandardMiddlewareConfigurer) Name() string {
 	return "standard-middleware"
 }
 
-func (configurer *StandardMiddlewareConfigurer) Configure() error {
-	configurer.wsp.engine.Use(gin.Logger())
-	configurer.wsp.engine.Use(gin.Recovery())
-	configurer.wsp.engine.Use(corsConfigurer())
+func (c *StandardMiddlewareConfigurer) Configure() error {
+	c.wsp.engine.Use(gin.Logger())
+	c.wsp.engine.Use(gin.Recovery())
+	c.wsp.engine.Use(corsConfigurer())
 	return nil
 }
 
-func (configurer *StandardMiddlewareConfigurer) Dispose(_ context.Context) error {
+func (c *StandardMiddlewareConfigurer) Dispose(_ context.Context) error {
 	return nil
 }
 
