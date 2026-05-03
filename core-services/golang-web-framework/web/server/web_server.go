@@ -30,14 +30,14 @@ var configurationManager = config.GetConfigurationManagerInstance()
 var web_server_logger = logging.GetLoggerInstanceForComponentByTypeName("WebServerProvisioner")
 
 type WebServerProvisioner struct {
-	engine           *gin.Engine
-	cancelContextFns []WebServerConfigurer
+	engine      *gin.Engine
+	configurers []WebServerConfigurer
 }
 
-/*
-This is one utility interface to allow the server to inject behaviour like OAuth2, OTel and so on
-This special feature can not simply apply a middleware
-*/
+// WebServerConfigurer lets the provisioner inject cross-cutting concerns
+// (OAuth2, OTel, standard middleware, ...) that need lifecycle hooks beyond
+// what a plain gin.HandlerFunc can express. Each configurer is registered with
+// the provisioner at construction time and disposed on Shutdown.
 type WebServerConfigurer interface {
 	Name() string
 	Configure() error
@@ -57,9 +57,9 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	// panics and access logs are observed; OAuth2 last so auth failures show up
 	// as span events on the already-open server span.
 	configurers := []WebServerConfigurer{
-		NewOtelWebServerConfigurer(wsp),
+		NewOTelConfigurer(wsp),
 		NewStandardMiddlewareConfigurer(wsp),
-		NewOauth2WebServerConfigurer(wsp),
+		NewOAuth2Configurer(wsp),
 	}
 	for _, configurer := range configurers {
 		web_server_logger.LogInfofFor("configuring %s", configurer.Name())
@@ -81,13 +81,13 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 // slice has been emptied. Call after StartEngine() returns on process exit.
 func (wsp *WebServerProvisioner) Shutdown() error {
 	web_server_logger.LogInfofFor("Server Shutdown has been started ....")
-	web_server_logger.LogInfofFor("There are %d configurer to be disposed", len(wsp.cancelContextFns))
-	for _, configurer := range wsp.cancelContextFns {
+	web_server_logger.LogInfofFor("There are %d configurer to be disposed", len(wsp.configurers))
+	for _, configurer := range wsp.configurers {
 		if err := configurer.Dispose(); err != nil {
 			web_server_logger.LogErrorfFor("configurer dispose failed (continuing to clean up): %v", err)
 		}
 	}
-	wsp.cancelContextFns = nil
+	wsp.configurers = nil
 	wsp.engine = nil
 	web_server_logger.LogInfofFor("Server Shutdown completed ....")
 

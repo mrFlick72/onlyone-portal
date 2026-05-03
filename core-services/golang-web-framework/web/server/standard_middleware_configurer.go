@@ -19,7 +19,7 @@ type StandardMiddlewareConfigurer struct {
 
 func NewStandardMiddlewareConfigurer(wsp *WebServerProvisioner) WebServerConfigurer {
 	configurer := &StandardMiddlewareConfigurer{wsp: wsp}
-	wsp.cancelContextFns = append(wsp.cancelContextFns, configurer)
+	wsp.configurers = append(wsp.configurers, configurer)
 	return configurer
 }
 
@@ -30,7 +30,7 @@ func (configurer *StandardMiddlewareConfigurer) Name() string {
 func (configurer *StandardMiddlewareConfigurer) Configure() error {
 	configurer.wsp.engine.Use(gin.Logger())
 	configurer.wsp.engine.Use(gin.Recovery())
-	configurer.wsp.engine.Use(corsCofigurer())
+	configurer.wsp.engine.Use(corsConfigurer())
 	return nil
 }
 
@@ -38,7 +38,7 @@ func (configurer *StandardMiddlewareConfigurer) Dispose() error {
 	return nil
 }
 
-func corsCofigurer() gin.HandlerFunc {
+func corsConfigurer() gin.HandlerFunc {
 	return cors.New(cors.Config{
 		AllowOrigins:     strings.Split(configurationManager.GetConfigFor("cors.allowed.origins"), ","),
 		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "OPTIONS"},
