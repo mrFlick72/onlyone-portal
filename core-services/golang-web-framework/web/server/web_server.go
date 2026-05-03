@@ -59,7 +59,7 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 
 	// 1. OTel: root server span wraps all subsequent middleware + handlers.
 	otelConfigurer := NewOtelWebServerConfigurer(engine)
-	err, otelCtx := otelConfigurer.Configure(serverContext)
+	err, _ := otelConfigurer.Configure(serverContext)
 	if err != nil {
 		// todo fire an event that trigger the server shutdown
 	}
@@ -70,20 +70,14 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	engine.Use(gin.Recovery())
 
 	// 3. CORS
-	engine.Use(cors.New(cors.Config{
-		AllowOrigins:     strings.Split(configurationManager.GetConfigFor("cors.allowed.origins"), ","),
-		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type", "Accept"},
-		AllowCredentials: true,
-		MaxAge:           60 * time.Minute,
-	}))
+	engine.Use(corsCofigurer())
 
 	// 4. JWT/OAuth2 (auth failures visible as span events).
 	//    JWKS misconfiguration is fatal at boot — without it every request would
 	//    either be rejected or, worse, silently pass without verification.
 	web_server_logger.LogInfofFor("Setting up OAuth2 middleware")
 	oauth2WebServerConfigurer := NewOauth2WebServerConfigurer(engine)
-	err, _ = oauth2WebServerConfigurer.Configure(otelCtx)
+	err, _ = oauth2WebServerConfigurer.Configure(serverContext)
 	if err != nil {
 		// todo fire an event that trigger the server shutdown
 	}
@@ -91,6 +85,16 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	magangement.RegisterEndpoints(engine)
 
 	return engine
+}
+
+func corsCofigurer() gin.HandlerFunc {
+	return cors.New(cors.Config{
+		AllowOrigins:     strings.Split(configurationManager.GetConfigFor("cors.allowed.origins"), ","),
+		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type", "Accept"},
+		AllowCredentials: true,
+		MaxAge:           60 * time.Minute,
+	})
 }
 
 // Shutdown cancels background goroutines (JWKS refresh) and flushes OTel spans.
