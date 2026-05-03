@@ -12,8 +12,6 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
-
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
@@ -36,29 +34,42 @@ var configurationManager = config.GetConfigurationManagerInstance()
 var web_server_logger = logging.GetLoggerInstanceForComponentByTypeName("WebServerProvisioner")
 
 type WebServerProvisioner struct {
-	router    *gin.Engine
+	engine    *gin.Engine
 	shutdown  otel.ShutdownFunc
 	cancelCtx context.CancelFunc
 }
 
+/*
+This is one utility interface to allow the server to inject behaviour like OAuth2, OTel and so on
+This special feature can not simply apply a middleware
+*/
+type WebServerConfigurer interface {
+	Configure(ctx context.Context) (error, context.Context)
+	Dispose(ctx context.Context) error
+}
+
 func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
-	if wsp.router != nil {
-		return wsp.router
+	if wsp.engine != nil {
+		return wsp.engine
 	}
 
-	router := gin.New()
-	wsp.router = router
+	engine := gin.New()
+	wsp.engine = engine
 
 	// 1. OTel: root server span wraps all subsequent middleware + handlers.
-	otelCtx, otelCtxCancel := wsp.otelSetup()
+	otelConfigurer := NewOtelWebServerConfigurer(engine)
+	err, otelCtx := otelConfigurer.Configure(context.TODO())
+	if err != nil {
+		// todo fire an event that trigger the server shutdown
+	}
 	//    /management/* health probes are filtered to avoid polluting traces.
 
 	// 2. Standard Gin middleware (inside the trace span)
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
+	engine.Use(gin.Logger())
+	engine.Use(gin.Recovery())
 
 	// 3. CORS
-	router.Use(cors.New(cors.Config{
+	engine.Use(cors.New(cors.Config{
 		AllowOrigins:     strings.Split(configurationManager.GetConfigFor("cors.allowed.origins"), ","),
 		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type", "Accept"},
@@ -73,37 +84,14 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	oauth2, err := security.SetUpOAuth2(otelCtx)
 	if err != nil {
 		web_server_logger.LogErrorfFor("OAuth2 setup failed: %v", err)
-		otelCtxCancel()
+		otelConfigurer.Dispose(otelCtx)
 		panic(fmt.Errorf("oauth2 setup: %w", err))
 	}
-	router.Use(oauth2)
+	engine.Use(oauth2)
 
-	magangement.RegisterEndpoints(router)
+	magangement.RegisterEndpoints(engine)
 
-	return router
-}
-
-func (wsp *WebServerProvisioner) otelSetup() (context.Context, context.CancelFunc) {
-	serviceName := configurationManager.GetConfigFor("otel.service-name")
-	// Lifecycle context for background goroutines (e.g. JWKS refresh).
-	// Cancelled in Shutdown so they exit cleanly on process exit.
-	ctx, cancel := context.WithCancel(context.Background())
-	wsp.cancelCtx = cancel
-
-	shutdown, err := otel.Setup(ctx)
-	if err != nil {
-		web_server_logger.LogErrorfFor("OTel setup failed (continuing without tracing): %v", err)
-		shutdown = func(_ context.Context) error { return nil }
-	}
-	wsp.shutdown = shutdown
-
-	wsp.router.Use(otelgin.Middleware(serviceName,
-		otelgin.WithFilter(func(req *http.Request) bool {
-			return !strings.HasPrefix(req.URL.Path, "/management/")
-		}),
-	))
-
-	return ctx, cancel
+	return engine
 }
 
 // Shutdown cancels background goroutines (JWKS refresh) and flushes OTel spans.
@@ -130,7 +118,7 @@ func (wsp *WebServerProvisioner) StartEngine() error {
 
 	srv := &http.Server{
 		Addr:              addr,
-		Handler:           wsp.router,
+		Handler:           wsp.engine,
 		ReadHeaderTimeout: configurationManager.GetConfigDurationFor("server.read-header-timeout", defaultReadHeaderTimeout),
 		ReadTimeout:       configurationManager.GetConfigDurationFor("server.read-timeout", defaultReadTimeout),
 		WriteTimeout:      configurationManager.GetConfigDurationFor("server.write-timeout", defaultWriteTimeout),
