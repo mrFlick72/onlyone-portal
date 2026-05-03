@@ -14,8 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
-	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
-	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/otel"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/magangement"
 )
 
@@ -34,9 +32,9 @@ var configurationManager = config.GetConfigurationManagerInstance()
 var web_server_logger = logging.GetLoggerInstanceForComponentByTypeName("WebServerProvisioner")
 
 type WebServerProvisioner struct {
-	engine    *gin.Engine
-	shutdown  otel.ShutdownFunc
-	cancelCtx context.CancelFunc
+	engine          *gin.Engine
+	serverContext   context.Context
+	cancelContextFn context.CancelFunc
 }
 
 /*
@@ -53,12 +51,14 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 		return wsp.engine
 	}
 
+	serverContext, cancelContextFn := context.WithCancel(context.Background())
 	engine := gin.New()
 	wsp.engine = engine
+	wsp.serverContext = serverContext
+	wsp.cancelContextFn = cancelContextFn
 
 	// 1. OTel: root server span wraps all subsequent middleware + handlers.
 	otelConfigurer := NewOtelWebServerConfigurer(engine)
-	serverContext := context.TODO()
 	err, otelCtx := otelConfigurer.Configure(serverContext)
 	if err != nil {
 		// todo fire an event that trigger the server shutdown
@@ -82,13 +82,11 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	//    JWKS misconfiguration is fatal at boot — without it every request would
 	//    either be rejected or, worse, silently pass without verification.
 	web_server_logger.LogInfofFor("Setting up OAuth2 middleware")
-	oauth2, err := security.SetUpOAuth2(otelCtx)
+	oauth2WebServerConfigurer := NewOauth2WebServerConfigurer(engine)
+	err, _ = oauth2WebServerConfigurer.Configure(otelCtx)
 	if err != nil {
-		web_server_logger.LogErrorfFor("OAuth2 setup failed: %v", err)
-		otelConfigurer.Dispose(otelCtx)
-		panic(fmt.Errorf("oauth2 setup: %w", err))
+		// todo fire an event that trigger the server shutdown
 	}
-	engine.Use(oauth2)
 
 	magangement.RegisterEndpoints(engine)
 
@@ -98,12 +96,7 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 // Shutdown cancels background goroutines (JWKS refresh) and flushes OTel spans.
 // Call after StartEngine() returns on process exit.
 func (wsp *WebServerProvisioner) Shutdown(ctx context.Context) error {
-	if wsp.cancelCtx != nil {
-		wsp.cancelCtx()
-	}
-	if wsp.shutdown != nil {
-		return wsp.shutdown(ctx)
-	}
+	wsp.cancelContextFn()
 	return nil
 }
 
