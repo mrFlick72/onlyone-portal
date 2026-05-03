@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -34,7 +35,7 @@ func (configurer *StandardMiddlewareConfigurer) Configure() error {
 	return nil
 }
 
-func (configurer *StandardMiddlewareConfigurer) Dispose() error {
+func (configurer *StandardMiddlewareConfigurer) Dispose(_ context.Context) error {
 	return nil
 }
 

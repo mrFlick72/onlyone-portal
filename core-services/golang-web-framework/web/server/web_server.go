@@ -41,7 +41,7 @@ type WebServerProvisioner struct {
 type WebServerConfigurer interface {
 	Name() string
 	Configure() error
-	Dispose() error
+	Dispose(ctx context.Context) error
 }
 
 func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
@@ -65,7 +65,9 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 		web_server_logger.LogInfofFor("configuring %s", configurer.Name())
 		if err := configurer.Configure(); err != nil {
 			web_server_logger.LogErrorfFor("%s configure failed: %v", configurer.Name(), err)
-			wsp.Shutdown()
+			ctx, cancel := context.WithTimeout(context.Background(), defaultShutdownTimeout)
+			defer cancel()
+			wsp.Shutdown(ctx)
 			panic(fmt.Errorf("%s configure: %w", configurer.Name(), err))
 		}
 	}
@@ -77,13 +79,15 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 
 // Shutdown disposes every registered configurer (cancelling background
 // goroutines like JWKS refresh and flushing OTel spans) and resets the
-// provisioner so it can be reconfigured. A second call is a no-op because the
-// slice has been emptied. Call after StartEngine() returns on process exit.
-func (wsp *WebServerProvisioner) Shutdown() error {
+// provisioner so it can be reconfigured. The ctx bounds disposal — in
+// particular it caps how long the OTel exporter is allowed to flush before
+// the process exits. A second call is a no-op because the slice has been
+// emptied. Call after StartEngine() returns on process exit.
+func (wsp *WebServerProvisioner) Shutdown(ctx context.Context) error {
 	web_server_logger.LogInfofFor("Server Shutdown has been started ....")
 	web_server_logger.LogInfofFor("There are %d configurer to be disposed", len(wsp.configurers))
 	for _, configurer := range wsp.configurers {
-		if err := configurer.Dispose(); err != nil {
+		if err := configurer.Dispose(ctx); err != nil {
 			web_server_logger.LogErrorfFor("configurer dispose failed (continuing to clean up): %v", err)
 		}
 	}
@@ -99,7 +103,15 @@ func (wsp *WebServerProvisioner) Shutdown() error {
 // drained for up to server.shutdown-timeout (default 10s) before OTel and
 // JWKS background goroutines are stopped.
 func (wsp *WebServerProvisioner) StartEngine() error {
-	defer wsp.Shutdown()
+	// Safety net: any early return (e.g. ListenAndServe failure) should still
+	// dispose registered configurers within a bounded window. The graceful
+	// path below clears the configurer slice, so on the happy path this defer
+	// iterates an empty slice.
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), defaultShutdownTimeout)
+		defer cancel()
+		wsp.Shutdown(ctx)
+	}()
 
 	port := configurationManager.GetConfigFor("server.port")
 	addr := fmt.Sprintf("0.0.0.0:%s", port)
@@ -145,5 +157,5 @@ func (wsp *WebServerProvisioner) StartEngine() error {
 		web_server_logger.LogErrorfFor("graceful shutdown failed: %v", err)
 		return fmt.Errorf("server shutdown: %w", err)
 	}
-	return nil
+	return wsp.Shutdown(shutdownCtx)
 }
