@@ -4,7 +4,6 @@ type Key struct {
 }
 
 type SymmetricKey struct {
-	Key
 	content []byte
 }
 
