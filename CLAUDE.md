@@ -88,20 +88,32 @@ All Gin-based services (budget-api, tag-api, account-api) depend on this via a l
 github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../core-services/golang-web-framework
 ```
 
-**What `server.WebServerProvisioner` auto-configures** (middleware order):
-1. OTel `otelgin` server span — wraps the full request; `/management/*` excluded
-2. `gin.Logger()` / `gin.Recovery()`
-3. CORS (origins from config key `cors.allowed.origins`)
-4. JWT validation middleware (`security.SetUpOAuth2()`) — reads `idp.jwks-endpoint` and `user.required-role`
-5. Health endpoint at `GET /management/health` → `{"status": "UP"}` (no auth required)
+**`server.WebServerProvisioner` is built around `WebServerConfigurer`s.** Each configurer owns one cross-cutting concern with a `Configure() error` step at boot and a `Dispose(ctx) error` step at shutdown. `ConfigureEngine()` registers them in this order (the order is the middleware order on the Gin engine):
 
-`StartEngine()` defers `Shutdown(ctx)` to flush OTel providers on exit.
+1. `OTelConfigurer` — installs global OTel providers (trace/metric/log) via `otel.Setup(ctx)` and registers `otelgin.Middleware`; `/management/*` is filtered so health probes don't pollute traces. Failure is non-fatal: logs and falls back to a no-op shutdown so the service still boots without tracing.
+2. `StandardMiddlewareConfigurer` — `gin.Logger()`, `gin.Recovery()`, CORS (origins from `cors.allowed.origins`).
+3. `OAuth2Configurer` — calls `security.SetUpOAuth2(ctx)` which builds the JWKS-cached middleware. The lifetime `ctx` is owned by the configurer and cancelled on `Dispose`, stopping the JWKS refresh goroutine.
+
+`management.RegisterEndpoints` then mounts `GET /management/health` → `{"status": "UP"}` (no auth).
+
+**Lifecycle / graceful shutdown:**
+- `StartEngine()` listens on `server.port` and blocks on SIGINT/SIGTERM. On signal it calls `srv.Shutdown(ctx)` to drain in-flight requests, then `provisioner.Shutdown(ctx)` which iterates `Dispose` on every configurer (cancels JWKS refresh, flushes OTel exporters).
+- A `defer` in `StartEngine()` is the safety net for early returns (e.g. `ListenAndServe` failure) — same `Shutdown` path.
+- `Shutdown` clears the configurer slice and `engine` so a second call is a no-op and a panicking `Configure` cannot leave the provisioner half-built.
+- Tunable via Go duration strings: `server.read-timeout` (30s), `server.write-timeout` (30s), `server.idle-timeout` (120s), `server.read-header-timeout` (5s), `server.shutdown-timeout` (10s).
+- `server.shutdown-timeout` is the single budget for the entire shutdown, including OTel exporter flushes.
 
 **JWT middleware behavior:**
-- Skips `/management/*` paths and `OPTIONS` requests automatically
-- Validated user is stored in Gin context under key `"user"` as `security.User{UserName, Authorities, AccessToken}`
-- Retrieve in handlers via `security.GetCurrentUser(ctx)` after converting Gin context with `server.GinContextToPlainContextFactory`
-- JWT claims used: `user_name` (string) and `authorities` ([]string)
+- `security.SetUpOAuth2(ctx)` takes a context — cancel it to stop the background JWKS refresh goroutine. (The `OAuth2Configurer` does this for you.)
+- JWKS is fetched through `httpclient.NewHTTPClient()` so refresh requests appear as `JWKS refresh` client spans when OTel is enabled.
+- Skips `/management/*` paths and `OPTIONS` requests automatically.
+- Validated user is stored in Gin context under key `"user"` as `security.User{UserName, Authorities, AccessToken}`.
+- Retrieve in handlers via `security.GetCurrentUser(ctx)` after converting Gin context with `server.GinContextToPlainContextFactory`.
+- JWT claims used: `user_name` (string) and `authorities` ([]string).
+
+**Crypto (`cypto` package):**
+- `cypto.AesCbcCipher` — AES-CBC encrypt/decrypt with PKCS-style padding, base64-encoded output, random IV per encryption.
+- `cypto.KeyRepository` — port for fetching `SymmetricKey` by id. `NewInMemoryKeyRepository()` reads a single key from config keys `key.in-memory.storage.key` (id) and `key.in-memory.storage.key-value` (raw key bytes).
 
 **OpenTelemetry (`otel` package):**
 - `otel.Setup(ctx)` is called automatically by `WebServerProvisioner.ConfigureEngine()`; services do not call it directly
@@ -123,7 +135,7 @@ github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../
 - When `otel.enabled: false`: returns a plain `aws.Config` with no overhead
 - **Requirement**: pass the request `ctx` to every AWS API call (e.g. `client.PutItem(ctx, input)`, not `context.TODO()`) so the middleware can read the active span
 
-**Config**: all Gin services load a YAML config file via Viper; path set in `CONFIG_FILE_LOCATION` env var. Access string values via `config.GetConfigurationManagerInstance().GetConfigFor("key")`, booleans via `GetConfigBoolFor("key")`.
+**Config**: all Gin services load a YAML config file via Viper; path set in `CONFIG_FILE_LOCATION` env var. Access string values via `config.GetConfigurationManagerInstance().GetConfigFor("key")`, booleans via `GetConfigBoolFor("key")`, durations via `GetConfigDurationFor("key", default)` (returns `default` when missing or unparseable).
 
 ## Service Routes Summary
 
