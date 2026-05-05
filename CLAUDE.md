@@ -9,7 +9,7 @@ OnlyOne Portal is a cloud-native microservices application. All services share a
 ## Architecture
 
 ```
-portal/application-shell/   # React 19 + TypeScript SPA (Webpack) — see portal/application-shell/CLAUDE.md
+portal/application-shell/   # React 19 + TypeScript SPA (Vite) — see portal/application-shell/CLAUDE.md
 account/account-api/        # Go (Gin) — user account management via vauthenticator REST
 budget/budget-api/          # Go (Gin) — budget expense + revenue (DynamoDB) — see budget/CLAUDE.md
 budget/revenue-api/         # Python FastAPI — legacy revenue service, pending decommission
