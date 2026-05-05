@@ -20,7 +20,8 @@ func RegisterExpenseEndpoints(
 	r.GET("/api/attachment", func(context *gin.Context) {
 
 	})
-	r.GET("/api/attachment/:attachmentId", func(context *gin.Context) {
+
+	r.GET("/api/attachment/:attachmentId/content", func(context *gin.Context) {
 
 	})
 	r.DELETE("/api/attachment/:attachmentId", func(context *gin.Context) {
