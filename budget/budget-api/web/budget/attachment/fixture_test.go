@@ -12,7 +12,7 @@ type AttachmentActionsMock struct {
 	mock.Mock
 }
 
-func (m *AttachmentActionsMock) AddAttachment(ctx context.Context, att *attachment.Attachment) error {
+func (m *AttachmentActionsMock) SaveAttachment(ctx context.Context, att *attachment.Attachment) error {
 	args := m.Called(ctx, att)
 	return args.Error(0)
 }

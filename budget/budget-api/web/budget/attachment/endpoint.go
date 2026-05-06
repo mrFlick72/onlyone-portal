@@ -27,6 +27,7 @@ func RegisterAttachmentEndpoints(
 		}
 
 		budgetId := c.PostForm("budgetId")
+		attachmentId := c.PostForm("attachmentId")
 		if budgetId == "" {
 			logger.LogErrorFor("missing 'budgetId' field")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "missing 'budgetId' field"})
@@ -58,7 +59,11 @@ func RegisterAttachmentEndpoints(
 			Content: content,
 		}
 
-		if err := facade.AddAttachment(ctx, domainAttachment); err != nil {
+		if attachmentId != "" {
+			domainAttachment.AttachmentId = attachmentId
+		}
+
+		if err := facade.SaveAttachment(ctx, domainAttachment); err != nil {
 			logger.LogErrorfFor("error adding attachment: %v\n", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

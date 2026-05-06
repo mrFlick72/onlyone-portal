@@ -82,7 +82,7 @@ func TestUploadAttachmentReturns204(t *testing.T) {
 
 	ctx := testutils.NewStubbedContextWith("USER")
 	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
-	facade.On("AddAttachment", ctx, expected).Return(nil)
+	facade.On("SaveAttachment", ctx, expected).Return(nil)
 
 	req := newMultipartRequest(t,
 		map[string]string{"budgetId": "budget-123"},
@@ -92,7 +92,42 @@ func TestUploadAttachmentReturns204(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNoContent, w.Code)
-	facade.AssertCalled(t, "AddAttachment", ctx, expected)
+	facade.AssertCalled(t, "SaveAttachment", ctx, expected)
+}
+
+func TestUploadAttachmentWithAttachmentIdUpdatesExistingAttachment(t *testing.T) {
+	r := setUpRouter()
+	facade := new(AttachmentActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterAttachmentEndpoints(r, contextFactoryConverter, facade)
+
+	fileContent := []byte("updated content")
+	expected := &attachment.Attachment{
+		AttachmentMetadata: attachment.AttachmentMetadata{
+			AttachmentId: "attachment-789",
+			BudgetId:     "budget-123",
+			FineName:     "receipt.txt",
+			ContentType:  "text/plain",
+		},
+		Content: fileContent,
+	}
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+	facade.On("SaveAttachment", ctx, expected).Return(nil)
+
+	req := newMultipartRequest(t,
+		map[string]string{
+			"budgetId":     "budget-123",
+			"attachmentId": "attachment-789",
+		},
+		"file", "receipt.txt", "text/plain", fileContent,
+	)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	facade.AssertCalled(t, "SaveAttachment", ctx, expected)
 }
 
 func TestUploadAttachmentMissingFileReturns400(t *testing.T) {
@@ -109,7 +144,7 @@ func TestUploadAttachmentMissingFileReturns400(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	facade.AssertNotCalled(t, "AddAttachment", mock.Anything, mock.Anything)
+	facade.AssertNotCalled(t, "SaveAttachment", mock.Anything, mock.Anything)
 }
 
 func TestUploadAttachmentMissingBudgetIdReturns400(t *testing.T) {
@@ -126,7 +161,7 @@ func TestUploadAttachmentMissingBudgetIdReturns400(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	facade.AssertNotCalled(t, "AddAttachment", mock.Anything, mock.Anything)
+	facade.AssertNotCalled(t, "SaveAttachment", mock.Anything, mock.Anything)
 }
 
 func TestUploadAttachmentFacadeErrorReturns500(t *testing.T) {
@@ -137,7 +172,7 @@ func TestUploadAttachmentFacadeErrorReturns500(t *testing.T) {
 
 	ctx := testutils.NewStubbedContextWith("USER")
 	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
-	facade.On("AddAttachment", ctx, mock.AnythingOfType("*attachment.Attachment")).Return(errors.New("boom"))
+	facade.On("SaveAttachment", ctx, mock.AnythingOfType("*attachment.Attachment")).Return(errors.New("boom"))
 
 	req := newMultipartRequest(t,
 		map[string]string{"budgetId": "budget-123"},
