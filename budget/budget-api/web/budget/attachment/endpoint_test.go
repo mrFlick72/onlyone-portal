@@ -74,6 +74,7 @@ func TestUploadAttachmentReturns204(t *testing.T) {
 	expected := &attachment.Attachment{
 		AttachmentMetadata: attachment.AttachmentMetadata{
 			BudgetId:    "budget-123",
+			BudgetType:  "expense",
 			FineName:    "receipt.txt",
 			ContentType: "text/plain",
 		},
@@ -85,7 +86,10 @@ func TestUploadAttachmentReturns204(t *testing.T) {
 	facade.On("SaveAttachment", ctx, expected).Return(nil)
 
 	req := newMultipartRequest(t,
-		map[string]string{"budgetId": "budget-123"},
+		map[string]string{
+			"budgetId":   "budget-123",
+			"budgetType": "expense",
+		},
 		"file", "receipt.txt", "text/plain", fileContent,
 	)
 	w := httptest.NewRecorder()
@@ -106,6 +110,7 @@ func TestUploadAttachmentWithAttachmentIdUpdatesExistingAttachment(t *testing.T)
 		AttachmentMetadata: attachment.AttachmentMetadata{
 			AttachmentId: "attachment-789",
 			BudgetId:     "budget-123",
+			BudgetType:   "expense",
 			FineName:     "receipt.txt",
 			ContentType:  "text/plain",
 		},
@@ -119,6 +124,7 @@ func TestUploadAttachmentWithAttachmentIdUpdatesExistingAttachment(t *testing.T)
 	req := newMultipartRequest(t,
 		map[string]string{
 			"budgetId":     "budget-123",
+			"budgetType":   "expense",
 			"attachmentId": "attachment-789",
 		},
 		"file", "receipt.txt", "text/plain", fileContent,
@@ -137,7 +143,10 @@ func TestUploadAttachmentMissingFileReturns400(t *testing.T) {
 	RegisterAttachmentEndpoints(r, contextFactoryConverter, facade)
 
 	req := newMultipartRequest(t,
-		map[string]string{"budgetId": "budget-123"},
+		map[string]string{
+			"budgetId":   "budget-123",
+			"budgetType": "expense",
+		},
 		"", "", "", nil,
 	)
 	w := httptest.NewRecorder()
@@ -154,7 +163,24 @@ func TestUploadAttachmentMissingBudgetIdReturns400(t *testing.T) {
 	RegisterAttachmentEndpoints(r, contextFactoryConverter, facade)
 
 	req := newMultipartRequest(t,
-		map[string]string{},
+		map[string]string{"budgetType": "expense"},
+		"file", "receipt.txt", "text/plain", []byte("hello"),
+	)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	facade.AssertNotCalled(t, "SaveAttachment", mock.Anything, mock.Anything)
+}
+
+func TestUploadAttachmentMissingBudgetTypeReturns400(t *testing.T) {
+	r := setUpRouter()
+	facade := new(AttachmentActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterAttachmentEndpoints(r, contextFactoryConverter, facade)
+
+	req := newMultipartRequest(t,
+		map[string]string{"budgetId": "budget-123"},
 		"file", "receipt.txt", "text/plain", []byte("hello"),
 	)
 	w := httptest.NewRecorder()
@@ -175,7 +201,10 @@ func TestUploadAttachmentFacadeErrorReturns500(t *testing.T) {
 	facade.On("SaveAttachment", ctx, mock.AnythingOfType("*attachment.Attachment")).Return(errors.New("boom"))
 
 	req := newMultipartRequest(t,
-		map[string]string{"budgetId": "budget-123"},
+		map[string]string{
+			"budgetId":   "budget-123",
+			"budgetType": "expense",
+		},
 		"file", "receipt.txt", "text/plain", []byte("hello"),
 	)
 	w := httptest.NewRecorder()
