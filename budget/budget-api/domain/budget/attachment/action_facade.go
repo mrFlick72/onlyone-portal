@@ -5,7 +5,7 @@ import (
 )
 
 type AttachmentActions interface {
-	AddAttachment(ctx context.Context, attachment *Attachment) error
+	SaveAttachment(ctx context.Context, attachment *Attachment) error
 	GetAttachmentBy(ctx context.Context, attachmentId string) (*Attachment, error)
 	GetAttachments(ctx context.Context, budgetId string) ([]AttachmentMetadata, error)
 	DeleteAttachment(ctx context.Context, attachmentId string) error
