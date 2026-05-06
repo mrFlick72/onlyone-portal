@@ -3,6 +3,7 @@ package attachment
 type AttachmentMetadata struct {
 	AttachmentId string
 	BudgetId     string // it can be the budget resource in which such attachment is attached to. It is something like, expense or revenue
+	BudgetType   string
 	Owner        string
 	FineName     string
 	ContentType  string
@@ -12,3 +13,9 @@ type Attachment struct {
 	AttachmentMetadata
 	Content []byte
 }
+type BudgetType string
+
+const (
+	Expense BudgetType = "expense"
+	Revenue BudgetType = "revenue"
+)
