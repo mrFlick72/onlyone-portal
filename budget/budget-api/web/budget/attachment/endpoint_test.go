@@ -64,7 +64,7 @@ func newMultipartRequest(
 	return req
 }
 
-func TestUploadAttachmentReturns201(t *testing.T) {
+func TestUploadAttachmentReturns204(t *testing.T) {
 	r := setUpRouter()
 	facade := new(AttachmentActionsMock)
 	contextFactoryConverter := new(ContextFactoryConverterMock)
@@ -74,8 +74,8 @@ func TestUploadAttachmentReturns201(t *testing.T) {
 	expected := &attachment.Attachment{
 		AttachmentMetadata: attachment.AttachmentMetadata{
 			BudgetId:    "budget-123",
-			FineName:    "receipt.png",
-			ContentType: "image/png",
+			FineName:    "receipt.txt",
+			ContentType: "text/plain",
 		},
 		Content: fileContent,
 	}
@@ -86,12 +86,12 @@ func TestUploadAttachmentReturns201(t *testing.T) {
 
 	req := newMultipartRequest(t,
 		map[string]string{"budgetId": "budget-123"},
-		"file", "receipt.png", "image/png", fileContent,
+		"file", "receipt.txt", "text/plain", fileContent,
 	)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusCreated, w.Code)
+	assert.Equal(t, http.StatusNoContent, w.Code)
 	facade.AssertCalled(t, "AddAttachment", ctx, expected)
 }
 
@@ -120,7 +120,7 @@ func TestUploadAttachmentMissingBudgetIdReturns400(t *testing.T) {
 
 	req := newMultipartRequest(t,
 		map[string]string{},
-		"file", "receipt.png", "image/png", []byte("hello"),
+		"file", "receipt.txt", "text/plain", []byte("hello"),
 	)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
@@ -141,7 +141,7 @@ func TestUploadAttachmentFacadeErrorReturns500(t *testing.T) {
 
 	req := newMultipartRequest(t,
 		map[string]string{"budgetId": "budget-123"},
-		"file", "receipt.png", "image/png", []byte("hello"),
+		"file", "receipt.txt", "text/plain", []byte("hello"),
 	)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
