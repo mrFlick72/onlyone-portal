@@ -28,6 +28,7 @@ func RegisterAttachmentEndpoints(
 
 		budgetId := c.PostForm("budgetId")
 		if budgetId == "" {
+			logger.LogErrorFor("missing 'budgetId' field")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "missing 'budgetId' field"})
 			return
 		}
@@ -63,7 +64,7 @@ func RegisterAttachmentEndpoints(
 			return
 		}
 
-		c.Status(http.StatusCreated)
+		c.Status(http.StatusNoContent)
 	})
 
 	r.GET("/api/attachment", func(context *gin.Context) {
