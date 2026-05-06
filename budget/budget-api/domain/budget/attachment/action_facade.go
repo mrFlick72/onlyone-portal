@@ -12,20 +12,23 @@ type AttachmentActions interface {
 }
 
 type AttachmentActionsFacade struct {
+	SaveAttachmentAction   *SaveAttachment
+	GetAttachmentAction    *GetAttachment
+	DeleteAttachmentAction *DeleteAttachment
 }
 
-func (facade *AttachmentActionsFacade) AddAttachment(ctx context.Context, attachment *Attachment) error {
-	panic("TODO")
+func (facade *AttachmentActionsFacade) SaveAttachment(ctx context.Context, attachment *Attachment) error {
+	return facade.SaveAttachmentAction.Execute(ctx, attachment)
 }
 
-func (facade *AttachmentActionsFacade) GetAttachmentBy(ctx context.Context, attachmentId string) error {
-	panic("TODO")
+func (facade *AttachmentActionsFacade) GetAttachmentBy(ctx context.Context, attachmentId string) (*Attachment, error) {
+	return facade.GetAttachmentAction.GetOneBy(ctx, attachmentId)
 }
 
-func (facade *AttachmentActionsFacade) GetAttachments(ctx context.Context, budgetId string) (*Attachment, error) {
-	panic("TODO")
+func (facade *AttachmentActionsFacade) GetAttachments(ctx context.Context, budgetId string) ([]AttachmentMetadata, error) {
+	return facade.GetAttachmentAction.GetAllBy(ctx, budgetId)
 }
 
 func (facade *AttachmentActionsFacade) DeleteAttachment(ctx context.Context, attachmentId string) error {
-	panic("TODO")
+	return facade.DeleteAttachmentAction.Execute(ctx, attachmentId)
 }
