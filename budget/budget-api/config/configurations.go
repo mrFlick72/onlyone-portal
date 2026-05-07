@@ -137,3 +137,12 @@ func NewAttachmentRepository() attachment.AttachmentRepository {
 
 	return attachmentadapter.NewAwsCompositeAttachmentRepository(idProvider, metadataRepository, contentRepository)
 }
+
+func NewAttachmentActionsFacade() attachment.AttachmentActions {
+	repository := NewAttachmentRepository()
+	return &attachment.AttachmentActionsFacade{
+		SaveAttachmentAction:   attachment.NewSaveAttachment(repository),
+		GetAttachmentAction:    &attachment.GetAttachment{},
+		DeleteAttachmentAction: &attachment.DeleteAttachment{},
+	}
+}

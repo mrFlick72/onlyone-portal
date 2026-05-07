@@ -12,6 +12,10 @@ type SaveAttachment struct {
 	repository AttachmentRepository
 }
 
+func NewSaveAttachment(repository AttachmentRepository) *SaveAttachment {
+	return &SaveAttachment{repository: repository}
+}
+
 func (a *SaveAttachment) Execute(ctx context.Context, attachment *Attachment) error {
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
