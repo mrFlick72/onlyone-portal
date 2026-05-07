@@ -13,9 +13,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/assert/v2"
 	"github.com/mrflick72/budget/budget-api/domain/budget/attachment"
+	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/budget/budget-api/internal/testutils"
 	"github.com/stretchr/testify/mock"
 )
+
+func mustDate(t *testing.T, raw string) date.Date {
+	t.Helper()
+	d, err := date.DateFor(raw)
+	if err != nil {
+		t.Fatalf("parse date %q: %v", raw, err)
+	}
+	return *d
+}
 
 func setUpRouter() *gin.Engine {
 	return gin.Default()
@@ -75,6 +85,7 @@ func TestUploadAttachmentReturns204(t *testing.T) {
 		AttachmentMetadata: attachment.AttachmentMetadata{
 			BudgetId:    "budget-123",
 			BudgetType:  "expense",
+			Date:        mustDate(t, "15/03/2024"),
 			FineName:    "receipt.txt",
 			ContentType: "text/plain",
 		},
@@ -89,6 +100,7 @@ func TestUploadAttachmentReturns204(t *testing.T) {
 		map[string]string{
 			"budgetId":   "budget-123",
 			"budgetType": "expense",
+			"date":       "15/03/2024",
 		},
 		"file", "receipt.txt", "text/plain", fileContent,
 	)
@@ -111,6 +123,7 @@ func TestUploadAttachmentWithAttachmentIdUpdatesExistingAttachment(t *testing.T)
 			AttachmentId: "attachment-789",
 			BudgetId:     "budget-123",
 			BudgetType:   "expense",
+			Date:         mustDate(t, "15/03/2024"),
 			FineName:     "receipt.txt",
 			ContentType:  "text/plain",
 		},
@@ -125,6 +138,7 @@ func TestUploadAttachmentWithAttachmentIdUpdatesExistingAttachment(t *testing.T)
 		map[string]string{
 			"budgetId":     "budget-123",
 			"budgetType":   "expense",
+			"date":         "15/03/2024",
 			"attachmentId": "attachment-789",
 		},
 		"file", "receipt.txt", "text/plain", fileContent,
@@ -146,6 +160,7 @@ func TestUploadAttachmentMissingFileReturns400(t *testing.T) {
 		map[string]string{
 			"budgetId":   "budget-123",
 			"budgetType": "expense",
+			"date":       "15/03/2024",
 		},
 		"", "", "", nil,
 	)
@@ -163,7 +178,10 @@ func TestUploadAttachmentMissingBudgetIdReturns400(t *testing.T) {
 	RegisterAttachmentEndpoints(r, contextFactoryConverter, facade)
 
 	req := newMultipartRequest(t,
-		map[string]string{"budgetType": "expense"},
+		map[string]string{
+			"budgetType": "expense",
+			"date":       "15/03/2024",
+		},
 		"file", "receipt.txt", "text/plain", []byte("hello"),
 	)
 	w := httptest.NewRecorder()
@@ -180,7 +198,51 @@ func TestUploadAttachmentMissingBudgetTypeReturns400(t *testing.T) {
 	RegisterAttachmentEndpoints(r, contextFactoryConverter, facade)
 
 	req := newMultipartRequest(t,
-		map[string]string{"budgetId": "budget-123"},
+		map[string]string{
+			"budgetId": "budget-123",
+			"date":     "15/03/2024",
+		},
+		"file", "receipt.txt", "text/plain", []byte("hello"),
+	)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	facade.AssertNotCalled(t, "SaveAttachment", mock.Anything, mock.Anything)
+}
+
+func TestUploadAttachmentMissingDateReturns400(t *testing.T) {
+	r := setUpRouter()
+	facade := new(AttachmentActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterAttachmentEndpoints(r, contextFactoryConverter, facade)
+
+	req := newMultipartRequest(t,
+		map[string]string{
+			"budgetId":   "budget-123",
+			"budgetType": "expense",
+		},
+		"file", "receipt.txt", "text/plain", []byte("hello"),
+	)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	facade.AssertNotCalled(t, "SaveAttachment", mock.Anything, mock.Anything)
+}
+
+func TestUploadAttachmentInvalidDateReturns400(t *testing.T) {
+	r := setUpRouter()
+	facade := new(AttachmentActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterAttachmentEndpoints(r, contextFactoryConverter, facade)
+
+	req := newMultipartRequest(t,
+		map[string]string{
+			"budgetId":   "budget-123",
+			"budgetType": "expense",
+			"date":       "2024-03-15",
+		},
 		"file", "receipt.txt", "text/plain", []byte("hello"),
 	)
 	w := httptest.NewRecorder()
@@ -204,6 +266,7 @@ func TestUploadAttachmentFacadeErrorReturns500(t *testing.T) {
 		map[string]string{
 			"budgetId":   "budget-123",
 			"budgetType": "expense",
+			"date":       "15/03/2024",
 		},
 		"file", "receipt.txt", "text/plain", []byte("hello"),
 	)
