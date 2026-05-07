@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mrflick72/budget/budget-api/domain/budget/attachment"
+	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 )
@@ -29,6 +30,7 @@ func RegisterAttachmentEndpoints(
 		budgetId := c.PostForm("budgetId")
 		attachmentId := c.PostForm("attachmentId")
 		budgetType := c.PostForm("budgetType")
+		rawDate := c.PostForm("date")
 		if budgetType == "" {
 			logger.LogErrorFor("missing 'budgetType' field")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "missing 'budgetType' field"})
@@ -37,6 +39,17 @@ func RegisterAttachmentEndpoints(
 		if budgetId == "" {
 			logger.LogErrorFor("missing 'budgetId' field")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "missing 'budgetId' field"})
+			return
+		}
+		if rawDate == "" {
+			logger.LogErrorFor("missing 'date' field")
+			c.JSON(http.StatusBadRequest, gin.H{"error": "missing 'date' field"})
+			return
+		}
+		parsedDate, err := date.DateFor(rawDate)
+		if err != nil {
+			logger.LogErrorfFor("invalid 'date' field: %v\n", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid 'date' field"})
 			return
 		}
 
@@ -60,6 +73,7 @@ func RegisterAttachmentEndpoints(
 			AttachmentMetadata: attachment.AttachmentMetadata{
 				BudgetId:    budgetId,
 				BudgetType:  budgetType,
+				Date:        *parsedDate,
 				FineName:    fileHeader.Filename,
 				ContentType: fileHeader.Header.Get("Content-Type"),
 			},
