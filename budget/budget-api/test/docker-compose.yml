@@ -4,4 +4,4 @@ services:
     ports:
       - "4566-4599:4566-4599"
     environment:
-      SERVICES: dynamodb
+      SERVICES: dynamodb,s3

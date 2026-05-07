@@ -5,10 +5,15 @@ import (
 
 	aws_config "github.com/aws/aws-sdk-go-v2/config"
 	aws_dynamodb "github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	aws_s3 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
+	attachmentadapter "github.com/mrflick72/budget/budget-api/adapter/budget/attachment"
+	attachmentdynamo "github.com/mrflick72/budget/budget-api/adapter/budget/attachment/dynamodb"
+	attachments3 "github.com/mrflick72/budget/budget-api/adapter/budget/attachment/s3"
 	"github.com/mrflick72/budget/budget-api/adapter/budget/expense/dynamodb"
 	revenuedynamo "github.com/mrflick72/budget/budget-api/adapter/budget/revenue/dynamodb"
 	"github.com/mrflick72/budget/budget-api/adapter/tags/rest"
+	"github.com/mrflick72/budget/budget-api/domain/budget/attachment"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
 	"github.com/mrflick72/budget/budget-api/domain/budget/revenue"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
@@ -105,4 +110,30 @@ func NewRevenueActionsFacade() revenue.RevenueActions {
 		FindRevenueAction:   &revenue.FindRevenue{Repository: revenueRepository},
 		DeleteRevenueAction: &revenue.DeleteRevenue{Repository: revenueRepository},
 	}
+}
+
+func NewAttachmentRepository() attachment.AttachmentRepository {
+	cfg, err := awsclient.LoadDefaultConfig(
+		context.TODO(),
+		aws_config.WithRegion("eu-central-1"),
+	)
+	if err != nil {
+		logger.LogErrorfFor("unable to load SDK config: %s", err.Error())
+		panic("unable to load SDK config, " + err.Error())
+	}
+
+	idProvider := &attachmentdynamo.DynamoDbAttachmentIdProvider{
+		UuidGenerator: func() string { return uuid.New().String() },
+	}
+	metadataRepository := attachmentdynamo.NewDynamoDbAttachmentMetadataRepository(
+		configurationManager.GetConfigFor("budget-api.dynamo-db.attachment-metadata.table-name"),
+		aws_dynamodb.NewFromConfig(cfg),
+		idProvider,
+	)
+	contentRepository := attachments3.NewS3AttachmentContentRepository(
+		configurationManager.GetConfigFor("budget-api.s3.attachment.bucket-name"),
+		aws_s3.NewFromConfig(cfg),
+	)
+
+	return attachmentadapter.NewAwsCompositeAttachmentRepository(idProvider, metadataRepository, contentRepository)
 }
