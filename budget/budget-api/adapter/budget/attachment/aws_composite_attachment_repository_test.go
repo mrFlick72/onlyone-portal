@@ -63,11 +63,11 @@ func setupCompositeTable() error {
 		TableName: aws.String(testTableName),
 		AttributeDefinitions: []dynamotypes.AttributeDefinition{
 			{AttributeName: aws.String("pk"), AttributeType: dynamotypes.ScalarAttributeTypeS},
-			{AttributeName: aws.String("range_key"), AttributeType: dynamotypes.ScalarAttributeTypeS},
+			{AttributeName: aws.String("attachment_id"), AttributeType: dynamotypes.ScalarAttributeTypeS},
 		},
 		KeySchema: []dynamotypes.KeySchemaElement{
 			{AttributeName: aws.String("pk"), KeyType: dynamotypes.KeyTypeHash},
-			{AttributeName: aws.String("range_key"), KeyType: dynamotypes.KeyTypeRange},
+			{AttributeName: aws.String("attachment_id"), KeyType: dynamotypes.KeyTypeRange},
 		},
 		BillingMode: dynamotypes.BillingModePayPerRequest,
 	})
@@ -177,8 +177,8 @@ func TestSaveAttachmentWritesContentToS3AndMetadataToDynamo(t *testing.T) {
 	itemOut, err := dynamoClient.GetItem(context.Background(), &aws_dynamodb.GetItemInput{
 		TableName: aws.String(testTableName),
 		Key: map[string]dynamotypes.AttributeValue{
-			"pk":        &dynamotypes.AttributeValueMemberS{Value: "budget-abc_EXPENSE"},
-			"range_key": &dynamotypes.AttributeValueMemberS{Value: "generated-uuid-1"},
+			"pk":            &dynamotypes.AttributeValueMemberS{Value: "budget-abc_EXPENSE"},
+			"attachment_id": &dynamotypes.AttributeValueMemberS{Value: "generated-uuid-1"},
 		},
 	})
 	assert.Equal(t, nil, err)
@@ -228,8 +228,8 @@ func TestSaveAttachmentReusesExistingAttachmentIdAndOverwrites(t *testing.T) {
 	itemOut, err := dynamoClient.GetItem(context.Background(), &aws_dynamodb.GetItemInput{
 		TableName: aws.String(testTableName),
 		Key: map[string]dynamotypes.AttributeValue{
-			"pk":        &dynamotypes.AttributeValueMemberS{Value: "budget-xyz_REVENUE"},
-			"range_key": &dynamotypes.AttributeValueMemberS{Value: "preexisting-id"},
+			"pk":            &dynamotypes.AttributeValueMemberS{Value: "budget-xyz_REVENUE"},
+			"attachment_id": &dynamotypes.AttributeValueMemberS{Value: "preexisting-id"},
 		},
 	})
 	assert.Equal(t, nil, err)

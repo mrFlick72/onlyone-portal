@@ -27,11 +27,12 @@ func TestObjectKeyForBuildsDateScopedPath(t *testing.T) {
 
 	att := &attachment.Attachment{
 		AttachmentMetadata: attachment.AttachmentMetadata{
-			Date: testutils.SafeDateFor("15/03/2024"),
+			AttachmentId: "att-001",
+			Date:         testutils.SafeDateFor("15/03/2024"),
 		},
 	}
 
-	key := repo.ObjectKeyFor(att, "budget-123_EXPENSE", "att-001")
+	key := repo.ObjectKeyFor(att, "budget-123_EXPENSE")
 	assert.Equal(t, "2024/03/15/budget-123_EXPENSE/att-001", key)
 }
 

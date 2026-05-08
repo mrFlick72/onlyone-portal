@@ -35,20 +35,20 @@ func (repository *AwsCompositeAttachmentRepository) SaveAttachment(ctx context.C
 	att.AttachmentId = repository.IdProvider.GenerateAttachmentIdFor(att)
 
 	pk := repository.IdProvider.PartitionKeyFor(att)
-	rk := repository.IdProvider.RangeKeyFor(att.AttachmentId)
 
-	objectKey := repository.ContentRepository.ObjectKeyFor(att, pk, rk)
+	objectKey := repository.ContentRepository.ObjectKeyFor(att, pk)
 	fileLocation := repository.ContentRepository.FileLocationFor(objectKey)
 
 	if err := repository.ContentRepository.Save(ctx, objectKey, att.ContentType, att.Content); err != nil {
 		return err
 	}
 
-	return repository.MetadataRepository.Save(ctx, att, pk, rk, fileLocation)
+	return repository.MetadataRepository.Save(ctx, att, pk, fileLocation)
 }
 
 func (repository *AwsCompositeAttachmentRepository) GenAttachment(ctx context.Context, attachmentId string) (*attachment.Attachment, error) {
 
+	repository.MetadataRepository.GetAttachment(ctx, attachmentId)
 	return nil, errors.New("not implemented")
 }
 

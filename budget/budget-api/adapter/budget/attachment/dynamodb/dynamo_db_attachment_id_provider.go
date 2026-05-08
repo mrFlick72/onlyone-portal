@@ -21,7 +21,3 @@ func (provider *DynamoDbAttachmentIdProvider) GenerateAttachmentIdFor(att *attac
 func (provider *DynamoDbAttachmentIdProvider) PartitionKeyFor(att *attachment.Attachment) string {
 	return fmt.Sprintf("%s_%s", att.BudgetId, strings.ToUpper(att.BudgetType))
 }
-
-func (provider *DynamoDbAttachmentIdProvider) RangeKeyFor(attachmentId string) string {
-	return attachmentId
-}

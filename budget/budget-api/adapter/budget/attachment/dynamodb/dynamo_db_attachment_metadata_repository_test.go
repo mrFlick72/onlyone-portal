@@ -41,13 +41,12 @@ func TestSaveAttachmentMetadataWritesAllFields(t *testing.T) {
 		},
 	}
 	pk := "budget-123_EXPENSE"
-	rk := "att-001"
 	fileLocation := "test-bucket/2024/03/15/budget-123_EXPENSE/att-001"
 
-	err := repo.Save(context.Background(), att, pk, rk, fileLocation)
+	err := repo.Save(context.Background(), att, pk, fileLocation)
 	assert.Equal(t, nil, err)
 
-	item, err := getItem(context.Background(), pk, rk)
+	item, err := getItem(context.Background(), pk, att.AttachmentId)
 	assert.Equal(t, nil, err)
 
 	assert.Equal(t, "att-001", item["attachment_id"].(*types.AttributeValueMemberS).Value)
@@ -81,12 +80,11 @@ func TestSaveAttachmentMetadataOmitsEmptyMetadataMap(t *testing.T) {
 		},
 	}
 	pk := "budget-456_REVENUE"
-	rk := "att-002"
 
-	err := repo.Save(context.Background(), att, pk, rk, "test-bucket/2024/06/01/budget-456_REVENUE/att-002")
+	err := repo.Save(context.Background(), att, pk, "test-bucket/2024/06/01/budget-456_REVENUE/att-002")
 	assert.Equal(t, nil, err)
 
-	item, err := getItem(context.Background(), pk, rk)
+	item, err := getItem(context.Background(), pk, att.AttachmentId)
 	assert.Equal(t, nil, err)
 
 	_, hasMetadata := item["metadata"]

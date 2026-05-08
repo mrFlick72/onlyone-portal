@@ -26,8 +26,8 @@ func NewS3AttachmentContentRepository(bucket string, client *s3.Client) *S3Attac
 	}
 }
 
-func (repository *S3AttachmentContentRepository) ObjectKeyFor(att *attachment.Attachment, partitionKey string, rangeKey string) string {
-	return fmt.Sprintf("%s/%s/%s", datePathFor(att.Date), partitionKey, rangeKey)
+func (repository *S3AttachmentContentRepository) ObjectKeyFor(att *attachment.Attachment, partitionKey string) string {
+	return fmt.Sprintf("%s/%s/%s", datePathFor(att.Date), partitionKey, att.AttachmentId)
 }
 
 func (repository *S3AttachmentContentRepository) FileLocationFor(objectKey string) string {

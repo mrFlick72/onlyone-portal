@@ -35,11 +35,11 @@ func setupTestDynamoDBTable() error {
 		TableName: aws.String(TableName),
 		AttributeDefinitions: []types.AttributeDefinition{
 			{AttributeName: aws.String("pk"), AttributeType: types.ScalarAttributeTypeS},
-			{AttributeName: aws.String("range_key"), AttributeType: types.ScalarAttributeTypeS},
+			{AttributeName: aws.String("attachment_id"), AttributeType: types.ScalarAttributeTypeS},
 		},
 		KeySchema: []types.KeySchemaElement{
 			{AttributeName: aws.String("pk"), KeyType: types.KeyTypeHash},
-			{AttributeName: aws.String("range_key"), KeyType: types.KeyTypeRange},
+			{AttributeName: aws.String("attachment_id"), KeyType: types.KeyTypeRange},
 		},
 		BillingMode: types.BillingModePayPerRequest,
 	})
@@ -60,12 +60,12 @@ func teardownTestDynamoDBTable() error {
 	return err
 }
 
-func getItem(ctx context.Context, pk, rk string) (map[string]types.AttributeValue, error) {
+func getItem(ctx context.Context, pk, attachmentId string) (map[string]types.AttributeValue, error) {
 	out, err := client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(TableName),
 		Key: map[string]types.AttributeValue{
-			"pk":        &types.AttributeValueMemberS{Value: pk},
-			"range_key": &types.AttributeValueMemberS{Value: rk},
+			"pk":            &types.AttributeValueMemberS{Value: pk},
+			"attachment_id": &types.AttributeValueMemberS{Value: attachmentId},
 		},
 	})
 	if err != nil {

@@ -36,12 +36,10 @@ func (repository *DynamoDbAttachmentMetadataRepository) Save(
 	ctx context.Context,
 	att *attachment.Attachment,
 	pk string,
-	rk string,
 	fileLocation string,
 ) error {
 	item := map[string]types.AttributeValue{
 		"pk":            &types.AttributeValueMemberS{Value: pk},
-		"range_key":     &types.AttributeValueMemberS{Value: rk},
 		"attachment_id": &types.AttributeValueMemberS{Value: att.AttachmentId},
 		"budget_id":     &types.AttributeValueMemberS{Value: att.BudgetId},
 		"budget_type":   &types.AttributeValueMemberS{Value: att.BudgetType},
@@ -109,4 +107,9 @@ func (repository *DynamoDbAttachmentMetadataRepository) FindAllAttachment(ctx co
 	}
 
 	return result, nil
+}
+
+func (repository *DynamoDbAttachmentMetadataRepository) GetAttachment(ctx context.Context, id string) (*attachment.Attachment, error) {
+
+	return nil, nil
 }

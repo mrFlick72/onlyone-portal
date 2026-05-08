@@ -62,8 +62,3 @@ func TestGenerateAttachmentIdGeneratesWhenMissing(t *testing.T) {
 
 	assert.Equal(t, "GENERATED", provider.GenerateAttachmentIdFor(att))
 }
-
-func TestRangeKeyForReturnsAttachmentId(t *testing.T) {
-	provider := &DynamoDbAttachmentIdProvider{}
-	assert.Equal(t, "ATT-1", provider.RangeKeyFor("ATT-1"))
-}
