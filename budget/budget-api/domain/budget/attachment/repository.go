@@ -5,6 +5,6 @@ import "context"
 type AttachmentRepository interface {
 	SaveAttachment(ctx context.Context, attachment *Attachment) error
 	GenAttachment(ctx context.Context, attachmentId string) (error, *Attachment)
-	FindAllAttachment(ctx context.Context, budgetId string) (error, []AttachmentMetadata)
+	FindAllAttachment(ctx context.Context, budgetId string, budgetType BudgetType) (error, []AttachmentMetadata)
 	DeleteAttachment(ctx context.Context, attachmentId string) error
 }

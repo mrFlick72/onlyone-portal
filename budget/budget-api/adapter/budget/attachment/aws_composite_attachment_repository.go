@@ -47,7 +47,8 @@ func (repository *AwsCompositeAttachmentRepository) GenAttachment(ctx context.Co
 	return errors.New("not implemented"), nil
 }
 
-func (repository *AwsCompositeAttachmentRepository) FindAllAttachment(ctx context.Context, budgetId string) (error, []attachment.AttachmentMetadata) {
+func (repository *AwsCompositeAttachmentRepository) FindAllAttachment(ctx context.Context, budgetId string, budgetType attachment.BudgetType) (error, []attachment.AttachmentMetadata) {
+	repository.MetadataRepository.FindAllAttachment(ctx, budgetType)
 	return errors.New("not implemented"), nil
 }
 

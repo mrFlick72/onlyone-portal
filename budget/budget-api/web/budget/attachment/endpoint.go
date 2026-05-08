@@ -101,7 +101,7 @@ func RegisterAttachmentEndpoints(
 
 		attachments, err := facade.GetAttachments(ctx, budgetId, attachment.BudgetType(budgetType))
 		if err != nil {
-			logger.LogErrorfFor("error adding attachment: %v\n", err)
+			logger.LogErrorfFor("error getting attachments metadata: %v\n", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

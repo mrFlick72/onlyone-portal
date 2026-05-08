@@ -67,3 +67,7 @@ func (repository *DynamoDbAttachmentMetadataRepository) Save(
 	}
 	return err
 }
+
+func (repository *DynamoDbAttachmentMetadataRepository) FindAllAttachment(ctx context.Context, budgetType attachment.BudgetType) {
+
+}

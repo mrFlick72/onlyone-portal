@@ -47,5 +47,5 @@ func (a *GetAttachment) GetOneBy(ctx context.Context, attachmentId string) (*Att
 }
 
 func (a *GetAttachment) GetAllBy(ctx context.Context, budgetId string, budgetType BudgetType) ([]AttachmentMetadata, error) {
-	panic("has to be implemented")
+	return a.repository.FindAllAttachment(ctx, budgetId, budgetType)
 }
