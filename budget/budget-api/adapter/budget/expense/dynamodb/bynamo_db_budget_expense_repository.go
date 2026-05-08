@@ -96,7 +96,7 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Contex
 		return nil, errors.New("invalid tag in BudgetExpense")
 	}
 	budgetExpense := &expense.BudgetExpense{
-		Id:       expense.BudgetExpenseId(item["budget_id"].(*types.AttributeValueMemberS).Value),
+		Id:       item["budget_id"].(*types.AttributeValueMemberS).Value,
 		UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
 		Date:     *date,
 		Amount:   moneyAmount,
