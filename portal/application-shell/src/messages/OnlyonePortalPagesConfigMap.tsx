@@ -56,7 +56,9 @@ export class OnlyonePortalPagesConfigMap {
                 uploadButtonLabel: getMessageFor(bundle, "common.button.upload.label"),
                 closeButtonLabel: getMessageFor(bundle, "common.button.close.label"),
                 chooseFileLabel: getMessageFor(bundle, "attachment.popup.chooseFile.label"),
-                noFileSelectedLabel: getMessageFor(bundle, "attachment.popup.noFileSelected.label")
+                noFileSelectedLabel: getMessageFor(bundle, "attachment.popup.noFileSelected.label"),
+                existingAttachmentsLabel: getMessageFor(bundle, "attachment.popup.existingAttachments.label"),
+                noAttachmentsLabel: getMessageFor(bundle, "attachment.popup.noAttachments.label")
             }
         }
     }
@@ -88,7 +90,9 @@ export class OnlyonePortalPagesConfigMap {
                 uploadButtonLabel: getMessageFor(bundle, "common.button.upload.label"),
                 closeButtonLabel: getMessageFor(bundle, "common.button.close.label"),
                 chooseFileLabel: getMessageFor(bundle, "attachment.popup.chooseFile.label"),
-                noFileSelectedLabel: getMessageFor(bundle, "attachment.popup.noFileSelected.label")
+                noFileSelectedLabel: getMessageFor(bundle, "attachment.popup.noFileSelected.label"),
+                existingAttachmentsLabel: getMessageFor(bundle, "attachment.popup.existingAttachments.label"),
+                noAttachmentsLabel: getMessageFor(bundle, "attachment.popup.noAttachments.label")
             }
         }
     }
