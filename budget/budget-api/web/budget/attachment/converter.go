@@ -5,7 +5,7 @@ import (
 )
 
 func DomainModelToRepresentationModel(model []attachment.AttachmentMetadata) []AttachmentMetadataRepresentation {
-	result := make([]AttachmentMetadataRepresentation, len(model))
+	result := make([]AttachmentMetadataRepresentation, 0, len(model))
 
 	for _, item := range model {
 		result = append(result, AttachmentMetadataRepresentation{

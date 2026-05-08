@@ -1,9 +1,22 @@
-import React, { useEffect, useState } from "react"
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from "@mui/material"
-import { CloudUpload, UploadFile } from "@mui/icons-material"
+import React, { useCallback, useEffect, useState } from "react"
+import {
+    Box,
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Divider,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
+    Typography,
+} from "@mui/material"
+import { AttachFile, CloudUpload, UploadFile } from "@mui/icons-material"
 import YesAndNoButtonGroup from "../../components/layout/YesAndNoButtonGroup"
-import { saveAttachment } from "./domain/AttachmentRepository"
-import { AttachmentTarget } from "./domain/Attachment"
+import { getAttachmentsFor, saveAttachment } from "./domain/AttachmentRepository"
+import { AttachmentMetadata, AttachmentTarget } from "./domain/Attachment"
 
 type UploadAttachmentPopUpProps = {
     open: boolean
@@ -15,6 +28,8 @@ type UploadAttachmentPopUpProps = {
         closeButtonLabel: string
         chooseFileLabel: string
         noFileSelectedLabel: string
+        existingAttachmentsLabel: string
+        noAttachmentsLabel: string
     }
     onUploaded?: () => void
 }
@@ -28,13 +43,24 @@ const UploadAttachmentPopUp: React.FC<UploadAttachmentPopUpProps> = ({
 }) => {
     const [file, setFile] = useState<File | null>(null)
     const [submitting, setSubmitting] = useState(false)
+    const [attachments, setAttachments] = useState<AttachmentMetadata[]>([])
+
+    const loadAttachments = useCallback(async (current: AttachmentTarget) => {
+        const list = await getAttachmentsFor(current)
+        setAttachments(list)
+    }, [])
 
     useEffect(() => {
         if (!open) {
             setFile(null)
             setSubmitting(false)
+            setAttachments([])
+            return
         }
-    }, [open])
+        if (target) {
+            loadAttachments(target)
+        }
+    }, [open, target, loadAttachments])
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const selected = event.target.files?.[0] ?? null
@@ -50,7 +76,8 @@ const UploadAttachmentPopUp: React.FC<UploadAttachmentPopUpProps> = ({
         setSubmitting(false)
         if (response.status === 201 || response.status === 204) {
             onUploaded?.()
-            handleClose()
+            await loadAttachments(target)
+            setFile(null)
         }
     }
 
@@ -77,6 +104,32 @@ const UploadAttachmentPopUp: React.FC<UploadAttachmentPopUpProps> = ({
                         {file ? file.name : modal.noFileSelectedLabel}
                     </Typography>
                 </Box>
+
+                <Divider sx={{ my: 2 }} />
+
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    {modal.existingAttachmentsLabel}
+                </Typography>
+
+                {attachments.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">
+                        {modal.noAttachmentsLabel}
+                    </Typography>
+                ) : (
+                    <List dense disablePadding>
+                        {attachments.map((attachment) => (
+                            <ListItem key={attachment.attachmentId} disableGutters>
+                                <ListItemIcon sx={{ minWidth: 36 }}>
+                                    <AttachFile fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary={attachment.fileName}
+                                    secondary={attachment.owner}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+                )}
             </DialogContent>
             <DialogActions>
                 <YesAndNoButtonGroup

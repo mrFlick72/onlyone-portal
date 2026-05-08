@@ -26,6 +26,8 @@ export function getAllMessageRegistry(): MessageBundle {
         "common.button.upload.label": "Upload",
         "attachment.popup.chooseFile.label": "Choose file",
         "attachment.popup.noFileSelected.label": "No file selected",
+        "attachment.popup.existingAttachments.label": "Existing attachments",
+        "attachment.popup.noAttachments.label": "No attachments yet",
         "budgetExpensePage.menu.newBudgetExpense": "New Budget Expense",
         "budgetExpensePage.menu.search": "Search",
         "budgetExpensePage.menu.searchTags": "Search Tags",
