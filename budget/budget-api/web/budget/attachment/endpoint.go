@@ -99,6 +99,8 @@ func RegisterAttachmentEndpoints(
 		budgetType := c.Param("budgetType")
 		budgetId := c.Param("budgetId")
 
+		logger.LogInfofFor("budgetType: %v", budgetType)
+		logger.LogInfofFor("budgetId: %v", budgetId)
 		attachments, err := facade.GetAttachments(ctx, budgetId, attachment.BudgetType(budgetType))
 		if err != nil {
 			logger.LogErrorfFor("error getting attachments metadata: %v\n", err)
