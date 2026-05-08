@@ -25,8 +25,8 @@ func (m *AttachmentActionsMock) GetAttachmentBy(ctx context.Context, attachmentI
 	return nil, args.Error(1)
 }
 
-func (m *AttachmentActionsMock) GetAttachments(ctx context.Context, budgetId string) ([]attachment.AttachmentMetadata, error) {
-	args := m.Called(ctx, budgetId)
+func (m *AttachmentActionsMock) GetAttachments(ctx context.Context, budgetId string, budgetType attachment.BudgetType) ([]attachment.AttachmentMetadata, error) {
+	args := m.Called(ctx, budgetId, budgetType)
 	if v := args.Get(0); v != nil {
 		return v.([]attachment.AttachmentMetadata), args.Error(1)
 	}

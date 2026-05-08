@@ -93,7 +93,7 @@ func RegisterAttachmentEndpoints(
 		c.Status(http.StatusNoContent)
 	})
 
-	r.GET("/api/attachment/:budgetType/:budgetId", func(c *gin.Context) {
+	r.GET("/api/attachment/metadata/:budgetType/:budgetId", func(c *gin.Context) {
 		ctx := contextFactoryConverter.CreateContextFromGin(c)
 
 		budgetType := c.Param("budgetType")
