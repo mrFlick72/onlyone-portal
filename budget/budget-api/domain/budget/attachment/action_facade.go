@@ -7,7 +7,7 @@ import (
 type AttachmentActions interface {
 	SaveAttachment(ctx context.Context, attachment *Attachment) error
 	GetAttachmentBy(ctx context.Context, attachmentId string) (*Attachment, error)
-	GetAttachments(ctx context.Context, budgetId string) ([]AttachmentMetadata, error)
+	GetAttachments(ctx context.Context, budgetId string, budgetType BudgetType) ([]AttachmentMetadata, error)
 	DeleteAttachment(ctx context.Context, attachmentId string) error
 }
 
@@ -25,8 +25,8 @@ func (facade *AttachmentActionsFacade) GetAttachmentBy(ctx context.Context, atta
 	return facade.GetAttachmentAction.GetOneBy(ctx, attachmentId)
 }
 
-func (facade *AttachmentActionsFacade) GetAttachments(ctx context.Context, budgetId string) ([]AttachmentMetadata, error) {
-	return facade.GetAttachmentAction.GetAllBy(ctx, budgetId)
+func (facade *AttachmentActionsFacade) GetAttachments(ctx context.Context, budgetId string, budgetType BudgetType) ([]AttachmentMetadata, error) {
+	return facade.GetAttachmentAction.GetAllBy(ctx, budgetId, budgetType)
 }
 
 func (facade *AttachmentActionsFacade) DeleteAttachment(ctx context.Context, attachmentId string) error {
