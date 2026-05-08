@@ -23,6 +23,9 @@ export function getAllMessageRegistry(): MessageBundle {
         "menu.title": "Home",
         "common.button.save.label": "Save",
         "common.button.close.label": "Close",
+        "common.button.upload.label": "Upload",
+        "attachment.popup.chooseFile.label": "Choose file",
+        "attachment.popup.noFileSelected.label": "No file selected",
         "budgetExpensePage.menu.newBudgetExpense": "New Budget Expense",
         "budgetExpensePage.menu.search": "Search",
         "budgetExpensePage.menu.searchTags": "Search Tags",
@@ -39,7 +42,8 @@ export function getAllMessageRegistry(): MessageBundle {
         "budgetExpensePage.cards.totalByCategories": "Total by categories",
         "budgetRevenuePage.newBudgetRevenueModal.title": "Save a Revenue Expense",
         "budgetRevenuePage.menu.changeYear": "Search",
-        "budgetRevenuePage.changeYear.popup.title": "Search"
+        "budgetRevenuePage.changeYear.popup.title": "Search",
+        "budgetRevenuePage.attachment.popup.title": "Load Attachments"
     }
 }
 

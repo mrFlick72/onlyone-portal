@@ -8,9 +8,10 @@ interface BudgetRevenueTableProps {
     total: string;
     openDeletePopUp: (revenue: BudgetRevenue) => void;
     openUpdatePopUp: (revenue: BudgetRevenue) => void;
+    openUploadAttachmentPopUp: (revenue: BudgetRevenue) => void;
 }
 
-const BudgetRevenueTable: React.FC<BudgetRevenueTableProps> = ({ revenues, total, openDeletePopUp, openUpdatePopUp }) => {
+const BudgetRevenueTable: React.FC<BudgetRevenueTableProps> = ({ revenues, total, openDeletePopUp, openUpdatePopUp, openUploadAttachmentPopUp }) => {
 
     return <TableContainer component={Paper}>
         <Table>
@@ -25,7 +26,8 @@ const BudgetRevenueTable: React.FC<BudgetRevenueTableProps> = ({ revenues, total
             <TableBody>
                 {revenues.map(revenue => <BudgetRevenueRow revenue={revenue}
                     openUpdatePopUp={openUpdatePopUp.bind(this, revenue)}
-                    openDeletePopUp={openDeletePopUp.bind(this, revenue)} />)}
+                    openDeletePopUp={openDeletePopUp.bind(this, revenue)}
+                    openUploadAttachmentPopUp={openUploadAttachmentPopUp.bind(this, revenue)} />)}
                 <TableRow>
                     <TableCell sx={{ fontWeight: 'bold' }}>Total</TableCell>
                     <TableCell></TableCell>

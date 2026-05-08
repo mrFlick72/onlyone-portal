@@ -1,16 +1,17 @@
 import React from "react"
 import { Button, ButtonGroup, TableCell, TableRow } from "@mui/material";
-import { Delete, Edit } from "@mui/icons-material";
+import { AttachFile, Delete, Edit } from "@mui/icons-material";
 import { BudgetExpense, SavedBudgetExpense } from "../domain/BudgetExpense";
 
 type DailyBudgetExpenseRowProps = {
     key: string,
     dailyBudgetExpense: BudgetExpense
     openUpdateBudgetExpensePopUp: (budgetExpense: SavedBudgetExpense) => void,
-    openDeleteBudgetExpensePopUp: (budgetExpense: BudgetExpense) => void
+    openDeleteBudgetExpensePopUp: (budgetExpense: BudgetExpense) => void,
+    openUploadAttachmentPopUp: (budgetExpense: BudgetExpense) => void
 }
 
-const DailyBudgetExpenseRow: React.FC<DailyBudgetExpenseRowProps> = ({ key, dailyBudgetExpense, openUpdateBudgetExpensePopUp, openDeleteBudgetExpensePopUp }: DailyBudgetExpenseRowProps) => {
+const DailyBudgetExpenseRow: React.FC<DailyBudgetExpenseRowProps> = ({ key, dailyBudgetExpense, openUpdateBudgetExpensePopUp, openDeleteBudgetExpensePopUp, openUploadAttachmentPopUp }: DailyBudgetExpenseRowProps) => {
     return <TableRow key={key} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
         <TableCell></TableCell>
         <TableCell>{dailyBudgetExpense.amount}</TableCell>
@@ -18,6 +19,7 @@ const DailyBudgetExpenseRow: React.FC<DailyBudgetExpenseRowProps> = ({ key, dail
         <TableCell>{dailyBudgetExpense.tagValue}</TableCell>
         <TableCell>
             <ButtonGroup variant="contained" aria-label="outlined primary button group">
+                <Button onClick={() => openUploadAttachmentPopUp(dailyBudgetExpense)}><AttachFile /> Attach</Button>
                 <Button onClick={() => openUpdateBudgetExpensePopUp({
                     id: dailyBudgetExpense.id,
                     amount: dailyBudgetExpense.amount,
