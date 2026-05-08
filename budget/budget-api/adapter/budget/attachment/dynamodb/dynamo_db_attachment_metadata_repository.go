@@ -87,7 +87,7 @@ func (repository *DynamoDbAttachmentMetadataRepository) FindAllAttachment(ctx co
 		return nil, err
 	}
 
-	result := make([]attachment.AttachmentMetadata, len(query.Items))
+	result := make([]attachment.AttachmentMetadata, 0, len(query.Items))
 	for _, item := range query.Items {
 		rawDate := item["date"].(*types.AttributeValueMemberS).Value
 		dateFor, err := date.IsoDateFor(rawDate)
