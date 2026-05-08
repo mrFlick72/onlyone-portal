@@ -93,8 +93,21 @@ func RegisterAttachmentEndpoints(
 		c.Status(http.StatusNoContent)
 	})
 
-	r.GET("/api/attachment", func(context *gin.Context) {
+	r.GET("/api/attachment/:budgetType/:budgetId", func(c *gin.Context) {
+		ctx := contextFactoryConverter.CreateContextFromGin(c)
 
+		budgetType := c.Param("budgetType")
+		budgetId := c.Param("budgetId")
+
+		attachments, err := facade.GetAttachments(ctx, budgetId, attachment.BudgetType(budgetType))
+		if err != nil {
+			logger.LogErrorfFor("error adding attachment: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		representation := DomainModelToRepresentationModel(attachments)
+		c.JSON(http.StatusOK, representation)
 	})
 
 	r.GET("/api/attachment/:attachmentId/content", func(context *gin.Context) {

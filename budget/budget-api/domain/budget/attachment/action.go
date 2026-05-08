@@ -46,6 +46,6 @@ func (a *GetAttachment) GetOneBy(ctx context.Context, attachmentId string) (*Att
 	panic("has to be implemented")
 }
 
-func (a *GetAttachment) GetAllBy(ctx context.Context, budgetId string) ([]AttachmentMetadata, error) {
+func (a *GetAttachment) GetAllBy(ctx context.Context, budgetId string, budgetType BudgetType) ([]AttachmentMetadata, error) {
 	panic("has to be implemented")
 }
