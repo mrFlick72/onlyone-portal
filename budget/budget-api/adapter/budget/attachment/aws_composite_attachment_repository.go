@@ -3,10 +3,11 @@ package attachment
 import (
 	"context"
 	"errors"
-	"fmt"
+
 	"github.com/mrflick72/budget/budget-api/adapter/budget/attachment/dynamodb"
 	"github.com/mrflick72/budget/budget-api/adapter/budget/attachment/s3"
 	"github.com/mrflick72/budget/budget-api/domain/budget/attachment"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
 
@@ -14,6 +15,7 @@ type AwsCompositeAttachmentRepository struct {
 	IdProvider         *dynamodb.DynamoDbAttachmentIdProvider
 	MetadataRepository *dynamodb.DynamoDbAttachmentMetadataRepository
 	ContentRepository  *s3.S3AttachmentContentRepository
+	logger             *logging.Logger
 }
 
 func NewAwsCompositeAttachmentRepository(
@@ -25,6 +27,7 @@ func NewAwsCompositeAttachmentRepository(
 		IdProvider:         idProvider,
 		MetadataRepository: metadataRepository,
 		ContentRepository:  contentRepository,
+		logger:             logging.GetLoggerInstanceForComponentByType(&AwsCompositeAttachmentRepository{}),
 	}
 }
 
@@ -45,13 +48,14 @@ func (repository *AwsCompositeAttachmentRepository) SaveAttachment(ctx context.C
 }
 
 func (repository *AwsCompositeAttachmentRepository) GenAttachment(ctx context.Context, attachmentId string) (*attachment.Attachment, error) {
+
 	return nil, errors.New("not implemented")
 }
 
 func (repository *AwsCompositeAttachmentRepository) FindAllAttachment(ctx context.Context, budgetId string, budgetType attachment.BudgetType) ([]attachment.AttachmentMetadata, error) {
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
-		fmt.Println(err)
+		repository.logger.LogErrorfFor("error getting current user: %v", err)
 		return []attachment.AttachmentMetadata{}, err
 	}
 	att := attachment.Attachment{
@@ -61,7 +65,7 @@ func (repository *AwsCompositeAttachmentRepository) FindAllAttachment(ctx contex
 		},
 	}
 	pk := repository.IdProvider.PartitionKeyFor(&att)
-	fmt.Println(pk)
+	repository.logger.LogDebugfFor("querying attachments for partition key %s", pk)
 	return repository.MetadataRepository.FindAllAttachment(ctx, *user.UserName, pk)
 }
 
