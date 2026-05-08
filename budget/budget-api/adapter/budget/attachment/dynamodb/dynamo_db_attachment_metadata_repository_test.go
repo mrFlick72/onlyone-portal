@@ -54,7 +54,7 @@ func TestSaveAttachmentMetadataWritesAllFields(t *testing.T) {
 	assert.Equal(t, "budget-123", item["budget_id"].(*types.AttributeValueMemberS).Value)
 	assert.Equal(t, "expense", item["budget_type"].(*types.AttributeValueMemberS).Value)
 	assert.Equal(t, "2024-03-15", item["date"].(*types.AttributeValueMemberS).Value)
-	assert.Equal(t, "testuser", item["owner"].(*types.AttributeValueMemberS).Value)
+	assert.Equal(t, "testuser", item["user_name"].(*types.AttributeValueMemberS).Value)
 	assert.Equal(t, "receipt.pdf", item["file_name"].(*types.AttributeValueMemberS).Value)
 	assert.Equal(t, "application/pdf", item["content_type"].(*types.AttributeValueMemberS).Value)
 	assert.Equal(t, fileLocation, item["file_location"].(*types.AttributeValueMemberS).Value)

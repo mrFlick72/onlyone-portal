@@ -46,7 +46,7 @@ func (repository *DynamoDbAttachmentMetadataRepository) Save(
 		"budget_id":     &types.AttributeValueMemberS{Value: att.BudgetId},
 		"budget_type":   &types.AttributeValueMemberS{Value: att.BudgetType},
 		"date":          &types.AttributeValueMemberS{Value: att.Date.GetIsoFormattedDate()},
-		"owner":         &types.AttributeValueMemberS{Value: att.Owner},
+		"user_name":     &types.AttributeValueMemberS{Value: att.Owner},
 		"file_name":     &types.AttributeValueMemberS{Value: att.FineName},
 		"content_type":  &types.AttributeValueMemberS{Value: att.ContentType},
 		"file_location": &types.AttributeValueMemberS{Value: fileLocation},
@@ -78,7 +78,7 @@ func (repository *DynamoDbAttachmentMetadataRepository) FindAllAttachment(ctx co
 			":user_name": &types.AttributeValueMemberS{Value: owner},
 		},
 		KeyConditionExpression: aws.String("pk =:pk"),
-		FilterExpression:       aws.String("owner =:user_name"),
+		FilterExpression:       aws.String("user_name =:user_name"),
 	}
 
 	query, err := repository.Client.Query(ctx, input)
@@ -101,7 +101,7 @@ func (repository *DynamoDbAttachmentMetadataRepository) FindAllAttachment(ctx co
 			BudgetId:     item["budget_id"].(*types.AttributeValueMemberS).Value,
 			BudgetType:   item["budget_type"].(*types.AttributeValueMemberS).Value,
 			Date:         *dateFor,
-			Owner:        item["owner"].(*types.AttributeValueMemberS).Value,
+			Owner:        item["user_name"].(*types.AttributeValueMemberS).Value,
 			FineName:     item["file_name"].(*types.AttributeValueMemberS).Value,
 			ContentType:  item["content_type"].(*types.AttributeValueMemberS).Value,
 			Metadata:     map[string]string{},
