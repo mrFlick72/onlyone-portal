@@ -43,13 +43,13 @@ func (repository *AwsCompositeAttachmentRepository) SaveAttachment(ctx context.C
 	return repository.MetadataRepository.Save(ctx, att, pk, rk, fileLocation)
 }
 
-func (repository *AwsCompositeAttachmentRepository) GenAttachment(ctx context.Context, attachmentId string) (error, *attachment.Attachment) {
-	return errors.New("not implemented"), nil
+func (repository *AwsCompositeAttachmentRepository) GenAttachment(ctx context.Context, attachmentId string) (*attachment.Attachment, error) {
+	return nil, errors.New("not implemented")
 }
 
-func (repository *AwsCompositeAttachmentRepository) FindAllAttachment(ctx context.Context, budgetId string, budgetType attachment.BudgetType) (error, []attachment.AttachmentMetadata) {
+func (repository *AwsCompositeAttachmentRepository) FindAllAttachment(ctx context.Context, budgetId string, budgetType attachment.BudgetType) ([]attachment.AttachmentMetadata, error) {
 	repository.MetadataRepository.FindAllAttachment(ctx, budgetType)
-	return errors.New("not implemented"), nil
+	return nil, errors.New("not implemented")
 }
 
 func (repository *AwsCompositeAttachmentRepository) DeleteAttachment(ctx context.Context, attachmentId string) error {
