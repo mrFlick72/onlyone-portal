@@ -7,10 +7,11 @@ import { BudgetExpense, SavedBudgetExpense, SpentBudget } from "../domain/Budget
 type SpentBudgetContentProps = {
     spentBudget: SpentBudget
     openUpdateBudgetExpensePopUp: (budgetExpense: SavedBudgetExpense) => void,
-    openDeleteBudgetExpensePopUp: (budgetExpense: BudgetExpense) => void
+    openDeleteBudgetExpensePopUp: (budgetExpense: BudgetExpense) => void,
+    openUploadAttachmentPopUp: (budgetExpense: BudgetExpense) => void
 }
 
-const SpentBudgetContent: React.FC<SpentBudgetContentProps> = ({ spentBudget, openUpdateBudgetExpensePopUp, openDeleteBudgetExpensePopUp }) => {
+const SpentBudgetContent: React.FC<SpentBudgetContentProps> = ({ spentBudget, openUpdateBudgetExpensePopUp, openDeleteBudgetExpensePopUp, openUploadAttachmentPopUp }) => {
     const tableContent: React.ReactNode[] = [];
     const dailyBudgetExpenseRepresentationList = spentBudget.dailyBudgetExpenseRepresentationList || []
 
@@ -31,7 +32,8 @@ const SpentBudgetContent: React.FC<SpentBudgetContentProps> = ({ spentBudget, op
                     searchTag: { value: budgetExpenseRepresentation.tagKey, label: budgetExpenseRepresentation.tagValue }
 
                 })}
-                openDeleteBudgetExpensePopUp={openDeleteBudgetExpensePopUp.bind(budgetExpenseRepresentation)} />)
+                openDeleteBudgetExpensePopUp={openDeleteBudgetExpensePopUp.bind(budgetExpenseRepresentation)}
+                openUploadAttachmentPopUp={openUploadAttachmentPopUp.bind(budgetExpenseRepresentation)} />)
         })
     });
 
