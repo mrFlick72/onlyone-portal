@@ -3,10 +3,10 @@ package attachment
 import (
 	"context"
 	"errors"
-
 	"github.com/mrflick72/budget/budget-api/adapter/budget/attachment/dynamodb"
 	"github.com/mrflick72/budget/budget-api/adapter/budget/attachment/s3"
 	"github.com/mrflick72/budget/budget-api/domain/budget/attachment"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
 
 type AwsCompositeAttachmentRepository struct {
@@ -48,8 +48,19 @@ func (repository *AwsCompositeAttachmentRepository) GenAttachment(ctx context.Co
 }
 
 func (repository *AwsCompositeAttachmentRepository) FindAllAttachment(ctx context.Context, budgetId string, budgetType attachment.BudgetType) ([]attachment.AttachmentMetadata, error) {
-	repository.MetadataRepository.FindAllAttachment(ctx, budgetType)
-	return nil, errors.New("not implemented")
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		return []attachment.AttachmentMetadata{}, err
+	}
+	att := attachment.Attachment{
+		AttachmentMetadata: attachment.AttachmentMetadata{
+			BudgetId:   budgetId,
+			BudgetType: string(budgetType),
+		},
+	}
+	pk := repository.IdProvider.PartitionKeyFor(&att)
+
+	return repository.MetadataRepository.FindAllAttachment(ctx, *user.UserName, pk)
 }
 
 func (repository *AwsCompositeAttachmentRepository) DeleteAttachment(ctx context.Context, attachmentId string) error {

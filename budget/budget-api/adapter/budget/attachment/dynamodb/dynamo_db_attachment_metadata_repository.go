@@ -2,11 +2,13 @@ package dynamodb
 
 import (
 	"context"
-
+	"errors"
+	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/mrflick72/budget/budget-api/domain/budget/attachment"
+	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 )
 
@@ -68,6 +70,43 @@ func (repository *DynamoDbAttachmentMetadataRepository) Save(
 	return err
 }
 
-func (repository *DynamoDbAttachmentMetadataRepository) FindAllAttachment(ctx context.Context, budgetType attachment.BudgetType) {
+func (repository *DynamoDbAttachmentMetadataRepository) FindAllAttachment(ctx context.Context, owner string, pk string) ([]attachment.AttachmentMetadata, error) {
+	input := &dynamodb.QueryInput{
+		TableName: aws.String(repository.TableName),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":pk":    &types.AttributeValueMemberS{Value: pk},
+			":owner": &types.AttributeValueMemberS{Value: owner},
+		},
+		KeyConditionExpression: aws.String("pk =:pk"),
+		FilterExpression:       aws.String("owner = :owner"),
+	}
 
+	query, err := repository.Client.Query(ctx, input)
+	if err != nil {
+		repository.logger.LogErrorfFor("Error during DynamoDb Query: $v", err)
+		return nil, err
+	}
+
+	result := make([]attachment.AttachmentMetadata, len(query.Items))
+	for _, item := range query.Items {
+		rawDate := item["date"].(*types.AttributeValueMemberS).Value
+		dateFor, err := date.IsoDateFor(rawDate)
+		if err != nil {
+			errorMessage := fmt.Sprint("Parsing failure: the data field is in a incorrect format: raw data: %s Error details: %v", rawDate, err)
+			repository.logger.LogErrorfFor(errorMessage)
+			return nil, errors.New(errorMessage)
+		}
+		result = append(result, attachment.AttachmentMetadata{
+			AttachmentId: item["attachment_id"].(*types.AttributeValueMemberS).Value,
+			BudgetId:     item["budget_id"].(*types.AttributeValueMemberS).Value,
+			BudgetType:   item["budget_type"].(*types.AttributeValueMemberS).Value,
+			Date:         *dateFor,
+			Owner:        item["owner"].(*types.AttributeValueMemberS).Value,
+			FineName:     item["file_name"].(*types.AttributeValueMemberS).Value,
+			ContentType:  item["content_type"].(*types.AttributeValueMemberS).Value,
+			Metadata:     map[string]string{},
+		})
+	}
+
+	return result, nil
 }
