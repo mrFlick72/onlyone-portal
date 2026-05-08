@@ -42,6 +42,10 @@ type GetAttachment struct {
 	repository AttachmentRepository
 }
 
+func NewGetAttachment(repository AttachmentRepository) *GetAttachment {
+	return &GetAttachment{repository: repository}
+}
+
 func (a *GetAttachment) GetOneBy(ctx context.Context, attachmentId string) (*Attachment, error) {
 	panic("has to be implemented")
 }

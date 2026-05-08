@@ -74,11 +74,11 @@ func (repository *DynamoDbAttachmentMetadataRepository) FindAllAttachment(ctx co
 	input := &dynamodb.QueryInput{
 		TableName: aws.String(repository.TableName),
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":pk":    &types.AttributeValueMemberS{Value: pk},
-			":owner": &types.AttributeValueMemberS{Value: owner},
+			":pk":        &types.AttributeValueMemberS{Value: pk},
+			":user_name": &types.AttributeValueMemberS{Value: owner},
 		},
 		KeyConditionExpression: aws.String("pk =:pk"),
-		FilterExpression:       aws.String("owner = :owner"),
+		FilterExpression:       aws.String("owner =:user_name"),
 	}
 
 	query, err := repository.Client.Query(ctx, input)

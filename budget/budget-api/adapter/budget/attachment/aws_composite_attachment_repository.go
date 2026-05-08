@@ -3,6 +3,7 @@ package attachment
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/mrflick72/budget/budget-api/adapter/budget/attachment/dynamodb"
 	"github.com/mrflick72/budget/budget-api/adapter/budget/attachment/s3"
 	"github.com/mrflick72/budget/budget-api/domain/budget/attachment"
@@ -50,6 +51,7 @@ func (repository *AwsCompositeAttachmentRepository) GenAttachment(ctx context.Co
 func (repository *AwsCompositeAttachmentRepository) FindAllAttachment(ctx context.Context, budgetId string, budgetType attachment.BudgetType) ([]attachment.AttachmentMetadata, error) {
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
+		fmt.Println(err)
 		return []attachment.AttachmentMetadata{}, err
 	}
 	att := attachment.Attachment{
@@ -59,7 +61,7 @@ func (repository *AwsCompositeAttachmentRepository) FindAllAttachment(ctx contex
 		},
 	}
 	pk := repository.IdProvider.PartitionKeyFor(&att)
-
+	fmt.Println(pk)
 	return repository.MetadataRepository.FindAllAttachment(ctx, *user.UserName, pk)
 }
 

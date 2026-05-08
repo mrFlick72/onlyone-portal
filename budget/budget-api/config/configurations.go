@@ -142,7 +142,7 @@ func NewAttachmentActionsFacade() attachment.AttachmentActions {
 	repository := NewAttachmentRepository()
 	return &attachment.AttachmentActionsFacade{
 		SaveAttachmentAction:   attachment.NewSaveAttachment(repository),
-		GetAttachmentAction:    &attachment.GetAttachment{},
+		GetAttachmentAction:    attachment.NewGetAttachment(repository),
 		DeleteAttachmentAction: &attachment.DeleteAttachment{},
 	}
 }
