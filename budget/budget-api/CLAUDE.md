@@ -8,7 +8,8 @@
 |--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Language           | Go 1.25.1                                                                                                                                                                                                                                                     |
 | Web framework      | Gin (`github.com/gin-gonic/gin v1.11.0`)                                                                                                                                                                                                                      |
-| Persistence        | AWS DynamoDB via `aws-sdk-go-v2`                                                                                                                                                                                                                              |
+| Persistence        | AWS DynamoDB via `aws-sdk-go-v2` (expense, revenue, attachment metadata)                                                                                                                                                                                      |
+| Object storage     | AWS S3 via `aws-sdk-go-v2` — attachment file content                                                                                                                                                                                                          |
 | In-process cache   | Ristretto (`github.com/dgraph-io/ristretto v0.2.0`)                                                                                                                                                                                                           |
 | Decimal arithmetic | shopspring/decimal                                                                                                                                                                                                                                            |
 | ID generation      | google/uuid (salt for DynamoDB range keys)                                                                                                                                                                                                                    |
@@ -28,22 +29,30 @@ path is set via the `CONFIG_FILE_LOCATION` env var.
 
 ```
 domain/
-  budget/expense/   # BudgetExpense model, CreateBudgetExpense, UpdateBudgetExpense,
-                    # FindSpentBudget, DeleteBudgetExpense, BudgetExpenseActionsFacade,
-                    # BudgetExpenseRepository port
-  budget/revenue/   # Revenue model, CreateRevenue, UpdateRevenue, FindRevenue,
-                    # DeleteRevenue, RevenueActionsFacade, RevenueRepository port
-  tags/             # SearchTagRepository port + SearchTag value object
-  money/, time/     # value objects (Money, Date, Month, Year)
+  budget/expense/    # BudgetExpense model, CreateBudgetExpense, UpdateBudgetExpense,
+                     # FindSpentBudget, DeleteBudgetExpense, BudgetExpenseActionsFacade,
+                     # BudgetExpenseRepository port
+  budget/revenue/    # Revenue model, CreateRevenue, UpdateRevenue, FindRevenue,
+                     # DeleteRevenue, RevenueActionsFacade, RevenueRepository port
+  budget/attachment/ # Attachment + AttachmentMetadata models, SaveAttachment,
+                     # GetAttachment, DeleteAttachment, AttachmentActionsFacade,
+                     # AttachmentRepository port
+  tags/              # SearchTagRepository port + SearchTag value object
+  money/, time/      # value objects (Money, Date, Month, Year)
 adapter/
-  budget/expense/dynamodb/  # DynamoDbBudgetExpenseRepository + DynamoDbBudgetExpenseIdProvider
-  budget/revenue/dynamodb/  # DynamoDbRevenueRepository + DynamoDbRevenueIdProvider
-  tags/rest/                # RestSearchTagRepository + RistrettoCachedSearchTagRepository decorator
+  budget/expense/dynamodb/      # DynamoDbBudgetExpenseRepository + DynamoDbBudgetExpenseIdProvider
+  budget/revenue/dynamodb/      # DynamoDbRevenueRepository + DynamoDbRevenueIdProvider
+  budget/attachment/            # AwsCompositeAttachmentRepository — orchestrates dynamo + s3
+  budget/attachment/dynamodb/   # DynamoDbAttachmentMetadataRepository + DynamoDbAttachmentIdProvider
+  budget/attachment/s3/         # S3AttachmentContentRepository (file bytes)
+  tags/rest/                    # RestSearchTagRepository + RistrettoCachedSearchTagRepository decorator
 web/
-  budget/expense/   # package expense — RegisterExpenseEndpoints, representations, converters
-  budget/revenue/   # package revenue — RegisterRevenueEndpoints, representations, converters
-config/             # composition root — NewBudgetExpenseActionsFacade, NewRevenueActionsFacade
-main.go             # wires everything via WebServerProvisioner (shared framework)
+  budget/expense/    # package expense    — RegisterExpenseEndpoints, representations, converters
+  budget/revenue/    # package revenue    — RegisterRevenueEndpoints, representations, converters
+  budget/attachment/ # package attachment — RegisterAttachmentEndpoints, representation, converter
+config/              # composition root — NewBudgetExpenseActionsFacade,
+                     # NewRevenueActionsFacade, NewAttachmentActionsFacade
+main.go              # wires everything via WebServerProvisioner (shared framework)
 ```
 
 Keep changes inside the right layer. Domain must not import adapter or web packages.
@@ -53,13 +62,21 @@ clash with the web package itself. Same pattern in `web/budget/revenue` with `do
 
 ### DynamoDB tables and config keys
 
-| Table             | Config key                                       |
-|-------------------|--------------------------------------------------|
-| `BUDGET_EXPENSES` | `budget-api.dynamo-db.budget-expense.table-name` |
-| `BUDGET_REVENUE`  | `budget-api.dynamo-db.revenue.table-name`        |
+| Table                          | Config key                                              |
+|--------------------------------|---------------------------------------------------------|
+| `BUDGET_EXPENSES`              | `budget-api.dynamo-db.budget-expense.table-name`        |
+| `BUDGET_REVENUE`               | `budget-api.dynamo-db.revenue.table-name`               |
+| `BUDGET_ATTACHMENT_METADATA`   | `budget-api.dynamo-db.attachment-metadata.table-name`   |
+
+S3 bucket holding attachment file bytes:
+
+| Bucket                | Config key                                |
+|-----------------------|-------------------------------------------|
+| `<attachment bucket>` | `budget-api.s3.attachment.bucket-name`    |
 
 AWS region is hardcoded to `eu-central-1` in `config/configurations.go` (`NewBudgetExpenseRepository`,
-`NewRevenueRepository`). LocalStack tests override the endpoint in their fixture, not in the constructor.
+`NewRevenueRepository`, `NewAttachmentRepository`). LocalStack tests override the endpoint in their fixture, not in the
+constructor.
 
 ### DynamoDB key schemes — do not change without a data migration
 
@@ -80,6 +97,24 @@ AWS region is hardcoded to `eu-central-1` in `config/configurations.go` (`NewBud
 - This layout preserves the Python `revenue-api` composite key format so existing `BUDGET_REVENUE` records remain
   readable without migration.
 
+**Attachment metadata** (`adapter/budget/attachment/dynamodb/dynamo_db_attachment_id_provider.go`):
+
+- PK: `<budgetId>_<UPPERCASE budgetType>` — one partition per parent expense/revenue (e.g. `budget-123_EXPENSE`)
+- RK: `attachment_id` — UUID generated server-side on first save (re-used on update)
+- GSI `<TableName>_GLOBAL_INDEX` keyed on `attachment_id` (HASH) with `ProjectionType: ALL`. Lookups by attachment id
+  (read content, delete) hit the GSI, then resolve the base item by `(pk, attachment_id)`. Ownership is enforced by a
+  `user_name = :user_name` filter on the query — never trust the id alone.
+- Each item carries a `metadata` map attribute holding free-form key/value strings plus two reserved keys used by the
+  composite repository:
+  - `metadata_bucket` — S3 bucket name where the content lives
+  - `metadata_object_key` — S3 object key (`<YYYY>/<MM>/<DD>/<pk>/<attachmentId>`)
+
+**Attachment content** (`adapter/budget/attachment/s3/s3_attachment_content_repository.go`):
+
+- Object key: `<YYYY>/<MM>/<DD>/<budgetId>_<UPPERCASE budgetType>/<attachmentId>` — date prefix is the attachment's
+  business date, not the upload time.
+- `file_location` stored alongside metadata is `<bucket>/<objectKey>` for traceability.
+
 ### Ownership enforced in two layers — keep both
 
 For expense update/delete (`domain/budget/expense/actions.go`):
@@ -90,6 +125,17 @@ For expense update/delete (`domain/budget/expense/actions.go`):
    Race-safe backstop if the domain check were ever bypassed.
 
 Revenue follows the same pattern. Removing either layer silently widens the authorization boundary.
+
+For attachments, ownership is enforced inside the composite adapter and the metadata repository:
+
+1. **`AwsCompositeAttachmentRepository`** resolves the current user from the request context before any read or
+   delete (`GenAttachment`, `FindAllAttachment`, `DeleteAttachment`). The username is the partition lens for every
+   subsequent call.
+2. **`DynamoDbAttachmentMetadataRepository`** layers a `user_name = :user_name` filter expression on top of the GSI
+   query in `GetAttachment` and `Delete`. A request with another user's attachment id therefore returns
+   `attachment not found`, never the actual item.
+3. **Save** sets `attachment.Owner = *user.UserName` in `SaveAttachment.Execute` (domain layer) before the repository
+   sees the entity, so a client cannot impersonate another owner via the upload form fields.
 
 ### Tag cache has no invalidation hook
 
@@ -168,6 +214,50 @@ The `?q=year=YYYY` query param format preserves the Python revenue-api wire form
 }
 ```
 
+### Attachment — `web/budget/attachment/endpoint.go`
+
+Attachments are file uploads attached to either an expense or a revenue (the same endpoint serves both — the
+`budgetType` form field selects the parent aggregate).
+
+| Method   | Path                                                | Purpose                              | Request                                     | Response                                              |
+|----------|-----------------------------------------------------|--------------------------------------|---------------------------------------------|-------------------------------------------------------|
+| `POST`   | `/api/attachment`                                   | Create or replace                    | `multipart/form-data`                       | `204 No Content`                                      |
+| `GET`    | `/api/attachment/metadata/:budgetType/:budgetId`    | List metadata for a parent           | —                                           | `[]AttachmentMetadataRepresentation` `200`            |
+| `GET`    | `/api/attachment/:attachmentId/content`             | Download file bytes                  | —                                           | Raw bytes with `Content-Type` + `Content-Disposition` |
+| `DELETE` | `/api/attachment/:attachmentId`                     | Delete (metadata + S3 content)       | —                                           | `204 No Content`                                      |
+
+**Upload form fields** (`POST /api/attachment`):
+
+| Field          | Required | Notes                                                                                  |
+|----------------|----------|----------------------------------------------------------------------------------------|
+| `file`         | yes      | Multipart file part — used for filename and content type                               |
+| `budgetId`     | yes      | Parent expense or revenue id                                                           |
+| `budgetType`   | yes      | `expense` or `revenue` (case-insensitive — folded to upper case for the partition key) |
+| `date`         | yes      | `DD/MM/YYYY` — drives the S3 date-scoped path                                          |
+| `attachmentId` | no       | Provide to overwrite an existing attachment; omitted for create (server-generated)     |
+
+**Download** sets `Content-Disposition: attachment; filename="<original-name>"` and falls back to
+`application/octet-stream` if no content type was stored.
+
+**Delete** removes the metadata row first, then the S3 object. If the metadata row is missing or owned by another user
+the call returns an error and S3 is left untouched. If the S3 deletion fails after the metadata row is gone, the orphan
+content can be reaped by an out-of-band sweeper — the metadata row is the source of truth.
+
+**`AttachmentMetadataRepresentation`** (list response item):
+
+```json
+{
+  "attachmentId": "uuid",
+  "fileName": "receipt.pdf",
+  "owner": "user-name",
+  "budgetId": "budget-123",
+  "budgetType": "expense"
+}
+```
+
+The S3 bucket / object key are intentionally **not** exposed on the wire — clients reach the bytes via
+`/api/attachment/:attachmentId/content`.
+
 ---
 
 ## How to Test Locally
@@ -180,11 +270,12 @@ go test -tags test ./domain/... ./web/...
 
 ### Full test suite (adapter tests require LocalStack)
 
-Start LocalStack first:
+Start LocalStack first — DynamoDB and S3 are both required since attachment adapter tests round-trip metadata and
+content against LocalStack:
 
 ```bash
 cd test
-docker compose up -d   # starts localstack/localstack:3.2 with DynamoDB on :4566
+docker compose up -d   # starts localstack/localstack:3.2 with DynamoDB + S3 on :4566
 ```
 
 Export the required AWS env vars (LocalStack accepts any non-empty value):
