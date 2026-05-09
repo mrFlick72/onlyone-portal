@@ -59,8 +59,7 @@ func (repository *AwsCompositeAttachmentRepository) GenAttachment(ctx context.Co
 		return nil, err
 	}
 
-	pk := repository.IdProvider.PartitionKeyFor(att)
-	objectKey := repository.ContentRepository.ObjectKeyFor(att, pk)
+	objectKey := att.Metadata["file_location"]
 	repository.logger.LogInfofFor("objectKey: %v", objectKey)
 
 	content, err := repository.ContentRepository.GetContentFor(ctx, objectKey)
