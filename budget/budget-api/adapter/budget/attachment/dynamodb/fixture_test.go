@@ -4,71 +4,24 @@ package dynamodb
 
 import (
 	"context"
-	"errors"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/mrflick72/budget/budget-api/internal/testutils/awsfixture"
 )
 
 var TableName = "BUDGET_ATTACHMENT_METADATA_TABLE_NAME_STAGING"
 
-var client, _ = newDynamoDBClient()
-
-func newDynamoDBClient() (*dynamodb.Client, error) {
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider("xxx", "xxx", "xxx")),
-		config.WithRegion("eu-central-1"),
-		config.WithBaseEndpoint("http://localhost:4566"),
-	)
-	if err != nil {
-		panic("unable to load SDK config, " + err.Error())
-	}
-	return dynamodb.NewFromConfig(cfg), err
-}
+var client *dynamodb.Client = awsfixture.NewLocalDynamoDBClient()
 
 func setupTestDynamoDBTable() error {
-	teardownTestDynamoDBTable()
-	_, err := client.CreateTable(context.TODO(), &dynamodb.CreateTableInput{
-		TableName: aws.String(TableName),
-		AttributeDefinitions: []types.AttributeDefinition{
-			{AttributeName: aws.String("pk"), AttributeType: types.ScalarAttributeTypeS},
-			{AttributeName: aws.String("attachment_id"), AttributeType: types.ScalarAttributeTypeS},
-		},
-		KeySchema: []types.KeySchemaElement{
-			{AttributeName: aws.String("pk"), KeyType: types.KeyTypeHash},
-			{AttributeName: aws.String("attachment_id"), KeyType: types.KeyTypeRange},
-		},
-		GlobalSecondaryIndexes: []types.GlobalSecondaryIndex{
-			{
-				IndexName: aws.String(TableName + "_GLOBAL_INDEX"),
-				KeySchema: []types.KeySchemaElement{
-					{AttributeName: aws.String("attachment_id"), KeyType: types.KeyTypeHash},
-				},
-				Projection: &types.Projection{
-					ProjectionType: types.ProjectionTypeAll,
-				},
-			},
-		},
-		BillingMode: types.BillingModePayPerRequest,
-	})
-	if err != nil {
-		var resourceInUseException *types.ResourceInUseException
-		if !errors.As(err, &resourceInUseException) {
-			return err
-		}
-	}
-	return nil
+	_ = awsfixture.TeardownTable(context.TODO(), client, TableName)
+	return awsfixture.SetupAttachmentTable(context.TODO(), client, TableName)
 }
 
 func teardownTestDynamoDBTable() error {
-	c, _ := newDynamoDBClient()
-	_, err := c.DeleteTable(context.TODO(), &dynamodb.DeleteTableInput{
-		TableName: aws.String(TableName),
-	})
-	return err
+	return awsfixture.TeardownTable(context.TODO(), client, TableName)
 }
 
 func getItem(ctx context.Context, pk, attachmentId string) (map[string]types.AttributeValue, error) {

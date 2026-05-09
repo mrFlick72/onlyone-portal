@@ -4,23 +4,20 @@ package attachment
 
 import (
 	"context"
-	"errors"
 	"io"
 	"os"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	aws_config "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	aws_dynamodb "github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	dynamotypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	aws_s3 "github.com/aws/aws-sdk-go-v2/service/s3"
-	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/go-playground/assert/v2"
 	attachmentdynamo "github.com/mrflick72/budget/budget-api/adapter/budget/attachment/dynamodb"
 	attachments3 "github.com/mrflick72/budget/budget-api/adapter/budget/attachment/s3"
 	"github.com/mrflick72/budget/budget-api/domain/budget/attachment"
 	"github.com/mrflick72/budget/budget-api/internal/testutils"
+	"github.com/mrflick72/budget/budget-api/internal/testutils/awsfixture"
 )
 
 const (
@@ -28,119 +25,18 @@ const (
 	testBucketName = "budget-attachment-composite-staging"
 )
 
-var dynamoClient, _ = newLocalDynamoDBClient()
-var s3Client, _ = newLocalS3Client()
-
-func newLocalDynamoDBClient() (*aws_dynamodb.Client, error) {
-	cfg, err := aws_config.LoadDefaultConfig(context.TODO(),
-		aws_config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider("xxx", "xxx", "xxx")),
-		aws_config.WithRegion("eu-central-1"),
-		aws_config.WithBaseEndpoint("http://localhost:4566"),
-	)
-	if err != nil {
-		panic("unable to load SDK config, " + err.Error())
-	}
-	return aws_dynamodb.NewFromConfig(cfg), err
-}
-
-func newLocalS3Client() (*aws_s3.Client, error) {
-	cfg, err := aws_config.LoadDefaultConfig(context.TODO(),
-		aws_config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider("xxx", "xxx", "xxx")),
-		aws_config.WithRegion("eu-central-1"),
-		aws_config.WithBaseEndpoint("http://localhost:4566"),
-	)
-	if err != nil {
-		panic("unable to load SDK config, " + err.Error())
-	}
-	return aws_s3.NewFromConfig(cfg, func(o *aws_s3.Options) {
-		o.UsePathStyle = true
-	}), err
-}
-
-func setupCompositeTable() error {
-	teardownCompositeTable()
-	_, err := dynamoClient.CreateTable(context.TODO(), &aws_dynamodb.CreateTableInput{
-		TableName: aws.String(testTableName),
-		AttributeDefinitions: []dynamotypes.AttributeDefinition{
-			{AttributeName: aws.String("pk"), AttributeType: dynamotypes.ScalarAttributeTypeS},
-			{AttributeName: aws.String("attachment_id"), AttributeType: dynamotypes.ScalarAttributeTypeS},
-		},
-		KeySchema: []dynamotypes.KeySchemaElement{
-			{AttributeName: aws.String("pk"), KeyType: dynamotypes.KeyTypeHash},
-			{AttributeName: aws.String("attachment_id"), KeyType: dynamotypes.KeyTypeRange},
-		},
-		GlobalSecondaryIndexes: []dynamotypes.GlobalSecondaryIndex{
-			{
-				IndexName: aws.String(testTableName + "_GLOBAL_INDEX"),
-				KeySchema: []dynamotypes.KeySchemaElement{
-					{AttributeName: aws.String("attachment_id"), KeyType: dynamotypes.KeyTypeHash},
-				},
-				Projection: &dynamotypes.Projection{
-					ProjectionType: dynamotypes.ProjectionTypeAll,
-				},
-			},
-		},
-		BillingMode: dynamotypes.BillingModePayPerRequest,
-	})
-	if err != nil {
-		var resourceInUse *dynamotypes.ResourceInUseException
-		if !errors.As(err, &resourceInUse) {
-			return err
-		}
-	}
-	return nil
-}
-
-func teardownCompositeTable() error {
-	_, err := dynamoClient.DeleteTable(context.TODO(), &aws_dynamodb.DeleteTableInput{
-		TableName: aws.String(testTableName),
-	})
-	return err
-}
-
-func setupCompositeBucket() error {
-	teardownCompositeBucket()
-	_, err := s3Client.CreateBucket(context.TODO(), &aws_s3.CreateBucketInput{
-		Bucket: aws.String(testBucketName),
-		CreateBucketConfiguration: &s3types.CreateBucketConfiguration{
-			LocationConstraint: s3types.BucketLocationConstraintEuCentral1,
-		},
-	})
-	if err != nil {
-		var alreadyOwned *s3types.BucketAlreadyOwnedByYou
-		var alreadyExists *s3types.BucketAlreadyExists
-		if errors.As(err, &alreadyOwned) || errors.As(err, &alreadyExists) {
-			return nil
-		}
-		return err
-	}
-	return nil
-}
-
-func teardownCompositeBucket() error {
-	out, err := s3Client.ListObjectsV2(context.TODO(), &aws_s3.ListObjectsV2Input{
-		Bucket: aws.String(testBucketName),
-	})
-	if err == nil {
-		for _, obj := range out.Contents {
-			_, _ = s3Client.DeleteObject(context.TODO(), &aws_s3.DeleteObjectInput{
-				Bucket: aws.String(testBucketName),
-				Key:    obj.Key,
-			})
-		}
-	}
-	_, err = s3Client.DeleteBucket(context.TODO(), &aws_s3.DeleteBucketInput{
-		Bucket: aws.String(testBucketName),
-	})
-	return err
-}
+var dynamoClient = awsfixture.NewLocalDynamoDBClient()
+var s3Client = awsfixture.NewLocalS3Client()
 
 func TestMain(m *testing.M) {
-	setupCompositeTable()
-	setupCompositeBucket()
+	ctx := context.TODO()
+	_ = awsfixture.TeardownTable(ctx, dynamoClient, testTableName)
+	_ = awsfixture.TeardownBucket(ctx, s3Client, testBucketName)
+	_ = awsfixture.SetupAttachmentTable(ctx, dynamoClient, testTableName)
+	_ = awsfixture.SetupBucket(ctx, s3Client, testBucketName)
 	code := m.Run()
-	teardownCompositeBucket()
-	teardownCompositeTable()
+	_ = awsfixture.TeardownBucket(ctx, s3Client, testBucketName)
+	_ = awsfixture.TeardownTable(ctx, dynamoClient, testTableName)
 	os.Exit(code)
 }
 
