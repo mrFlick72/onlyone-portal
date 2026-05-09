@@ -96,7 +96,7 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Contex
 		return nil, errors.New("invalid tag in BudgetExpense")
 	}
 	budgetExpense := &expense.BudgetExpense{
-		Id:       expense.BudgetExpenseId(item["budget_id"].(*types.AttributeValueMemberS).Value),
+		Id:       item["budget_id"].(*types.AttributeValueMemberS).Value,
 		UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
 		Date:     *date,
 		Amount:   moneyAmount,
@@ -193,7 +193,7 @@ func (repository *DynamoDbBudgetExpenseRepository) Save(ctx context.Context, bud
 			"pk":               &types.AttributeValueMemberS{Value: pk},
 			"range_key":        &types.AttributeValueMemberS{Value: range_key},
 			"user_name":        &types.AttributeValueMemberS{Value: budgetExpense.UserName},
-			"budget_id":        &types.AttributeValueMemberS{Value: string(budgetExpense.Id)},
+			"budget_id":        &types.AttributeValueMemberS{Value: budgetExpense.Id},
 			"transaction_date": &types.AttributeValueMemberS{Value: budgetExpense.Date.GetIsoFormattedDate()},
 			"amount":           &types.AttributeValueMemberS{Value: budgetExpense.Amount.StringifyAmount()},
 			"note":             &types.AttributeValueMemberS{Value: budgetExpense.Note},

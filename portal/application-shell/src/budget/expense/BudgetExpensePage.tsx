@@ -21,6 +21,8 @@ import DeleteBudgetExpenseConfirmationPopUp from "./popup/DeleteBudgetExpenseCon
 import TotalBySearchTags from "./budget/TotalBySearchTags"
 import SpentBudgetTotalBanner from "./budget/SpentBudgetTotalBanner"
 import SearchBudgetExpensePopUp from "./popup/SearchBudgetExpensePopUp"
+import UploadAttachmentPopUp from "../attachment/UploadAttachmentPopUp"
+import type { AttachmentTarget } from "../attachment/domain/Attachment"
 import Menu from "../../components/menu/Menu"
 import OpenPopUpMenuItem from "../../components/menu/OpenPopUpMenuItem"
 import SearchTagsPageMenuItem from "../../components/menu/SearchTagsPageMenuItem"
@@ -62,6 +64,8 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
     const [openSaveBudgetExpensePopUp, setOpenSaveBudgetExpensePopUp] = useState(false)
     const [openDeleteBudgetExpensePopUp, setOpenDeleteBudgetExpensePopUp] = useState(false)
     const [openSearchBudgetExpensePopUp, setOpenSearchBudgetExpensePopUp] = useState(false)
+    const [openUploadAttachmentPopUp, setOpenUploadAttachmentPopUp] = useState(false)
+    const [attachmentTarget, setAttachmentTarget] = useState<AttachmentTarget | null>(null)
 
     const [selectedMonth, setSelectedMonth] = useState<string>(getMonthSearchCriteria())
     const [selectedYear, setSelectedYear] = useState<string>(getYearSearchCriteria())
@@ -133,6 +137,23 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
 
     const searchBudgetExpensePopUpCloseHandler = useCallback(() => {
         setOpenSearchBudgetExpensePopUp(false)
+    }, [])
+
+    const makeUploadAttachmentPopUpOpen = useCallback((expense: BudgetExpense) => {
+        if (!expense.id) {
+            return
+        }
+        setAttachmentTarget({
+            budgetId: expense.id,
+            budgetType: "expense",
+            date: expense.date,
+        })
+        setOpenUploadAttachmentPopUp(true)
+    }, [])
+
+    const uploadAttachmentPopUpCloseHandler = useCallback(() => {
+        setOpenUploadAttachmentPopUp(false)
+        setAttachmentTarget(null)
     }, [])
 
     const deleteItem = useCallback(() => {
@@ -247,6 +268,13 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
                     modal={configMap.budgetExpense(messageRegistry).deleteModal}
                 />
 
+                <UploadAttachmentPopUp
+                    open={openUploadAttachmentPopUp}
+                    handleClose={uploadAttachmentPopUpCloseHandler}
+                    target={attachmentTarget}
+                    modal={configMap.budgetExpense(messageRegistry).uploadAttachmentModal}
+                />
+
                 <Menu messages={configMap.searchTags(messageRegistry).menuMessages} navBarItems={navBarItems}>
                     <OpenPopUpMenuItem
                         icon={<LocalGroceryStore />}
@@ -276,6 +304,7 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
                                 spentBudget={spentBudget}
                                 openUpdateBudgetExpensePopUp={makeUpdateBudgetExpensePopUpOpen}
                                 openDeleteBudgetExpensePopUp={makeDeleteBudgetExpensePopUpOpen}
+                                openUploadAttachmentPopUp={makeUploadAttachmentPopUpOpen}
                             />
                         </TabPanel>
                         <TabPanel value={tabPanel} index={1}>

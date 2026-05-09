@@ -48,6 +48,19 @@ export class OnlyonePortalPagesConfigMap {
                 id: "deleteModal",
                 title: getMessageFor(bundle, "budgetExpensePage.delete.popup.title"),
                 message: getMessageFor(bundle, "budgetExpensePage.delete.popup.message")
+            },
+
+            uploadAttachmentModal: {
+                id: "uploadAttachmentModal",
+                title: getMessageFor(bundle, "budgetExpensePage.attachment.popup.title"),
+                uploadButtonLabel: getMessageFor(bundle, "common.button.upload.label"),
+                closeButtonLabel: getMessageFor(bundle, "common.button.close.label"),
+                chooseFileLabel: getMessageFor(bundle, "attachment.popup.chooseFile.label"),
+                noFileSelectedLabel: getMessageFor(bundle, "attachment.popup.noFileSelected.label"),
+                existingAttachmentsLabel: getMessageFor(bundle, "attachment.popup.existingAttachments.label"),
+                noAttachmentsLabel: getMessageFor(bundle, "attachment.popup.noAttachments.label"),
+                downloadAttachmentLabel: getMessageFor(bundle, "attachment.popup.download.label"),
+                deleteAttachmentLabel: getMessageFor(bundle, "attachment.popup.delete.label")
             }
         }
     }
@@ -72,6 +85,18 @@ export class OnlyonePortalPagesConfigMap {
                 title: getMessageFor(bundle, "budgetRevenuePage.changeYear.popup.title"),
                 closeButtonLabel: getMessageFor(bundle, "common.button.close.label"),
                 saveButtonLabel: getMessageFor(bundle, "common.button.save.label")
+            },
+            uploadAttachmentModal: {
+                id: "uploadAttachmentModal",
+                title: getMessageFor(bundle, "budgetRevenuePage.attachment.popup.title"),
+                uploadButtonLabel: getMessageFor(bundle, "common.button.upload.label"),
+                closeButtonLabel: getMessageFor(bundle, "common.button.close.label"),
+                chooseFileLabel: getMessageFor(bundle, "attachment.popup.chooseFile.label"),
+                noFileSelectedLabel: getMessageFor(bundle, "attachment.popup.noFileSelected.label"),
+                existingAttachmentsLabel: getMessageFor(bundle, "attachment.popup.existingAttachments.label"),
+                noAttachmentsLabel: getMessageFor(bundle, "attachment.popup.noAttachments.label"),
+                downloadAttachmentLabel: getMessageFor(bundle, "attachment.popup.download.label"),
+                deleteAttachmentLabel: getMessageFor(bundle, "attachment.popup.delete.label")
             }
         }
     }

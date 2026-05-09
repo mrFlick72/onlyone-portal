@@ -17,3 +17,11 @@ logger:
 
 tag-api:
   base-url: http://local.tag-api.onlyone-portal.com:8000
+
+budget-api:
+  dynamo-db:
+    attachment-metadata:
+      table-name: BUDGET_ATTACHMENT_METADATA
+  s3:
+    attachment:
+      bucket-name: budget-attachment-staging

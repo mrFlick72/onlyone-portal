@@ -16,7 +16,7 @@ jobs:
         ports:
           - "4566-4599:4566-4599"
         env:
-          SERVICES: dynamodb
+          SERVICES: dynamodb,s3
     steps:
       - name: checkout
         uses: actions/checkout@v6

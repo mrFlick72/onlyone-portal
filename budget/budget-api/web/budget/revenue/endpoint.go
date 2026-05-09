@@ -15,7 +15,7 @@ func RegisterRevenueEndpoints(
 	facade revenue.RevenueActions,
 ) *gin.Engine {
 
-	var logger = logging.GetLoggerInstanceForComponentByTypeName("web.RegisterRevenueEndpoints")
+	var logger = logging.GetLoggerInstanceForComponentByTypeName("revenue.RegisterRevenueEndpoints")
 
 	r.GET("/api/budget/revenue", func(c *gin.Context) {
 		year, err := parseYearQueryParam(c.Query("q"))
