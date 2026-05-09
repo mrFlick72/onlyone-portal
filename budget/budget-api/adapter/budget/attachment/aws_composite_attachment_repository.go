@@ -39,6 +39,12 @@ func (repository *AwsCompositeAttachmentRepository) SaveAttachment(ctx context.C
 	objectKey := repository.ContentRepository.ObjectKeyFor(att, pk)
 	fileLocation := repository.ContentRepository.FileLocationFor(objectKey)
 
+	if att.Metadata == nil {
+		att.Metadata = make(map[string]string)
+	}
+	att.Metadata[attachment.MetadataKeyBucket] = repository.ContentRepository.Bucket
+	att.Metadata[attachment.MetadataKeyObjectKey] = objectKey
+
 	if err := repository.ContentRepository.Save(ctx, objectKey, att.ContentType, att.Content); err != nil {
 		return err
 	}
@@ -59,7 +65,7 @@ func (repository *AwsCompositeAttachmentRepository) GenAttachment(ctx context.Co
 		return nil, err
 	}
 
-	objectKey := att.Metadata["file_location"]
+	objectKey := att.Metadata[attachment.MetadataKeyObjectKey]
 	repository.logger.LogInfofFor("objectKey: %v", objectKey)
 
 	content, err := repository.ContentRepository.GetContentFor(ctx, objectKey)

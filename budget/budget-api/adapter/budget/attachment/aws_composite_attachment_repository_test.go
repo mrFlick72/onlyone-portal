@@ -186,6 +186,11 @@ func TestSaveAttachmentWritesContentToS3AndMetadataToDynamo(t *testing.T) {
 	assert.Equal(t, expectedFileLocation, itemOut.Item["file_location"].(*dynamotypes.AttributeValueMemberS).Value)
 	assert.Equal(t, "generated-uuid-1", itemOut.Item["attachment_id"].(*dynamotypes.AttributeValueMemberS).Value)
 	assert.Equal(t, "testuser", itemOut.Item["user_name"].(*dynamotypes.AttributeValueMemberS).Value)
+
+	metadataAttr := itemOut.Item["metadata"].(*dynamotypes.AttributeValueMemberM).Value
+	assert.Equal(t, testBucketName, metadataAttr[attachment.MetadataKeyBucket].(*dynamotypes.AttributeValueMemberS).Value)
+	assert.Equal(t, expectedKey, metadataAttr[attachment.MetadataKeyObjectKey].(*dynamotypes.AttributeValueMemberS).Value)
+	assert.Equal(t, "web", metadataAttr["source"].(*dynamotypes.AttributeValueMemberS).Value)
 }
 
 func TestSaveAttachmentReusesExistingAttachmentIdAndOverwrites(t *testing.T) {

@@ -24,3 +24,9 @@ const (
 	Expense BudgetType = "expense"
 	Revenue BudgetType = "revenue"
 )
+
+// Keys used to reference values inside AttachmentMetadata.Metadata.
+const (
+	MetadataKeyBucket    = "metadata_bucket"
+	MetadataKeyObjectKey = "metadata_object_key"
+)
