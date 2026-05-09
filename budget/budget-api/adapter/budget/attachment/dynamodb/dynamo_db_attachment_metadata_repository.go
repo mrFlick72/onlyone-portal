@@ -109,7 +109,35 @@ func (repository *DynamoDbAttachmentMetadataRepository) FindAllAttachment(ctx co
 	return result, nil
 }
 
-func (repository *DynamoDbAttachmentMetadataRepository) GetAttachment(ctx context.Context, id string) (*attachment.Attachment, error) {
+func (repository *DynamoDbAttachmentMetadataRepository) GetAttachment(ctx context.Context, user string, id string) (*attachment.Attachment, error) {
+	input := &dynamodb.QueryInput{
+		TableName: aws.String(repository.TableName),
+		IndexName: aws.String(fmt.Sprintf("%s_GLOBAL_INDEX", repository.TableName)),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":attachmentId": &types.AttributeValueMemberS{Value: id},
+			":user_name":    &types.AttributeValueMemberS{Value: user},
+		},
+		KeyConditionExpression: aws.String("attachmentId =:attachmentId"),
+		FilterExpression:       aws.String("user_name =:user_name"),
+	}
+	query, err := repository.Client.Query(ctx, input)
+	if err != nil {
+		repository.logger.LogErrorfFor("Error during DynamoDb Global Secondary Index query err: %v", err)
+		return nil, err
+	}
 
-	return nil, nil
+	if len(query.Items) == 0 {
+		repository.logger.LogErrorfFor("No attachment found in the global secondary index with this id: %s. Error details: %v", id, err)
+		return nil, err
+	}
+
+	attachmentMetadata := query.Items[0]
+	return &attachment.Attachment{
+		AttachmentMetadata: attachment.AttachmentMetadata{
+			AttachmentId: id,
+			Owner:        user,
+			FineName:     attachmentMetadata["file_name"].(*types.AttributeValueMemberS).Value,
+			ContentType:  attachmentMetadata["content_type"].(*types.AttributeValueMemberS).Value,
+		},
+	}, nil
 }
