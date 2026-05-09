@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/mrflick72/budget/budget-api/domain/budget/attachment"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
+	"io"
+	"strings"
 )
 
 type S3AttachmentContentRepository struct {
@@ -48,11 +48,15 @@ func (repository *S3AttachmentContentRepository) Save(ctx context.Context, objec
 	return err
 }
 
-func (repository *S3AttachmentContentRepository) GetContentFor(ctx context.Context, objectKey string) ([]byte, error) {
+func (repository *S3AttachmentContentRepository) GetContentFor(ctx context.Context, fileLocation string) ([]byte, error) {
+	after, _ := strings.CutPrefix(fileLocation, repository.Bucket)
+	after, _ = strings.CutPrefix(after, "/")
+	objectKey := after
 	object, err := repository.Client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(repository.Bucket),
 		Key:    aws.String(objectKey),
 	})
+	repository.logger.LogInfofFor("new objectKey: %s", objectKey)
 	if err != nil {
 		repository.logger.LogErrorfFor("error fetching attachment content from s3 key %s: %v", objectKey, err)
 		return nil, err
