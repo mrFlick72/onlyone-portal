@@ -47,7 +47,7 @@ func TestSavePutsObjectInS3(t *testing.T) {
 	repo := NewS3AttachmentContentRepository(TestBucket, s3Client)
 
 	objectKey := "2024/03/15/budget-123_EXPENSE/att-save-1"
-	content := []byte("hello attachment world")
+	content := []byte("hello world attachment")
 
 	err := repo.Save(context.Background(), objectKey, "text/plain", content)
 	assert.Equal(t, nil, err)
