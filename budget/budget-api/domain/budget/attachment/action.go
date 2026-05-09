@@ -34,8 +34,16 @@ type DeleteAttachment struct {
 	repository AttachmentRepository
 }
 
+func NewDeleteAttachment(repository AttachmentRepository) *DeleteAttachment {
+	return &DeleteAttachment{repository: repository}
+}
+
 func (a *DeleteAttachment) Execute(ctx context.Context, attachmentId string) error {
-	panic("has to be implemented")
+	if err := a.repository.DeleteAttachment(ctx, attachmentId); err != nil {
+		logger.LogErrorfFor("error deleting attachment: %v\n", err)
+		return err
+	}
+	return nil
 }
 
 type GetAttachment struct {

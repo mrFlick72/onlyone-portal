@@ -197,3 +197,79 @@ func TestGetAttachmentReturnsErrorWhenNotFound(t *testing.T) {
 	_, err := repo.GetAttachment(context.Background(), "any-owner", "missing-id")
 	assert.NotEqual(t, nil, err)
 }
+
+func TestDeleteReturnsObjectKeyAndRemovesItem(t *testing.T) {
+	idProvider := &DynamoDbAttachmentIdProvider{
+		UuidGenerator: func() string { return "ignored-here" },
+	}
+	repo := NewDynamoDbAttachmentMetadataRepository(TableName, client, idProvider)
+
+	pk := "budget-del_EXPENSE"
+	objectKey := "2024/03/03/budget-del_EXPENSE/att-del-1"
+	att := &attachment.Attachment{
+		AttachmentMetadata: attachment.AttachmentMetadata{
+			AttachmentId: "att-del-1",
+			BudgetId:     "budget-del",
+			BudgetType:   "expense",
+			Date:         testutils.SafeDateFor("03/03/2024"),
+			Owner:        "owner-del",
+			FineName:     "del.pdf",
+			ContentType:  "application/pdf",
+			Metadata: map[string]string{
+				attachment.MetadataKeyBucket:    "del-bucket",
+				attachment.MetadataKeyObjectKey: objectKey,
+			},
+		},
+	}
+	assert.Equal(t, nil, repo.Save(context.Background(), att, pk, "del-bucket/"+objectKey))
+
+	got, err := repo.Delete(context.Background(), "owner-del", "att-del-1")
+	assert.Equal(t, nil, err)
+	assert.Equal(t, objectKey, got)
+
+	item, err := getItem(context.Background(), pk, "att-del-1")
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 0, len(item))
+}
+
+func TestDeleteReturnsErrorWhenNotFound(t *testing.T) {
+	idProvider := &DynamoDbAttachmentIdProvider{
+		UuidGenerator: func() string { return "ignored-here" },
+	}
+	repo := NewDynamoDbAttachmentMetadataRepository(TableName, client, idProvider)
+
+	_, err := repo.Delete(context.Background(), "any-owner", "missing-id")
+	assert.NotEqual(t, nil, err)
+}
+
+func TestDeleteRefusesToDeleteWhenOwnerDoesNotMatch(t *testing.T) {
+	idProvider := &DynamoDbAttachmentIdProvider{
+		UuidGenerator: func() string { return "ignored-here" },
+	}
+	repo := NewDynamoDbAttachmentMetadataRepository(TableName, client, idProvider)
+
+	pk := "budget-acl_EXPENSE"
+	objectKey := "2024/04/04/budget-acl_EXPENSE/att-acl-1"
+	att := &attachment.Attachment{
+		AttachmentMetadata: attachment.AttachmentMetadata{
+			AttachmentId: "att-acl-1",
+			BudgetId:     "budget-acl",
+			BudgetType:   "expense",
+			Date:         testutils.SafeDateFor("04/04/2024"),
+			Owner:        "owner-real",
+			FineName:     "acl.pdf",
+			ContentType:  "application/pdf",
+			Metadata: map[string]string{
+				attachment.MetadataKeyObjectKey: objectKey,
+			},
+		},
+	}
+	assert.Equal(t, nil, repo.Save(context.Background(), att, pk, "acl-bucket/"+objectKey))
+
+	_, err := repo.Delete(context.Background(), "intruder", "att-acl-1")
+	assert.NotEqual(t, nil, err)
+
+	item, err := getItem(context.Background(), pk, "att-acl-1")
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "att-acl-1", item["attachment_id"].(*types.AttributeValueMemberS).Value)
+}

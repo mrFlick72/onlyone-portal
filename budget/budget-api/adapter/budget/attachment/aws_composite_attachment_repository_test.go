@@ -175,6 +175,72 @@ func TestGenAttachmentReturnsContentRoundTrippedFromS3(t *testing.T) {
 	assert.Equal(t, "2024/04/12/budget-gen_EXPENSE/gen-uuid", loaded.Metadata[attachment.MetadataKeyObjectKey])
 }
 
+func TestDeleteAttachmentRemovesContentAndMetadata(t *testing.T) {
+	repo := newCompositeRepository("delete-uuid")
+
+	att := &attachment.Attachment{
+		AttachmentMetadata: attachment.AttachmentMetadata{
+			BudgetId:    "budget-del",
+			BudgetType:  "expense",
+			Date:        testutils.SafeDateFor("10/07/2024"),
+			Owner:       "del-user",
+			FineName:    "del.pdf",
+			ContentType: "application/pdf",
+		},
+		Content: []byte("delete-me"),
+	}
+	ctx := testutils.NewStubbedContextWith("del-user")
+	assert.Equal(t, nil, repo.SaveAttachment(ctx, att))
+
+	expectedKey := "2024/07/10/budget-del_EXPENSE/delete-uuid"
+
+	err := repo.DeleteAttachment(ctx, "delete-uuid")
+	assert.Equal(t, nil, err)
+
+	_, err = s3Client.GetObject(context.Background(), &aws_s3.GetObjectInput{
+		Bucket: aws.String(testBucketName),
+		Key:    aws.String(expectedKey),
+	})
+	assert.NotEqual(t, nil, err)
+
+	item, err := dynamoClient.GetItem(context.Background(), &aws_dynamodb.GetItemInput{
+		TableName: aws.String(testTableName),
+		Key: map[string]dynamotypes.AttributeValue{
+			"pk":            &dynamotypes.AttributeValueMemberS{Value: "budget-del_EXPENSE"},
+			"attachment_id": &dynamotypes.AttributeValueMemberS{Value: "delete-uuid"},
+		},
+	})
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 0, len(item.Item))
+}
+
+func TestDeleteAttachmentReturnsErrorWhenNotOwner(t *testing.T) {
+	repo := newCompositeRepository("acl-uuid")
+
+	att := &attachment.Attachment{
+		AttachmentMetadata: attachment.AttachmentMetadata{
+			BudgetId:    "budget-acl-comp",
+			BudgetType:  "revenue",
+			Date:        testutils.SafeDateFor("11/07/2024"),
+			Owner:       "owner-real",
+			FineName:    "acl.pdf",
+			ContentType: "application/pdf",
+		},
+		Content: []byte("hands off"),
+	}
+	assert.Equal(t, nil, repo.SaveAttachment(testutils.NewStubbedContextWith("owner-real"), att))
+
+	err := repo.DeleteAttachment(testutils.NewStubbedContextWith("intruder"), "acl-uuid")
+	assert.NotEqual(t, nil, err)
+
+	expectedKey := "2024/07/11/budget-acl-comp_REVENUE/acl-uuid"
+	_, err = s3Client.GetObject(context.Background(), &aws_s3.GetObjectInput{
+		Bucket: aws.String(testBucketName),
+		Key:    aws.String(expectedKey),
+	})
+	assert.Equal(t, nil, err)
+}
+
 func TestFindAllAttachmentReturnsOnlyOwnerItemsForPartition(t *testing.T) {
 	repo := newCompositeRepository("findall-uuid")
 

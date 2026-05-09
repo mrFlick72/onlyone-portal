@@ -84,3 +84,27 @@ func TestGetContentForReturnsErrorWhenObjectMissing(t *testing.T) {
 	_, err := repo.GetContentFor(context.Background(), "does/not/exist")
 	assert.NotEqual(t, nil, err)
 }
+
+func TestDeleteRemovesObjectFromS3(t *testing.T) {
+	repo := NewS3AttachmentContentRepository(TestBucket, s3Client)
+
+	objectKey := "2024/05/01/budget-del_EXPENSE/att-del-1"
+	content := []byte("to be deleted")
+	assert.Equal(t, nil, repo.Save(context.Background(), objectKey, "text/plain", content))
+
+	err := repo.Delete(context.Background(), objectKey)
+	assert.Equal(t, nil, err)
+
+	_, err = s3Client.GetObject(context.Background(), &aws_s3.GetObjectInput{
+		Bucket: aws.String(TestBucket),
+		Key:    aws.String(objectKey),
+	})
+	assert.NotEqual(t, nil, err)
+}
+
+func TestDeleteIsIdempotentWhenObjectMissing(t *testing.T) {
+	repo := NewS3AttachmentContentRepository(TestBucket, s3Client)
+
+	err := repo.Delete(context.Background(), "does/not/exist")
+	assert.Equal(t, nil, err)
+}

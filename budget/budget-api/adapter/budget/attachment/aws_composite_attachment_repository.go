@@ -2,7 +2,6 @@ package attachment
 
 import (
 	"context"
-	"errors"
 
 	"github.com/mrflick72/budget/budget-api/adapter/budget/attachment/dynamodb"
 	"github.com/mrflick72/budget/budget-api/adapter/budget/attachment/s3"
@@ -97,5 +96,21 @@ func (repository *AwsCompositeAttachmentRepository) FindAllAttachment(ctx contex
 }
 
 func (repository *AwsCompositeAttachmentRepository) DeleteAttachment(ctx context.Context, attachmentId string) error {
-	return errors.New("not implemented")
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		repository.logger.LogErrorfFor("error getting current user: %v", err)
+		return err
+	}
+
+	objectKey, err := repository.MetadataRepository.Delete(ctx, *user.UserName, attachmentId)
+	if err != nil {
+		repository.logger.LogErrorfFor("error deleting attachment metadata for id %s: %v", attachmentId, err)
+		return err
+	}
+
+	if err := repository.ContentRepository.Delete(ctx, objectKey); err != nil {
+		repository.logger.LogErrorfFor("error deleting attachment content for id %s: %v", attachmentId, err)
+		return err
+	}
+	return nil
 }
