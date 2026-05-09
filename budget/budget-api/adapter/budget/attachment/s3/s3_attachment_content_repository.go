@@ -47,6 +47,12 @@ func (repository *S3AttachmentContentRepository) Save(ctx context.Context, objec
 	return err
 }
 
+func (repository *S3AttachmentContentRepository) GetContentFor(ctx context.Context, objectKey string) {
+
+	repository.Client.GetObject(ctx, s3.GetObjectInput{Bucket: aws.String(repository.Bucket),
+		Key: aws.String(objectKey)})
+}
+
 func datePathFor(d date.Date) string {
 	return d.GetTime().Format("2006/01/02")
 }

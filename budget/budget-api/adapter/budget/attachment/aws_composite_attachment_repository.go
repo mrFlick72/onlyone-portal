@@ -46,9 +46,26 @@ func (repository *AwsCompositeAttachmentRepository) SaveAttachment(ctx context.C
 	return repository.MetadataRepository.Save(ctx, att, pk, fileLocation)
 }
 
+/*
+Pay attention the method does not provide a complete attachment object.
+It is intended to provide the attavment content
+*/
 func (repository *AwsCompositeAttachmentRepository) GenAttachment(ctx context.Context, attachmentId string) (*attachment.Attachment, error) {
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		repository.logger.LogErrorfFor("error getting current user: %v", err)
+		return nil, err
+	}
+	att, err := repository.MetadataRepository.GetAttachment(ctx, *user.UserName, attachmentId)
 
-	repository.MetadataRepository.GetAttachment(ctx, attachmentId)
+	if err != nil {
+		repository.logger.LogErrorfFor("Error to get the attachment metadata: %v", err)
+		return nil, err
+	}
+	pk := repository.IdProvider.PartitionKeyFor(att)
+	objectKey := repository.ContentRepository.ObjectKeyFor(att, pk)
+
+	repository.ContentRepository.GetContentFor(ctx, objectKey)
 	return nil, errors.New("not implemented")
 }
 
