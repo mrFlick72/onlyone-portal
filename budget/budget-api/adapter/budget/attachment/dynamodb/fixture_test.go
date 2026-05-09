@@ -41,6 +41,17 @@ func setupTestDynamoDBTable() error {
 			{AttributeName: aws.String("pk"), KeyType: types.KeyTypeHash},
 			{AttributeName: aws.String("attachment_id"), KeyType: types.KeyTypeRange},
 		},
+		GlobalSecondaryIndexes: []types.GlobalSecondaryIndex{
+			{
+				IndexName: aws.String(TableName + "_GLOBAL_INDEX"),
+				KeySchema: []types.KeySchemaElement{
+					{AttributeName: aws.String("attachment_id"), KeyType: types.KeyTypeHash},
+				},
+				Projection: &types.Projection{
+					ProjectionType: types.ProjectionTypeAll,
+				},
+			},
+		},
 		BillingMode: types.BillingModePayPerRequest,
 	})
 	if err != nil {

@@ -90,3 +90,110 @@ func TestSaveAttachmentMetadataOmitsEmptyMetadataMap(t *testing.T) {
 	_, hasMetadata := item["metadata"]
 	assert.Equal(t, false, hasMetadata)
 }
+
+func TestFindAllAttachmentReturnsItemsForOwnerAndPartition(t *testing.T) {
+	idProvider := &DynamoDbAttachmentIdProvider{
+		UuidGenerator: func() string { return "ignored-here" },
+	}
+	repo := NewDynamoDbAttachmentMetadataRepository(TableName, client, idProvider)
+
+	pk := "budget-find_EXPENSE"
+	att1 := &attachment.Attachment{
+		AttachmentMetadata: attachment.AttachmentMetadata{
+			AttachmentId: "att-find-1",
+			BudgetId:     "budget-find",
+			BudgetType:   "expense",
+			Date:         testutils.SafeDateFor("10/01/2024"),
+			Owner:        "owner-alice",
+			FineName:     "alice-1.pdf",
+			ContentType:  "application/pdf",
+			Metadata: map[string]string{
+				attachment.MetadataKeyBucket:    "alice-bucket",
+				attachment.MetadataKeyObjectKey: "2024/01/10/budget-find_EXPENSE/att-find-1",
+				"source":                        "web",
+			},
+		},
+	}
+	att2 := &attachment.Attachment{
+		AttachmentMetadata: attachment.AttachmentMetadata{
+			AttachmentId: "att-find-2",
+			BudgetId:     "budget-find",
+			BudgetType:   "expense",
+			Date:         testutils.SafeDateFor("11/01/2024"),
+			Owner:        "owner-bob",
+			FineName:     "bob.pdf",
+			ContentType:  "application/pdf",
+		},
+	}
+
+	assert.Equal(t, nil, repo.Save(context.Background(), att1, pk, "alice-bucket/2024/01/10/budget-find_EXPENSE/att-find-1"))
+	assert.Equal(t, nil, repo.Save(context.Background(), att2, pk, "alice-bucket/2024/01/11/budget-find_EXPENSE/att-find-2"))
+
+	got, err := repo.FindAllAttachment(context.Background(), "owner-alice", pk)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 1, len(got))
+	assert.Equal(t, "att-find-1", got[0].AttachmentId)
+	assert.Equal(t, "owner-alice", got[0].Owner)
+	assert.Equal(t, "alice-1.pdf", got[0].FineName)
+	assert.Equal(t, "alice-bucket", got[0].Metadata[attachment.MetadataKeyBucket])
+	assert.Equal(t, "2024/01/10/budget-find_EXPENSE/att-find-1", got[0].Metadata[attachment.MetadataKeyObjectKey])
+	assert.Equal(t, "web", got[0].Metadata["source"])
+}
+
+func TestFindAllAttachmentReturnsEmptySliceWhenNoMatches(t *testing.T) {
+	idProvider := &DynamoDbAttachmentIdProvider{
+		UuidGenerator: func() string { return "ignored-here" },
+	}
+	repo := NewDynamoDbAttachmentMetadataRepository(TableName, client, idProvider)
+
+	got, err := repo.FindAllAttachment(context.Background(), "no-owner", "no_PARTITION")
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 0, len(got))
+}
+
+func TestGetAttachmentReturnsAttachmentWithMetadataMap(t *testing.T) {
+	idProvider := &DynamoDbAttachmentIdProvider{
+		UuidGenerator: func() string { return "ignored-here" },
+	}
+	repo := NewDynamoDbAttachmentMetadataRepository(TableName, client, idProvider)
+
+	pk := "budget-get_EXPENSE"
+	objectKey := "2024/02/02/budget-get_EXPENSE/att-get-1"
+	fileLocation := "get-bucket/" + objectKey
+	att := &attachment.Attachment{
+		AttachmentMetadata: attachment.AttachmentMetadata{
+			AttachmentId: "att-get-1",
+			BudgetId:     "budget-get",
+			BudgetType:   "expense",
+			Date:         testutils.SafeDateFor("02/02/2024"),
+			Owner:        "owner-get",
+			FineName:     "doc.pdf",
+			ContentType:  "application/pdf",
+			Metadata: map[string]string{
+				attachment.MetadataKeyBucket:    "get-bucket",
+				attachment.MetadataKeyObjectKey: objectKey,
+			},
+		},
+	}
+	assert.Equal(t, nil, repo.Save(context.Background(), att, pk, fileLocation))
+
+	loaded, err := repo.GetAttachment(context.Background(), "owner-get", "att-get-1")
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "att-get-1", loaded.AttachmentId)
+	assert.Equal(t, "owner-get", loaded.Owner)
+	assert.Equal(t, "doc.pdf", loaded.FineName)
+	assert.Equal(t, "application/pdf", loaded.ContentType)
+	assert.Equal(t, "get-bucket", loaded.Metadata[attachment.MetadataKeyBucket])
+	assert.Equal(t, objectKey, loaded.Metadata[attachment.MetadataKeyObjectKey])
+	assert.Equal(t, fileLocation, loaded.Metadata["file_location"])
+}
+
+func TestGetAttachmentReturnsErrorWhenNotFound(t *testing.T) {
+	idProvider := &DynamoDbAttachmentIdProvider{
+		UuidGenerator: func() string { return "ignored-here" },
+	}
+	repo := NewDynamoDbAttachmentMetadataRepository(TableName, client, idProvider)
+
+	_, err := repo.GetAttachment(context.Background(), "any-owner", "missing-id")
+	assert.NotEqual(t, nil, err)
+}

@@ -90,7 +90,7 @@ func (repository *DynamoDbAttachmentMetadataRepository) FindAllAttachment(ctx co
 		rawDate := item["date"].(*types.AttributeValueMemberS).Value
 		dateFor, err := date.IsoDateFor(rawDate)
 		if err != nil {
-			errorMessage := fmt.Sprint("Parsing failure: the data field is in a incorrect format: raw data: %s Error details: %v", rawDate, err)
+			errorMessage := fmt.Sprintf("Parsing failure: the data field is in a incorrect format: raw data: %s Error details: %v", rawDate, err)
 			repository.logger.LogErrorfFor(errorMessage)
 			return nil, errors.New(errorMessage)
 		}

@@ -275,3 +275,110 @@ func TestUploadAttachmentFacadeErrorReturns500(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
+
+func TestGetAttachmentMetadataReturns200WithRepresentation(t *testing.T) {
+	r := setUpRouter()
+	facade := new(AttachmentActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterAttachmentEndpoints(r, contextFactoryConverter, facade)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+	facade.On("GetAttachments", ctx, "budget-123", attachment.Expense).Return([]attachment.AttachmentMetadata{
+		{AttachmentId: "a-1", BudgetId: "budget-123", BudgetType: "expense", Owner: "USER", FineName: "r.pdf"},
+	}, nil)
+
+	req, _ := http.NewRequest(http.MethodGet, "/api/attachment/metadata/expense/budget-123", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	body := w.Body.String()
+	if !bytes.Contains([]byte(body), []byte(`"attachmentId":"a-1"`)) || !bytes.Contains([]byte(body), []byte(`"fileName":"r.pdf"`)) {
+		t.Fatalf("unexpected body: %s", body)
+	}
+}
+
+func TestGetAttachmentMetadataFacadeErrorReturns500(t *testing.T) {
+	r := setUpRouter()
+	facade := new(AttachmentActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterAttachmentEndpoints(r, contextFactoryConverter, facade)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+	facade.On("GetAttachments", ctx, "budget-x", attachment.Revenue).Return(nil, errors.New("db down"))
+
+	req, _ := http.NewRequest(http.MethodGet, "/api/attachment/metadata/revenue/budget-x", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestGetAttachmentContentReturns200WithContent(t *testing.T) {
+	r := setUpRouter()
+	facade := new(AttachmentActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterAttachmentEndpoints(r, contextFactoryConverter, facade)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+	expected := &attachment.Attachment{
+		AttachmentMetadata: attachment.AttachmentMetadata{
+			AttachmentId: "att-1",
+			FineName:     "doc.pdf",
+			ContentType:  "application/pdf",
+		},
+		Content: []byte("PDFBYTES"),
+	}
+	facade.On("GetAttachmentBy", ctx, "att-1").Return(expected, nil)
+
+	req, _ := http.NewRequest(http.MethodGet, "/api/attachment/att-1/content", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "application/pdf", w.Header().Get("Content-Type"))
+	assert.Equal(t, `attachment; filename="doc.pdf"`, w.Header().Get("Content-Disposition"))
+	assert.Equal(t, "PDFBYTES", w.Body.String())
+}
+
+func TestGetAttachmentContentDefaultsToOctetStreamWhenNoContentType(t *testing.T) {
+	r := setUpRouter()
+	facade := new(AttachmentActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterAttachmentEndpoints(r, contextFactoryConverter, facade)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+	expected := &attachment.Attachment{
+		AttachmentMetadata: attachment.AttachmentMetadata{AttachmentId: "att-2", FineName: "blob"},
+		Content:            []byte("X"),
+	}
+	facade.On("GetAttachmentBy", ctx, "att-2").Return(expected, nil)
+
+	req, _ := http.NewRequest(http.MethodGet, "/api/attachment/att-2/content", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "application/octet-stream", w.Header().Get("Content-Type"))
+}
+
+func TestGetAttachmentContentFacadeErrorReturns500(t *testing.T) {
+	r := setUpRouter()
+	facade := new(AttachmentActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterAttachmentEndpoints(r, contextFactoryConverter, facade)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+	facade.On("GetAttachmentBy", ctx, "missing").Return(nil, errors.New("not found"))
+
+	req, _ := http.NewRequest(http.MethodGet, "/api/attachment/missing/content", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}

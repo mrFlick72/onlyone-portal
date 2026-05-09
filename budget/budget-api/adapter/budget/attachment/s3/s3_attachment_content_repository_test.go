@@ -64,3 +64,23 @@ func TestSavePutsObjectInS3(t *testing.T) {
 	assert.Equal(t, content, body)
 	assert.Equal(t, "text/plain", aws.ToString(out.ContentType))
 }
+
+func TestGetContentForReturnsSavedContent(t *testing.T) {
+	repo := NewS3AttachmentContentRepository(TestBucket, s3Client)
+
+	objectKey := "2024/04/20/budget-xyz_EXPENSE/att-get-1"
+	content := []byte("retrieved content")
+	err := repo.Save(context.Background(), objectKey, "text/plain", content)
+	assert.Equal(t, nil, err)
+
+	got, err := repo.GetContentFor(context.Background(), objectKey)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, content, got)
+}
+
+func TestGetContentForReturnsErrorWhenObjectMissing(t *testing.T) {
+	repo := NewS3AttachmentContentRepository(TestBucket, s3Client)
+
+	_, err := repo.GetContentFor(context.Background(), "does/not/exist")
+	assert.NotEqual(t, nil, err)
+}
