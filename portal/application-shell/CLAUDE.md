@@ -59,20 +59,32 @@ The three `budget*` entries all share `budget/index.tsx`, which mounts `SpentBud
 
 ```
 src/
-  auth/           # OAuth2 PKCE flow + JWT validation (jose library)
-  config/         # ApplicationConfig loaded from env vars via dotenv-webpack
-  account/        # User profile feature
-  budget/         # Budget feature (expenses, revenue, search tags)
-    spent-budget/ # Expense tracking sub-feature
+  auth/             # OAuth2 PKCE flow + JWT validation (jose library)
+  config/           # ApplicationConfig loaded from env vars via dotenv-webpack
+  account/          # User profile feature
+  budget/           # Budget feature (expenses, revenue, search tags, attachments)
+    spent-budget/   # Expense tracking sub-feature
     budget-revenue/ # Revenue tracking sub-feature
-    search-tags/  # Tag management sub-feature
-  components/     # Shared UI: Menu, form inputs, layout helpers
-  messages/       # Hardcoded English message bundle (no i18n library)
-  theme/          # MUI theme configuration
-  time/           # Month/date utilities
+    search-tags/    # Tag management sub-feature
+    attachment/     # File attachments shared by expense + revenue (UploadAttachmentPopUp + AttachmentRepository)
+  components/       # Shared UI: Menu, form inputs, layout helpers
+  messages/         # Hardcoded English message bundle (no i18n library)
+  theme/            # MUI theme configuration
+  time/             # Month/date utilities
 ```
 
 Each feature follows a `domain/` pattern: type definitions in `domain/*.ts`, API calls in `domain/*Repository.ts`, React components at the feature level.
+
+### Attachments
+
+`budget/attachment/UploadAttachmentPopUp.tsx` is a single dialog reused by both `BudgetExpensePage` and `BudgetRevenuePage`. The parent page passes an `AttachmentTarget` (`{ budgetId, budgetType, date, attachmentId? }`) and a label bundle; the dialog handles upload, listing existing attachments, per-row download, and per-row delete on its own. Backend calls live in `budget/attachment/domain/AttachmentRepository.ts`:
+
+- `saveAttachment(target, file)` → `POST /api/attachment` (multipart). Pass `target.attachmentId` to overwrite an existing attachment instead of creating a new one.
+- `getAttachmentsFor(target)` → `GET /api/attachment/metadata/:budgetType/:budgetId` — returns `[]` on non-2xx so callers don't have to branch.
+- `downloadAttachment(attachmentId, fileName)` → `GET /api/attachment/:attachmentId/content` — streams to a synthesized `<a download>` and revokes the blob URL.
+- `deleteAttachment(attachmentId)` → `DELETE /api/attachment/:attachmentId`.
+
+All four go through `getBudgetApiBaseUrl()` and the standard bearer-token / `credentials: include` envelope used by every other repository. Tooltip / aria-label strings are sourced from `messages/MessageRepository.ts` under the `attachment.popup.*` keys and wired through `OnlyonePortalPagesConfigMap.tsx` for both the expense and revenue page configs.
 
 ### Authentication Pattern
 
