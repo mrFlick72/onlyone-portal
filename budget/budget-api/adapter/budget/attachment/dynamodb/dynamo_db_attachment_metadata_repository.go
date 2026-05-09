@@ -143,6 +143,9 @@ func (repository *DynamoDbAttachmentMetadataRepository) GetAttachment(ctx contex
 			Owner:        user,
 			FineName:     attachmentMetadata["file_name"].(*types.AttributeValueMemberS).Value,
 			ContentType:  attachmentMetadata["content_type"].(*types.AttributeValueMemberS).Value,
+			Metadata: map[string]string{
+				"file_location": attachmentMetadata["file_location"].(*types.AttributeValueMemberS).Value,
+			},
 		},
 	}, nil
 }
