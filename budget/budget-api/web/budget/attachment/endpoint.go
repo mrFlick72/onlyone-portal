@@ -1,6 +1,7 @@
 package attachment
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -112,8 +113,25 @@ func RegisterAttachmentEndpoints(
 		c.JSON(http.StatusOK, representation)
 	})
 
-	r.GET("/api/attachment/:attachmentId/content", func(context *gin.Context) {
+	r.GET("/api/attachment/:attachmentId/content", func(c *gin.Context) {
+		ctx := contextFactoryConverter.CreateContextFromGin(c)
 
+		attachmentId := c.Param("attachmentId")
+
+		logger.LogInfofFor("attachmentId: %v", attachmentId)
+		att, err := facade.GetAttachmentBy(ctx, attachmentId)
+		if err != nil {
+			logger.LogErrorfFor("error getting attachment content for id %s: %v\n", attachmentId, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		contentType := att.ContentType
+		if contentType == "" {
+			contentType = "application/octet-stream"
+		}
+		c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, att.FineName))
+		c.Data(http.StatusOK, contentType, att.Content)
 	})
 
 	r.DELETE("/api/attachment/:attachmentId", func(context *gin.Context) {

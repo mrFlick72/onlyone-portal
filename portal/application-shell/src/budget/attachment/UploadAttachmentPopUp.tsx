@@ -7,15 +7,18 @@ import {
     DialogContent,
     DialogTitle,
     Divider,
+    IconButton,
     List,
     ListItem,
     ListItemIcon,
+    ListItemSecondaryAction,
     ListItemText,
+    Tooltip,
     Typography,
 } from "@mui/material"
-import { AttachFile, CloudUpload, UploadFile } from "@mui/icons-material"
+import { AttachFile, CloudDownload, CloudUpload, UploadFile } from "@mui/icons-material"
 import YesAndNoButtonGroup from "../../components/layout/YesAndNoButtonGroup"
-import { getAttachmentsFor, saveAttachment } from "./domain/AttachmentRepository"
+import { downloadAttachment, getAttachmentsFor, saveAttachment } from "./domain/AttachmentRepository"
 import { AttachmentMetadata, AttachmentTarget } from "./domain/Attachment"
 
 type UploadAttachmentPopUpProps = {
@@ -30,6 +33,7 @@ type UploadAttachmentPopUpProps = {
         noFileSelectedLabel: string
         existingAttachmentsLabel: string
         noAttachmentsLabel: string
+        downloadAttachmentLabel: string
     }
     onUploaded?: () => void
 }
@@ -126,6 +130,20 @@ const UploadAttachmentPopUp: React.FC<UploadAttachmentPopUpProps> = ({
                                     primary={attachment.fileName}
                                     secondary={attachment.owner}
                                 />
+                                <ListItemSecondaryAction>
+                                    <Tooltip title={modal.downloadAttachmentLabel}>
+                                        <IconButton
+                                            edge="end"
+                                            size="small"
+                                            aria-label={modal.downloadAttachmentLabel}
+                                            onClick={() =>
+                                                downloadAttachment(attachment.attachmentId, attachment.fileName)
+                                            }
+                                        >
+                                            <CloudDownload fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                </ListItemSecondaryAction>
                             </ListItem>
                         ))}
                     </List>

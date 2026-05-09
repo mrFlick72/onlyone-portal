@@ -47,7 +47,7 @@ func NewGetAttachment(repository AttachmentRepository) *GetAttachment {
 }
 
 func (a *GetAttachment) GetOneBy(ctx context.Context, attachmentId string) (*Attachment, error) {
-	panic("has to be implemented")
+	return a.repository.GenAttachment(ctx, attachmentId)
 }
 
 func (a *GetAttachment) GetAllBy(ctx context.Context, budgetId string, budgetType BudgetType) ([]AttachmentMetadata, error) {

@@ -28,6 +28,7 @@ export function getAllMessageRegistry(): MessageBundle {
         "attachment.popup.noFileSelected.label": "No file selected",
         "attachment.popup.existingAttachments.label": "Existing attachments",
         "attachment.popup.noAttachments.label": "No attachments yet",
+        "attachment.popup.download.label": "Download attachment",
         "budgetExpensePage.menu.newBudgetExpense": "New Budget Expense",
         "budgetExpensePage.menu.search": "Search",
         "budgetExpensePage.menu.searchTags": "Search Tags",
