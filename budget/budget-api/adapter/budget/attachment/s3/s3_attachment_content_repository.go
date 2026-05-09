@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -47,10 +48,23 @@ func (repository *S3AttachmentContentRepository) Save(ctx context.Context, objec
 	return err
 }
 
-func (repository *S3AttachmentContentRepository) GetContentFor(ctx context.Context, objectKey string) {
+func (repository *S3AttachmentContentRepository) GetContentFor(ctx context.Context, objectKey string) ([]byte, error) {
+	object, err := repository.Client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(repository.Bucket),
+		Key:    aws.String(objectKey),
+	})
+	if err != nil {
+		repository.logger.LogErrorfFor("error fetching attachment content from s3 key %s: %v", objectKey, err)
+		return nil, err
+	}
+	defer object.Body.Close()
 
-	repository.Client.GetObject(ctx, s3.GetObjectInput{Bucket: aws.String(repository.Bucket),
-		Key: aws.String(objectKey)})
+	content, err := io.ReadAll(object.Body)
+	if err != nil {
+		repository.logger.LogErrorfFor("error reading attachment content from s3 key %s: %v", objectKey, err)
+		return nil, err
+	}
+	return content, nil
 }
 
 func datePathFor(d date.Date) string {

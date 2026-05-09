@@ -109,6 +109,11 @@ func (repository *DynamoDbAttachmentMetadataRepository) FindAllAttachment(ctx co
 	return result, nil
 }
 
+// GetAttachment looks up an attachment by id via the Global Secondary Index.
+// The GSI does not project budget_id, budget_type or date, so the returned
+// Attachment is intentionally incomplete: only AttachmentId, Owner, FineName
+// and ContentType are populated. Callers that need the full metadata must
+// fetch it from the base table.
 func (repository *DynamoDbAttachmentMetadataRepository) GetAttachment(ctx context.Context, user string, id string) (*attachment.Attachment, error) {
 	input := &dynamodb.QueryInput{
 		TableName: aws.String(repository.TableName),
@@ -127,8 +132,8 @@ func (repository *DynamoDbAttachmentMetadataRepository) GetAttachment(ctx contex
 	}
 
 	if len(query.Items) == 0 {
-		repository.logger.LogErrorfFor("No attachment found in the global secondary index with this id: %s. Error details: %v", id, err)
-		return nil, err
+		repository.logger.LogErrorfFor("No attachment found in the global secondary index with this id: %s", id)
+		return nil, errors.New("attachment not found")
 	}
 
 	attachmentMetadata := query.Items[0]
