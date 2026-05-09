@@ -69,6 +69,17 @@ func setupCompositeTable() error {
 			{AttributeName: aws.String("pk"), KeyType: dynamotypes.KeyTypeHash},
 			{AttributeName: aws.String("attachment_id"), KeyType: dynamotypes.KeyTypeRange},
 		},
+		GlobalSecondaryIndexes: []dynamotypes.GlobalSecondaryIndex{
+			{
+				IndexName: aws.String(testTableName + "_GLOBAL_INDEX"),
+				KeySchema: []dynamotypes.KeySchemaElement{
+					{AttributeName: aws.String("attachment_id"), KeyType: dynamotypes.KeyTypeHash},
+				},
+				Projection: &dynamotypes.Projection{
+					ProjectionType: dynamotypes.ProjectionTypeAll,
+				},
+			},
+		},
 		BillingMode: dynamotypes.BillingModePayPerRequest,
 	})
 	if err != nil {
@@ -239,4 +250,70 @@ func TestSaveAttachmentReusesExistingAttachmentIdAndOverwrites(t *testing.T) {
 	})
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "new.pdf", itemOut.Item["file_name"].(*dynamotypes.AttributeValueMemberS).Value)
+}
+
+func TestGenAttachmentReturnsContentRoundTrippedFromS3(t *testing.T) {
+	repo := newCompositeRepository("gen-uuid")
+
+	att := &attachment.Attachment{
+		AttachmentMetadata: attachment.AttachmentMetadata{
+			BudgetId:    "budget-gen",
+			BudgetType:  "expense",
+			Date:        testutils.SafeDateFor("12/04/2024"),
+			Owner:       "gen-user",
+			FineName:    "gen.pdf",
+			ContentType: "application/pdf",
+		},
+		Content: []byte("gen-bytes"),
+	}
+	ctx := testutils.NewStubbedContextWith("gen-user")
+	assert.Equal(t, nil, repo.SaveAttachment(ctx, att))
+
+	loaded, err := repo.GenAttachment(ctx, "gen-uuid")
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "gen-uuid", loaded.AttachmentId)
+	assert.Equal(t, "gen.pdf", loaded.FineName)
+	assert.Equal(t, "application/pdf", loaded.ContentType)
+	assert.Equal(t, []byte("gen-bytes"), loaded.Content)
+	assert.Equal(t, testBucketName, loaded.Metadata[attachment.MetadataKeyBucket])
+	assert.Equal(t, "2024/04/12/budget-gen_EXPENSE/gen-uuid", loaded.Metadata[attachment.MetadataKeyObjectKey])
+}
+
+func TestFindAllAttachmentReturnsOnlyOwnerItemsForPartition(t *testing.T) {
+	repo := newCompositeRepository("findall-uuid")
+
+	mine := &attachment.Attachment{
+		AttachmentMetadata: attachment.AttachmentMetadata{
+			AttachmentId: "mine-1",
+			BudgetId:     "budget-findall",
+			BudgetType:   "revenue",
+			Date:         testutils.SafeDateFor("01/05/2024"),
+			Owner:        "find-user",
+			FineName:     "mine.pdf",
+			ContentType:  "application/pdf",
+		},
+		Content: []byte("mine"),
+	}
+	other := &attachment.Attachment{
+		AttachmentMetadata: attachment.AttachmentMetadata{
+			AttachmentId: "other-1",
+			BudgetId:     "budget-findall",
+			BudgetType:   "revenue",
+			Date:         testutils.SafeDateFor("02/05/2024"),
+			Owner:        "other-user",
+			FineName:     "other.pdf",
+			ContentType:  "application/pdf",
+		},
+		Content: []byte("other"),
+	}
+	ctx := testutils.NewStubbedContextWith("find-user")
+	assert.Equal(t, nil, repo.SaveAttachment(ctx, mine))
+	assert.Equal(t, nil, repo.SaveAttachment(testutils.NewStubbedContextWith("other-user"), other))
+
+	got, err := repo.FindAllAttachment(ctx, "budget-findall", attachment.Revenue)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 1, len(got))
+	assert.Equal(t, "mine-1", got[0].AttachmentId)
+	assert.Equal(t, "find-user", got[0].Owner)
+	assert.Equal(t, testBucketName, got[0].Metadata[attachment.MetadataKeyBucket])
 }
