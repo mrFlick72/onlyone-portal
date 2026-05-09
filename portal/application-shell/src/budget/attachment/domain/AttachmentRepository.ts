@@ -6,6 +6,8 @@ const ATTACHMENT_METADATA_URI = (baseUrl: string, budgetType: BudgetType, budget
     `${baseUrl}/api/attachment/metadata/${budgetType}/${budgetId}`
 const ATTACHMENT_CONTENT_URI = (baseUrl: string, attachmentId: string) =>
     `${baseUrl}/api/attachment/${attachmentId}/content`
+const ATTACHMENT_RESOURCE_URI = (baseUrl: string, attachmentId: string) =>
+    `${baseUrl}/api/attachment/${attachmentId}`
 
 export async function saveAttachment(target: AttachmentTarget, file: File) {
     const baseUrl = await getBudgetApiBaseUrl()
@@ -72,4 +74,16 @@ export async function downloadAttachment(attachmentId: string, fileName: string)
     anchor.click()
     anchor.remove()
     window.URL.revokeObjectURL(objectUrl)
+}
+
+export async function deleteAttachment(attachmentId: string) {
+    const baseUrl = await getBudgetApiBaseUrl()
+
+    return fetch(ATTACHMENT_RESOURCE_URI(baseUrl, attachmentId), {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+            Authorization: `Bearer ${window.sessionStorage.getItem("ACCESS_TOKEN")}`,
+        },
+    })
 }

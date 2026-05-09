@@ -29,6 +29,7 @@ export function getAllMessageRegistry(): MessageBundle {
         "attachment.popup.existingAttachments.label": "Existing attachments",
         "attachment.popup.noAttachments.label": "No attachments yet",
         "attachment.popup.download.label": "Download attachment",
+        "attachment.popup.delete.label": "Delete attachment",
         "budgetExpensePage.menu.newBudgetExpense": "New Budget Expense",
         "budgetExpensePage.menu.search": "Search",
         "budgetExpensePage.menu.searchTags": "Search Tags",
