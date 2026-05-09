@@ -134,7 +134,18 @@ func RegisterAttachmentEndpoints(
 		c.Data(http.StatusOK, contentType, att.Content)
 	})
 
-	r.DELETE("/api/attachment/:attachmentId", func(context *gin.Context) {
+	r.DELETE("/api/attachment/:attachmentId", func(c *gin.Context) {
+		ctx := contextFactoryConverter.CreateContextFromGin(c)
 
+		attachmentId := c.Param("attachmentId")
+
+		logger.LogInfofFor("attachmentId: %v", attachmentId)
+		if err := facade.DeleteAttachment(ctx, attachmentId); err != nil {
+			logger.LogErrorfFor("error deleting attachment for id %s: %v\n", attachmentId, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.Status(http.StatusNoContent)
 	})
 }

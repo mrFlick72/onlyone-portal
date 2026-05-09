@@ -150,6 +150,49 @@ func (repository *DynamoDbAttachmentMetadataRepository) GetAttachment(ctx contex
 	}, nil
 }
 
+// Delete looks up the attachment by id via the Global Secondary Index,
+// enforces ownership against the supplied user and removes the metadata row
+// from the base table. The S3 object key extracted from the located item is
+// returned so the caller can purge the corresponding content storage.
+func (repository *DynamoDbAttachmentMetadataRepository) Delete(ctx context.Context, owner string, attachmentId string) (string, error) {
+	input := &dynamodb.QueryInput{
+		TableName: aws.String(repository.TableName),
+		IndexName: aws.String(fmt.Sprintf("%s_GLOBAL_INDEX", repository.TableName)),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":attachmentId": &types.AttributeValueMemberS{Value: attachmentId},
+			":user_name":    &types.AttributeValueMemberS{Value: owner},
+		},
+		KeyConditionExpression: aws.String("attachment_id =:attachmentId"),
+		FilterExpression:       aws.String("user_name =:user_name"),
+	}
+	query, err := repository.Client.Query(ctx, input)
+	if err != nil {
+		repository.logger.LogErrorfFor("Error during DynamoDb Global Secondary Index query err: %v", err)
+		return "", err
+	}
+	if len(query.Items) == 0 {
+		repository.logger.LogErrorfFor("No attachment found in the global secondary index with this id: %s", attachmentId)
+		return "", errors.New("attachment not found")
+	}
+
+	item := query.Items[0]
+	pk := item["pk"].(*types.AttributeValueMemberS).Value
+	objectKey := readMetadataMap(item)[attachment.MetadataKeyObjectKey]
+
+	_, err = repository.Client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
+		TableName: aws.String(repository.TableName),
+		Key: map[string]types.AttributeValue{
+			"pk":            &types.AttributeValueMemberS{Value: pk},
+			"attachment_id": &types.AttributeValueMemberS{Value: attachmentId},
+		},
+	})
+	if err != nil {
+		repository.logger.LogErrorfFor("error deleting attachment metadata for id %s: %v", attachmentId, err)
+		return "", err
+	}
+	return objectKey, nil
+}
+
 func readMetadataMap(item map[string]types.AttributeValue) map[string]string {
 	result := map[string]string{}
 	raw, ok := item["metadata"].(*types.AttributeValueMemberM)

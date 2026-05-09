@@ -109,11 +109,39 @@ func TestGetAttachmentGetAllByDelegatesToRepository(t *testing.T) {
 	repo.AssertCalled(t, "FindAllAttachment", ctx, "b", Expense)
 }
 
+func TestDeleteAttachmentDelegatesToRepository(t *testing.T) {
+	repo := new(AttachmentRepositoryMock)
+	uut := NewDeleteAttachment(repo)
+
+	ctx := testutils.NewUserContext()
+	repo.On("DeleteAttachment", ctx, "att-1").Return(nil)
+
+	err := uut.Execute(ctx, "att-1")
+
+	assert.Equal(t, nil, err)
+	repo.AssertCalled(t, "DeleteAttachment", ctx, "att-1")
+}
+
+func TestDeleteAttachmentPropagatesRepositoryError(t *testing.T) {
+	repo := new(AttachmentRepositoryMock)
+	uut := NewDeleteAttachment(repo)
+
+	ctx := testutils.NewUserContext()
+	repoErr := errors.New("storage unavailable")
+	repo.On("DeleteAttachment", ctx, "att-2").Return(repoErr)
+
+	err := uut.Execute(ctx, "att-2")
+
+	assert.Equal(t, repoErr, err)
+	repo.AssertCalled(t, "DeleteAttachment", ctx, "att-2")
+}
+
 func TestActionFacadeRoutesEachMethodToCorrespondingAction(t *testing.T) {
 	repo := new(AttachmentRepositoryMock)
 	facade := AttachmentActionsFacade{
-		SaveAttachmentAction: NewSaveAttachment(repo),
-		GetAttachmentAction:  NewGetAttachment(repo),
+		SaveAttachmentAction:   NewSaveAttachment(repo),
+		GetAttachmentAction:    NewGetAttachment(repo),
+		DeleteAttachmentAction: NewDeleteAttachment(repo),
 	}
 
 	ctx := testutils.NewUserContext()
@@ -132,4 +160,8 @@ func TestActionFacadeRoutesEachMethodToCorrespondingAction(t *testing.T) {
 	gotList, err := facade.GetAttachments(ctx, "b", Revenue)
 	assert.Equal(t, nil, err)
 	assert.Equal(t, list, gotList)
+
+	repo.On("DeleteAttachment", ctx, "x").Return(nil)
+	assert.Equal(t, nil, facade.DeleteAttachment(ctx, "x"))
+	repo.AssertCalled(t, "DeleteAttachment", ctx, "x")
 }

@@ -67,6 +67,17 @@ func (repository *S3AttachmentContentRepository) GetContentFor(ctx context.Conte
 	return content, nil
 }
 
+func (repository *S3AttachmentContentRepository) Delete(ctx context.Context, objectKey string) error {
+	_, err := repository.Client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(repository.Bucket),
+		Key:    aws.String(objectKey),
+	})
+	if err != nil {
+		repository.logger.LogErrorfFor("error deleting attachment content from s3 key %s: %v", objectKey, err)
+	}
+	return err
+}
+
 func datePathFor(d date.Date) string {
 	return d.GetTime().Format("2006/01/02")
 }

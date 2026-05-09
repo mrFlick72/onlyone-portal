@@ -382,3 +382,38 @@ func TestGetAttachmentContentFacadeErrorReturns500(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
+
+func TestDeleteAttachmentReturns204(t *testing.T) {
+	r := setUpRouter()
+	facade := new(AttachmentActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterAttachmentEndpoints(r, contextFactoryConverter, facade)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+	facade.On("DeleteAttachment", ctx, "att-1").Return(nil)
+
+	req, _ := http.NewRequest(http.MethodDelete, "/api/attachment/att-1", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	facade.AssertCalled(t, "DeleteAttachment", ctx, "att-1")
+}
+
+func TestDeleteAttachmentFacadeErrorReturns500(t *testing.T) {
+	r := setUpRouter()
+	facade := new(AttachmentActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterAttachmentEndpoints(r, contextFactoryConverter, facade)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+	facade.On("DeleteAttachment", ctx, "missing").Return(errors.New("not found"))
+
+	req, _ := http.NewRequest(http.MethodDelete, "/api/attachment/missing", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
