@@ -46,10 +46,6 @@ func (repository *AwsCompositeAttachmentRepository) SaveAttachment(ctx context.C
 	return repository.MetadataRepository.Save(ctx, att, pk, fileLocation)
 }
 
-/*
-Pay attention the method does not provide a complete attachment object.
-It is intended to provide the attavment content
-*/
 func (repository *AwsCompositeAttachmentRepository) GenAttachment(ctx context.Context, attachmentId string) (*attachment.Attachment, error) {
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
@@ -57,16 +53,21 @@ func (repository *AwsCompositeAttachmentRepository) GenAttachment(ctx context.Co
 		return nil, err
 	}
 	att, err := repository.MetadataRepository.GetAttachment(ctx, *user.UserName, attachmentId)
-
 	if err != nil {
-		repository.logger.LogErrorfFor("Error to get the attachment metadata: %v", err)
+		repository.logger.LogErrorfFor("error getting attachment metadata for id %s: %v", attachmentId, err)
 		return nil, err
 	}
+
 	pk := repository.IdProvider.PartitionKeyFor(att)
 	objectKey := repository.ContentRepository.ObjectKeyFor(att, pk)
 
-	repository.ContentRepository.GetContentFor(ctx, objectKey)
-	return nil, errors.New("not implemented")
+	content, err := repository.ContentRepository.GetContentFor(ctx, objectKey)
+	if err != nil {
+		repository.logger.LogErrorfFor("error getting attachment content for id %s: %v", attachmentId, err)
+		return nil, err
+	}
+	att.Content = content
+	return att, nil
 }
 
 func (repository *AwsCompositeAttachmentRepository) FindAllAttachment(ctx context.Context, budgetId string, budgetType attachment.BudgetType) ([]attachment.AttachmentMetadata, error) {
