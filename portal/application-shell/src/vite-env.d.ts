@@ -9,6 +9,7 @@ interface ImportMetaEnv {
   readonly REVENUE_API_BASE_URL: string;
   readonly ACCOUNT_API_BASE_URL: string;
   readonly TAG_API_BASE_URL: string;
+  readonly PLAN_API_BASE_URL: string;
 }
 
 interface ImportMeta {

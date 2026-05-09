@@ -10,6 +10,7 @@ import MenuCardContainer from "../components/menu/MenuCardContainer";
 import BudgetPageMenuItem from '../components/menu/BudgetPageMenuItem';
 import BudgetRevenuePageMenuItem from '../components/menu/BudgetRevenuePageMenuItem';
 import AccountPageMenuItem from '../components/menu/AccountPageMenuItem';
+import PlanPageMenuItem from '../components/menu/PlanPageMenuItem';
 
 const HomePage: React.FC = () => {
     const configMap = new OnlyonePortalPagesConfigMap();
@@ -28,6 +29,7 @@ const HomePage: React.FC = () => {
                   showGlobalNav={false}>
                 <BudgetPageMenuItem text={configMap.budgetExpense(messageRegistry).menuMessages.budgetPageLabel}/>
                 <BudgetRevenuePageMenuItem text={configMap.budgetExpense(messageRegistry).menuMessages.revenuePageLabel}/>
+                <PlanPageMenuItem text={configMap.budgetExpense(messageRegistry).menuMessages.planPageLabel}/>
                 <AccountPageMenuItem text={configMap.budgetExpense(messageRegistry).menuMessages.userProfileLabel}/>
             </Menu>
 
@@ -35,6 +37,7 @@ const HomePage: React.FC = () => {
                 <MenuCardContainer>
                     <HomePageMenuItem content={homeMenuContent.budget} />
                     <HomePageMenuItem content={homeMenuContent.revenue} />
+                    <HomePageMenuItem content={homeMenuContent.plan} />
                     <HomePageMenuItem content={homeMenuContent.account} />
                 </MenuCardContainer>
             </Container>

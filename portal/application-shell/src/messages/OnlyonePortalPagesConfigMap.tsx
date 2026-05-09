@@ -23,6 +23,7 @@ export class OnlyonePortalPagesConfigMap {
                 userProfileLabel: getMessageFor(bundle, "menu.userProfile.label"),
                 budgetPageLabel: getMessageFor(bundle, "menu.budgetPage.label"),
                 revenuePageLabel: getMessageFor(bundle, "menu.revenuePage.label"),
+                planPageLabel: getMessageFor(bundle, "menu.planPage.label"),
                 logOutLabel: getMessageFor(bundle, "menu.logOut.label")
             },
             cards: {
@@ -107,6 +108,57 @@ export class OnlyonePortalPagesConfigMap {
                 title: getMessageFor(bundle, "menu.title"),
                 userProfileLabel: getMessageFor(bundle, "menu.userProfile.label"),
                 logOutLabel: getMessageFor(bundle, "menu.logOut.label")
+            }
+        }
+    }
+
+    plan(bundle: MessageBundle) {
+        return {
+            menuMessages: {
+                title: getMessageFor(bundle, "menu.title"),
+                userProfileLabel: getMessageFor(bundle, "menu.userProfile.label"),
+                logOutLabel: getMessageFor(bundle, "menu.logOut.label"),
+                newPlan: getMessageFor(bundle, "planPage.menu.newPlan"),
+            },
+            savePlanModal: {
+                id: "savePlanModal",
+                title: getMessageFor(bundle, "planPage.savePlan.popup.title"),
+                closeButtonLabel: getMessageFor(bundle, "common.button.close.label"),
+                saveButtonLabel: getMessageFor(bundle, "common.button.save.label")
+            },
+            deletePlanModal: {
+                id: "deletePlanModal",
+                title: getMessageFor(bundle, "planPage.deletePlan.popup.title"),
+                message: getMessageFor(bundle, "planPage.deletePlan.popup.message")
+            }
+        }
+    }
+
+    planDetail(bundle: MessageBundle) {
+        return {
+            menuMessages: {
+                title: getMessageFor(bundle, "menu.title"),
+                userProfileLabel: getMessageFor(bundle, "menu.userProfile.label"),
+                logOutLabel: getMessageFor(bundle, "menu.logOut.label"),
+                newTodo: getMessageFor(bundle, "planDetailPage.menu.newTodo"),
+                backToList: getMessageFor(bundle, "planDetailPage.menu.backToList"),
+            },
+            saveTodoModal: {
+                id: "saveTodoModal",
+                title: getMessageFor(bundle, "planDetailPage.saveTodo.popup.title"),
+                closeButtonLabel: getMessageFor(bundle, "common.button.close.label"),
+                saveButtonLabel: getMessageFor(bundle, "common.button.save.label")
+            },
+            updateTodoModal: {
+                id: "updateTodoModal",
+                title: getMessageFor(bundle, "planDetailPage.updateTodo.popup.title"),
+                closeButtonLabel: getMessageFor(bundle, "common.button.close.label"),
+                saveButtonLabel: getMessageFor(bundle, "common.button.save.label")
+            },
+            deleteTodoModal: {
+                id: "deleteTodoModal",
+                title: getMessageFor(bundle, "planDetailPage.deleteTodo.popup.title"),
+                message: getMessageFor(bundle, "planDetailPage.deleteTodo.popup.message")
             }
         }
     }
