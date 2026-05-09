@@ -122,7 +122,7 @@ func (repository *DynamoDbAttachmentMetadataRepository) GetAttachment(ctx contex
 			":attachmentId": &types.AttributeValueMemberS{Value: id},
 			":user_name":    &types.AttributeValueMemberS{Value: user},
 		},
-		KeyConditionExpression: aws.String("attachmentId =:attachmentId"),
+		KeyConditionExpression: aws.String("attachment_id =:attachmentId"),
 		FilterExpression:       aws.String("user_name =:user_name"),
 	}
 	query, err := repository.Client.Query(ctx, input)

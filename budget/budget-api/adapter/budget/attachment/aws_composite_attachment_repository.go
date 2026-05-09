@@ -53,6 +53,7 @@ func (repository *AwsCompositeAttachmentRepository) GenAttachment(ctx context.Co
 		return nil, err
 	}
 	att, err := repository.MetadataRepository.GetAttachment(ctx, *user.UserName, attachmentId)
+	repository.logger.LogInfofFor("attachment metadata: %v", att)
 	if err != nil {
 		repository.logger.LogErrorfFor("error getting attachment metadata for id %s: %v", attachmentId, err)
 		return nil, err
@@ -60,8 +61,11 @@ func (repository *AwsCompositeAttachmentRepository) GenAttachment(ctx context.Co
 
 	pk := repository.IdProvider.PartitionKeyFor(att)
 	objectKey := repository.ContentRepository.ObjectKeyFor(att, pk)
+	repository.logger.LogInfofFor("objectKey: %v", objectKey)
 
 	content, err := repository.ContentRepository.GetContentFor(ctx, objectKey)
+	repository.logger.LogInfofFor("content size: %v", len(content))
+
 	if err != nil {
 		repository.logger.LogErrorfFor("error getting attachment content for id %s: %v", attachmentId, err)
 		return nil, err
