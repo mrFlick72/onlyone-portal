@@ -16,9 +16,9 @@ import {
     Tooltip,
     Typography,
 } from "@mui/material"
-import { AttachFile, CloudDownload, CloudUpload, UploadFile } from "@mui/icons-material"
+import { AttachFile, CloudDownload, CloudUpload, Delete, UploadFile } from "@mui/icons-material"
 import YesAndNoButtonGroup from "../../components/layout/YesAndNoButtonGroup"
-import { downloadAttachment, getAttachmentsFor, saveAttachment } from "./domain/AttachmentRepository"
+import { deleteAttachment, downloadAttachment, getAttachmentsFor, saveAttachment } from "./domain/AttachmentRepository"
 import { AttachmentMetadata, AttachmentTarget } from "./domain/Attachment"
 
 type UploadAttachmentPopUpProps = {
@@ -34,6 +34,7 @@ type UploadAttachmentPopUpProps = {
         existingAttachmentsLabel: string
         noAttachmentsLabel: string
         downloadAttachmentLabel: string
+        deleteAttachmentLabel: string
     }
     onUploaded?: () => void
 }
@@ -82,6 +83,16 @@ const UploadAttachmentPopUp: React.FC<UploadAttachmentPopUpProps> = ({
             onUploaded?.()
             await loadAttachments(target)
             setFile(null)
+        }
+    }
+
+    const handleDelete = async (attachmentId: string) => {
+        if (!target) {
+            return
+        }
+        const response = await deleteAttachment(attachmentId)
+        if (response.ok) {
+            await loadAttachments(target)
         }
     }
 
@@ -141,6 +152,16 @@ const UploadAttachmentPopUp: React.FC<UploadAttachmentPopUpProps> = ({
                                             }
                                         >
                                             <CloudDownload fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title={modal.deleteAttachmentLabel}>
+                                        <IconButton
+                                            edge="end"
+                                            size="small"
+                                            aria-label={modal.deleteAttachmentLabel}
+                                            onClick={() => handleDelete(attachment.attachmentId)}
+                                        >
+                                            <Delete fontSize="small" />
                                         </IconButton>
                                     </Tooltip>
                                 </ListItemSecondaryAction>

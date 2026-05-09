@@ -59,7 +59,8 @@ export class OnlyonePortalPagesConfigMap {
                 noFileSelectedLabel: getMessageFor(bundle, "attachment.popup.noFileSelected.label"),
                 existingAttachmentsLabel: getMessageFor(bundle, "attachment.popup.existingAttachments.label"),
                 noAttachmentsLabel: getMessageFor(bundle, "attachment.popup.noAttachments.label"),
-                downloadAttachmentLabel: getMessageFor(bundle, "attachment.popup.download.label")
+                downloadAttachmentLabel: getMessageFor(bundle, "attachment.popup.download.label"),
+                deleteAttachmentLabel: getMessageFor(bundle, "attachment.popup.delete.label")
             }
         }
     }
@@ -94,7 +95,8 @@ export class OnlyonePortalPagesConfigMap {
                 noFileSelectedLabel: getMessageFor(bundle, "attachment.popup.noFileSelected.label"),
                 existingAttachmentsLabel: getMessageFor(bundle, "attachment.popup.existingAttachments.label"),
                 noAttachmentsLabel: getMessageFor(bundle, "attachment.popup.noAttachments.label"),
-                downloadAttachmentLabel: getMessageFor(bundle, "attachment.popup.download.label")
+                downloadAttachmentLabel: getMessageFor(bundle, "attachment.popup.download.label"),
+                deleteAttachmentLabel: getMessageFor(bundle, "attachment.popup.delete.label")
             }
         }
     }
