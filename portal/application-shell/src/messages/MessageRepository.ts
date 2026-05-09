@@ -47,7 +47,18 @@ export function getAllMessageRegistry(): MessageBundle {
         "budgetRevenuePage.newBudgetRevenueModal.title": "Save a Revenue Expense",
         "budgetRevenuePage.menu.changeYear": "Search",
         "budgetRevenuePage.changeYear.popup.title": "Search",
-        "budgetRevenuePage.attachment.popup.title": "Load Attachments"
+        "budgetRevenuePage.attachment.popup.title": "Load Attachments",
+        "menu.planPage.label": "Plans",
+        "planPage.menu.newPlan": "New Plan",
+        "planPage.savePlan.popup.title": "Save a Plan",
+        "planPage.deletePlan.popup.title": "Delete Plan",
+        "planPage.deletePlan.popup.message": "Are you sure you want to delete this plan and all its todos?",
+        "planDetailPage.menu.newTodo": "Add Todo",
+        "planDetailPage.menu.backToList": "Back to plans",
+        "planDetailPage.saveTodo.popup.title": "Add a Todo",
+        "planDetailPage.updateTodo.popup.title": "Edit Todo",
+        "planDetailPage.deleteTodo.popup.title": "Delete Todo",
+        "planDetailPage.deleteTodo.popup.message": "Are you sure you want to delete this todo?"
     }
 }
 
