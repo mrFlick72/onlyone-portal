@@ -102,7 +102,7 @@ func (repository *DynamoDbAttachmentMetadataRepository) FindAllAttachment(ctx co
 			Owner:        item["user_name"].(*types.AttributeValueMemberS).Value,
 			FineName:     item["file_name"].(*types.AttributeValueMemberS).Value,
 			ContentType:  item["content_type"].(*types.AttributeValueMemberS).Value,
-			Metadata:     map[string]string{},
+			Metadata:     readMetadataMap(item),
 		})
 	}
 
@@ -137,15 +137,29 @@ func (repository *DynamoDbAttachmentMetadataRepository) GetAttachment(ctx contex
 	}
 
 	attachmentMetadata := query.Items[0]
+	metadata := readMetadataMap(attachmentMetadata)
+	metadata["file_location"] = attachmentMetadata["file_location"].(*types.AttributeValueMemberS).Value
 	return &attachment.Attachment{
 		AttachmentMetadata: attachment.AttachmentMetadata{
 			AttachmentId: id,
 			Owner:        user,
 			FineName:     attachmentMetadata["file_name"].(*types.AttributeValueMemberS).Value,
 			ContentType:  attachmentMetadata["content_type"].(*types.AttributeValueMemberS).Value,
-			Metadata: map[string]string{
-				"file_location": attachmentMetadata["file_location"].(*types.AttributeValueMemberS).Value,
-			},
+			Metadata:     metadata,
 		},
 	}, nil
+}
+
+func readMetadataMap(item map[string]types.AttributeValue) map[string]string {
+	result := map[string]string{}
+	raw, ok := item["metadata"].(*types.AttributeValueMemberM)
+	if !ok {
+		return result
+	}
+	for k, v := range raw.Value {
+		if s, ok := v.(*types.AttributeValueMemberS); ok {
+			result[k] = s.Value
+		}
+	}
+	return result
 }

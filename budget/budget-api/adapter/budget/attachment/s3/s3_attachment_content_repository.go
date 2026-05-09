@@ -10,7 +10,6 @@ import (
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"io"
-	"strings"
 )
 
 type S3AttachmentContentRepository struct {
@@ -48,10 +47,7 @@ func (repository *S3AttachmentContentRepository) Save(ctx context.Context, objec
 	return err
 }
 
-func (repository *S3AttachmentContentRepository) GetContentFor(ctx context.Context, fileLocation string) ([]byte, error) {
-	after, _ := strings.CutPrefix(fileLocation, repository.Bucket)
-	after, _ = strings.CutPrefix(after, "/")
-	objectKey := after
+func (repository *S3AttachmentContentRepository) GetContentFor(ctx context.Context, objectKey string) ([]byte, error) {
 	object, err := repository.Client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(repository.Bucket),
 		Key:    aws.String(objectKey),
