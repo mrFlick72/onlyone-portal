@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/mrflick72/budget/budget-api/config"
+	"github.com/mrflick72/budget/budget-api/web/budget/attachment"
 	"github.com/mrflick72/budget/budget-api/web/budget/expense"
 	"github.com/mrflick72/budget/budget-api/web/budget/revenue"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
@@ -17,6 +18,7 @@ func main() {
 	GinContextToPlainContextFactory := &server.GinContextToPlainContextFactory{}
 	expense.RegisterExpenseEndpoints(ginEngine, GinContextToPlainContextFactory, config.NewBudgetExpenseActionsFacade())
 	revenue.RegisterRevenueEndpoints(ginEngine, GinContextToPlainContextFactory, config.NewRevenueActionsFacade())
+	attachment.RegisterAttachmentEndpoints(ginEngine, GinContextToPlainContextFactory, config.NewAttachmentActionsFacade())
 
 	engine.StartEngine()
 }

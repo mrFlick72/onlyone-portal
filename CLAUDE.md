@@ -9,9 +9,9 @@ OnlyOne Portal is a cloud-native microservices application. All services share a
 ## Architecture
 
 ```
-portal/application-shell/   # React 19 + TypeScript SPA (Webpack) — see portal/application-shell/CLAUDE.md
+portal/application-shell/   # React 19 + TypeScript SPA (Vite) — see portal/application-shell/CLAUDE.md
 account/account-api/        # Go (Gin) — user account management via vauthenticator REST
-budget/budget-api/          # Go (Gin) — budget expense + revenue (DynamoDB) — see budget/CLAUDE.md
+budget/budget-api/          # Go (Gin) — budget expense + revenue + attachments (DynamoDB + S3) — see budget/CLAUDE.md
 budget/revenue-api/         # Python FastAPI — legacy revenue service, pending decommission
 budget/budget-exporter/     # Python — data export job
 budget/analytic/            # Python — analytics/visualization scripts
@@ -61,11 +61,12 @@ pytest
 export BUDGET_API_CONFIG_FILE_LOCATION=<path-to-config>
 ```
 
-## Testing with LocalStack (DynamoDB)
+## Testing with LocalStack (DynamoDB + S3)
 
-Go adapter tests for budget-api and tag-api run against LocalStack. Start it first:
+Go adapter tests for budget-api and tag-api run against LocalStack. budget-api also exercises S3 (attachment content).
+Start it first:
 ```bash
-cd <service>/test && docker compose up -d   # localstack/localstack:3.2 on :4566
+cd <service>/test && docker compose up -d   # localstack/localstack:3.2 with DynamoDB + S3 on :4566
 ```
 Required env vars (any non-empty value works):
 ```
@@ -139,23 +140,28 @@ github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../
 
 ## Service Routes Summary
 
-| Service | Method | Path | Notes |
-|---------|--------|------|-------|
-| tag-api | GET | `/api/tags` | Returns all tags for authenticated user |
-| tag-api | PUT | `/api/tags` | Creates tag; UUID key is generated server-side |
-| account-api | GET | `/api/account/user-account` | Proxies to vauthenticator REST at `idp.base-url` |
-| account-api | PUT | `/api/account/user-account` | Proxies to vauthenticator REST |
-| plan-service | GET | `/todo-service/todo` | MySQL-backed, no JWT auth |
-| plan-service | POST | `/todo-service/todo` | |
-| plan-service | GET/DELETE | `/todo-service/todo/:id` | |
+| Service      | Method     | Path                                             | Notes                                                                              |
+|--------------|------------|--------------------------------------------------|------------------------------------------------------------------------------------|
+| tag-api      | GET        | `/api/tags`                                      | Returns all tags for authenticated user                                            |
+| tag-api      | PUT        | `/api/tags`                                      | Creates tag; UUID key is generated server-side                                     |
+| account-api  | GET        | `/api/account/user-account`                      | Proxies to vauthenticator REST at `idp.base-url`                                   |
+| account-api  | PUT        | `/api/account/user-account`                      | Proxies to vauthenticator REST                                                     |
+| budget-api   | POST       | `/api/attachment`                                | Multipart upload (file + `budgetId`/`budgetType`/`date` + optional `attachmentId`) |
+| budget-api   | GET        | `/api/attachment/metadata/:budgetType/:budgetId` | Lists attachments for a parent expense or revenue                                  |
+| budget-api   | GET        | `/api/attachment/:attachmentId/content`          | Returns the raw file bytes with `Content-Disposition`                              |
+| budget-api   | DELETE     | `/api/attachment/:attachmentId`                  | Deletes both the metadata row and the S3 object                                    |
+| plan-service | GET        | `/todo-service/todo`                             | MySQL-backed, no JWT auth                                                          |
+| plan-service | POST       | `/todo-service/todo`                             |                                                                                    |
+| plan-service | GET/DELETE | `/todo-service/todo/:id`                         |                                                                                    |
 
-Budget-api and revenue-api routes: see `budget/CLAUDE.md`.
+Expense, revenue, and full attachment route details: see `budget/CLAUDE.md` and `budget/budget-api/CLAUDE.md`.
 
 ## Key Cross-Service Dependencies
 
 - `budget-api` → `tag-api` (REST, config key `tag-api.base-url`; cached with Ristretto; OTel trace propagation via `httpclient.NewHTTPClient()`)
 - `account-api` → vauthenticator IDP (REST, config key `idp.base-url`)
 - `budget-api`, `tag-api` → DynamoDB (region hardcoded to `eu-central-1`)
+- `budget-api` → S3 (attachment content; bucket from config key `budget-api.s3.attachment.bucket-name`)
 - `plan-service` → MySQL
 - All Gin services → vauthenticator JWKS for JWT validation
 

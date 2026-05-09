@@ -14,6 +14,8 @@ import Menu from "../../components/menu/Menu";
 import OpenPopUpMenuItem from "../../components/menu/OpenPopUpMenuItem";
 import { FormDateFormatPattern } from "../../components/form/FormDatePicker";
 import BudgetRevenue from "./domain/BudgetRevenue";
+import UploadAttachmentPopUp from "../attachment/UploadAttachmentPopUp";
+import type { AttachmentTarget } from "../attachment/domain/Attachment";
 interface BudgetRevenuePageProps {
     messageRegistry: any;
 }
@@ -69,6 +71,24 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
     }, [])
     const deleteBudgetRevenuePopUpOpenCloseHandler = useCallback(() => {
         setOpenDeleteBudgetRevenuePopUp(false)
+    }, [])
+
+    const [openUploadAttachmentPopUp, setOpenUploadAttachmentPopUp] = useState(false)
+    const [attachmentTarget, setAttachmentTarget] = useState<AttachmentTarget | null>(null)
+    const makeUploadAttachmentPopUpOpen = useCallback((revenue: BudgetRevenue) => {
+        if (!revenue.id) {
+            return
+        }
+        setAttachmentTarget({
+            budgetId: revenue.id,
+            budgetType: "revenue",
+            date: revenue.date,
+        })
+        setOpenUploadAttachmentPopUp(true)
+    }, [])
+    const uploadAttachmentPopUpCloseHandler = useCallback(() => {
+        setOpenUploadAttachmentPopUp(false)
+        setAttachmentTarget(null)
     }, [])
 
     let configMap = new OnlyonePortalPagesConfigMap()
@@ -165,8 +185,16 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
                     modal={configMap.budgetRevenue(messageRegistry).changeYearModal}
                     saveCallback={saveYear} />
 
+                <UploadAttachmentPopUp
+                    open={openUploadAttachmentPopUp}
+                    handleClose={uploadAttachmentPopUpCloseHandler}
+                    target={attachmentTarget}
+                    modal={configMap.budgetRevenue(messageRegistry).uploadAttachmentModal}
+                />
+
                 <BudgetRevenueContent openUpdatePopUp={makeUpdateBudgetRevenuePopUpOpen}
                     openDeletePopUp={makeDeleteBudgetRevenuePopUpOpen}
+                    openUploadAttachmentPopUp={makeUploadAttachmentPopUpOpen}
                     revenues={revenues}
                     total={total} />
             </Container>
