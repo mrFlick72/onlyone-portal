@@ -13,9 +13,10 @@ type todoStatusChangeRequest struct {
 }
 
 type planRepresentation struct {
-	Id       string               `json:"id"`
-	UserName string               `json:"user_name"`
-	Title    string               `json:"title"`
-	Date     string               `json:"date"`
-	Todos    []todoRepresentation `json:"todos"`
+	Id        string               `json:"id"`
+	UserName  string               `json:"user_name"`
+	Title     string               `json:"title"`
+	Date      string               `json:"date"`
+	Todos     []todoRepresentation `json:"todos"`
+	TodoCount int                  `json:"todo_count"`
 }

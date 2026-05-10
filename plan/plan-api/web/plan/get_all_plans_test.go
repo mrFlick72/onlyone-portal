@@ -10,10 +10,13 @@ import (
 
 	"github.com/mrflick72/onlyone-portal/plan/plan-service/domain/plan"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetAllPlans(t *testing.T) {
 	aPlan := test.ANewPlan()
+	aTodo := test.ANewTodoWith("A Content")
+	aPlan.Todos = []*plan.Todo{&aTodo}
 	repo := &mockRepo{}
 	repo.On("GetAllPlanBy", testUser).Return([]*plan.Plan{&aPlan}, nil)
 
@@ -22,8 +25,12 @@ func TestGetAllPlans(t *testing.T) {
 	setupRouter(repo).ServeHTTP(w, req)
 
 	expected, _ := json.Marshal([]planRepresentation{toPlanRepresentation(&aPlan)})
+	var actual []planRepresentation
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &actual))
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, string(expected), strings.TrimSpace(w.Body.String()))
+	require.Len(t, actual, 1)
+	assert.Equal(t, 1, actual[0].TodoCount)
 	repo.AssertExpectations(t)
 }
 

@@ -35,6 +35,13 @@ func (r *PlanPostgresRepository) GetAllPlanBy(userName string) ([]*plan.Plan, er
 
 	database.CloseResources(rows, query, db)
 
+	for _, p := range result {
+		p.Todos, err = r.loadTodosFor(p.Id)
+		if err != nil {
+			return result, err
+		}
+	}
+
 	return result, err
 }
 

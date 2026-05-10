@@ -16,6 +16,7 @@ const PlanListContent: React.FC<PlanListContentProps> = ({ plans, openDetail, op
                 <TableRow>
                     <TableCell>Date</TableCell>
                     <TableCell>Title</TableCell>
+                    <TableCell>Todos</TableCell>
                     <TableCell>Options</TableCell>
                 </TableRow>
             </TableHead>

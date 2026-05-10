@@ -14,6 +14,7 @@ export type Plan = {
     title: string;
     date: string;
     todos: Todo[];
+    todo_count: number;
 };
 
 export type NewPlan = {
