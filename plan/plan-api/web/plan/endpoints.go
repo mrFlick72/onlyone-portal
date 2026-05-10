@@ -232,11 +232,12 @@ func toPlanRepresentation(p *plan.Plan) planRepresentation {
 		})
 	}
 	return planRepresentation{
-		Id:       p.Id,
-		UserName: p.UserName,
-		Title:    p.Title,
-		Date:     clock.FormatDateFor(p.Date),
-		Todos:    todos,
+		Id:        p.Id,
+		UserName:  p.UserName,
+		Title:     p.Title,
+		Date:      clock.FormatDateFor(p.Date),
+		Todos:     todos,
+		TodoCount: len(todos),
 	}
 }
 

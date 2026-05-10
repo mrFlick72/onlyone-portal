@@ -23,7 +23,8 @@ func TestGetAllPlanBy(t *testing.T) {
 
 	firstPlanId, err := repo.CreateNewPlan(plan.Plan{Title: "first plan", UserName: userName, Date: clock.ToDay(), Todos: []*plan.Todo{}})
 	require.NoError(t, err)
-	require.NoError(t, repo.AddTodo(firstPlanId, test.ANewTodoWith("A Content")))
+	aTodo := test.ANewTodoWith("A Content")
+	require.NoError(t, repo.AddTodo(firstPlanId, aTodo))
 
 	secondPlanId, err := repo.CreateNewPlan(plan.Plan{Title: "second plan", UserName: userName, Date: clock.ToDay(), Todos: []*plan.Todo{}})
 	require.NoError(t, err)
@@ -31,6 +32,6 @@ func TestGetAllPlanBy(t *testing.T) {
 	plans, err := repo.GetAllPlanBy(userName)
 	require.NoError(t, err)
 	assert.Len(t, plans, 2)
-	assert.Equal(t, plan.Plan{Id: firstPlanId, Title: "first plan", UserName: userName, Date: clock.ToDay(), Todos: []*plan.Todo{}}, *plans[0])
+	assert.Equal(t, plan.Plan{Id: firstPlanId, Title: "first plan", UserName: userName, Date: clock.ToDay(), Todos: []*plan.Todo{&aTodo}}, *plans[0])
 	assert.Equal(t, plan.Plan{Id: secondPlanId, Title: "second plan", UserName: userName, Date: clock.ToDay(), Todos: []*plan.Todo{}}, *plans[1])
 }
