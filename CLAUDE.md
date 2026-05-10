@@ -9,48 +9,54 @@ OnlyOne Portal is a cloud-native microservices application. All services share a
 ## Architecture
 
 ```
-portal/application-shell/   # React 19 + TypeScript SPA (Vite) — see portal/application-shell/CLAUDE.md
+portal/application-shell/   # React 19 + TypeScript multi-page SPA (Vite 8, MUI 9) — see portal/application-shell/CLAUDE.md
+portal/e2e/ai/              # Playwright-MCP-driven AI end-to-end tests (LOGIN, PLAN scenarios)
 account/account-api/        # Go (Gin) — user account management via vauthenticator REST
 budget/budget-api/          # Go (Gin) — budget expense + revenue + attachments (DynamoDB + S3) — see budget/CLAUDE.md
 budget/revenue-api/         # Python FastAPI — legacy revenue service, pending decommission
 budget/budget-exporter/     # Python — data export job
 budget/analytic/            # Python — analytics/visualization scripts
 tagging/tag-api/            # Go (Gin) — transaction tagging (DynamoDB)
-plan/plan-service/          # Go (Echo) — todo/plan management (MySQL) — does NOT use the shared framework
+plan/plan-api/              # Go (Gin) — plan/todo management (Postgres) — shared framework + JWT
 core-services/golang-web-framework/  # Shared Go library (Gin, JWT, CORS, logging, caching, OTel, HTTP client)
 idp/                        # OAuth2 token helper scripts for local dev
 ```
 
-**Sub-CLAUDE.md files** contain deeper per-subtree guidance: `budget/CLAUDE.md`, `budget/budget-api/CLAUDE.md`, `portal/application-shell/CLAUDE.md`.
+**Sub-CLAUDE.md files** contain deeper per-subtree guidance: `budget/CLAUDE.md`, `budget/budget-api/CLAUDE.md`, `portal/application-shell/CLAUDE.md`, `plan/plan-api/CLAUDE.md`.
 
 ## Build & Run Commands
 
 ### Frontend (`portal/application-shell/src/`)
 ```bash
 npm install
-npm run build              # development build → ../dist
+npm run dev                # Vite dev server on :3000
+npm run build              # development build -> ../dist
 npm run production-build   # production build
-npm run watch              # watch mode
+npm run type-check         # tsc --noEmit
 ```
 
-### Go services using the shared framework (budget-api, tag-api, account-api)
+### Go services using the shared framework (budget-api, tag-api, account-api, plan-api)
 Run from each service directory. All require `CONFIG_FILE_LOCATION` env var pointing to a YAML config file.
 ```bash
 go build -o app .
-go test -tags test ./...               # `-tags test` required; adapter tests need LocalStack
+go test -tags test ./...               # `-tags test` required; adapter tests may need local infra
 go test -tags test ./domain/... ./web/... # unit tests only, no infra needed
 CGO_ENABLED=0 GOOS=linux go build -o app . # cross-compile for Docker/Alpine
 ```
 
-Test fixtures (e.g. `fixture.go` files) are guarded by `//go:build test`. Running `go test ./...` without the tag will fail to compile.
+Test fixtures (e.g. `fixture.go` files and `internal/test`) are guarded by `//go:build test`. Running `go test ./...` without the tag can fail to compile in packages that import those fixtures.
 
-### Plan service (`plan/plan-service/`) — different setup
-Uses Echo (not the shared Gin framework) and reads its own env vars directly via Viper (no `CONFIG_FILE_LOCATION`):
+### Plan API (`plan/plan-api/`)
+Uses the shared Gin framework, JWT middleware, and Postgres. Config is loaded through `CONFIG_FILE_LOCATION`.
 ```bash
+cd plan/plan-api
 go build -o app .
-go test ./...              # no build tag needed
+go test -tags test ./domain/plan ./pkg/clock ./web/plan
+
+cd test && docker compose up -d
+cd ..
+CONFIG_FILE_LOCATION=test/application.yml go test -tags test ./adapter/plan/db
 ```
-Required env vars: `DATABASE_URL`, `DATABASE_USER`, `DATABASE_PASSWORD`, `WEB_SERVER_PORT`, `LOGGING_FILE_NAME`.
 
 ### Python services
 ```bash
@@ -82,9 +88,13 @@ AWS_DEFAULT_REGION=us-east-1
 - Frontend uses OAuth2 PKCE flow; entry points: `callback.html`, `logout.html`
 - Local token generation helpers: `idp/get_access_token.py` / `idp/get_access_token.sh`
 
+## End-to-End Testing
+
+`portal/e2e/ai/` holds AI-agent-driven UI scenarios that run against the local stack with the Playwright MCP server. Each scenario is a Markdown brief (`LOGIN.md`, `PLAN.md`) listing acceptance criteria the agent verifies against PNG snapshots in `assertions/`. `prerequisite.md` describes how to launch Chrome in incognito with the insecure-origin flags needed to talk to the http-only local IDP, and `prompt.md` is the entry prompt the user feeds to the agent. Credentials come from `portal/e2e/ai/.env` (gitignored). There is no Jest/Vitest suite for the frontend — these scenarios and the Go test suites are the verification path.
+
 ## Shared Go Framework (`core-services/golang-web-framework`)
 
-All Gin-based services (budget-api, tag-api, account-api) depend on this via a local `replace` directive:
+All Gin-based services (budget-api, tag-api, account-api, plan-api) depend on this via a local `replace` directive:
 ```
 github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../core-services/golang-web-framework
 ```
@@ -150,9 +160,13 @@ github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../
 | budget-api   | GET        | `/api/attachment/metadata/:budgetType/:budgetId` | Lists attachments for a parent expense or revenue                                  |
 | budget-api   | GET        | `/api/attachment/:attachmentId/content`          | Returns the raw file bytes with `Content-Disposition`                              |
 | budget-api   | DELETE     | `/api/attachment/:attachmentId`                  | Deletes both the metadata row and the S3 object                                    |
-| plan-service | GET        | `/todo-service/todo`                             | MySQL-backed, no JWT auth                                                          |
-| plan-service | POST       | `/todo-service/todo`                             |                                                                                    |
-| plan-service | GET/DELETE | `/todo-service/todo/:id`                         |                                                                                    |
+| plan-api     | GET        | `/api/plan`                                      | Lists authenticated user's plans                                                   |
+| plan-api     | POST       | `/api/plan`                                      | Creates a plan and returns `{ "id": "<uuid>" }`                                    |
+| plan-api     | GET/DELETE | `/api/plan/:id`                                  | Gets or deletes a plan; todos are cascade-deleted in Postgres                      |
+| plan-api     | PUT        | `/api/plan/:id/todo`                             | Adds a todo with default `TODO` status                                             |
+| plan-api     | PUT        | `/api/plan/:id/todo/:todoId`                     | Updates todo content/date without changing status                                  |
+| plan-api     | PUT        | `/api/plan/:id/todo/:todoId/status`              | Validates todo status transitions                                                  |
+| plan-api     | DELETE     | `/api/plan/:id/todo/:todoId`                     | Deletes a todo                                                                     |
 
 Expense, revenue, and full attachment route details: see `budget/CLAUDE.md` and `budget/budget-api/CLAUDE.md`.
 
@@ -162,13 +176,13 @@ Expense, revenue, and full attachment route details: see `budget/CLAUDE.md` and 
 - `account-api` → vauthenticator IDP (REST, config key `idp.base-url`)
 - `budget-api`, `tag-api` → DynamoDB (region hardcoded to `eu-central-1`)
 - `budget-api` → S3 (attachment content; bucket from config key `budget-api.s3.attachment.bucket-name`)
-- `plan-service` → MySQL
-- All Gin services → vauthenticator JWKS for JWT validation
+- `plan-api` → Postgres
+- All Gin services, including `plan-api` → vauthenticator JWKS for JWT validation
 
 ## Deployment
 
 - Docker images per service; Go services use Alpine base, Python services use `python:3.14.3-alpine3.23`
-- All Go services share a common Dockerfile: `core-services/docker/ubuntu.Dockerfile`
+- Shared-framework Go services generally use `core-services/docker/ubuntu.Dockerfile`; `plan/plan-api` also has its own Dockerfile.
 - Kubernetes Helm charts: `account/helm/`, `budget/helm-charts/`
 - CI/CD via GitHub Actions (`.github/workflows/`)
 - Local frontend dev: nginx on port 8070 via `portal/application-shell/local/docker compose up`; app served at `http://local.onlyone-portal.com:8070`
