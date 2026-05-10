@@ -15,7 +15,6 @@ const PlanListRow: React.FC<PlanListRowProps> = ({ plan, openDetail, openDelete 
     <TableRow key={plan.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
         <TableCell>{moment(plan.date, ApiDateFormatPattern).format(FormDateFormatPattern)}</TableCell>
         <TableCell>{plan.title}</TableCell>
-        <TableCell>{plan.todos?.length ?? 0}</TableCell>
         <TableCell>
             <ButtonGroup variant="contained" aria-label="plan row actions">
                 <Button onClick={openDetail}><FormatListBulleted /> Open</Button>
