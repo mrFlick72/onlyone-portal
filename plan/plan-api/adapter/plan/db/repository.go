@@ -72,7 +72,7 @@ func (r *PlanPostgresRepository) loadTodosFor(planId string) ([]*plan.Todo, erro
 		return result, err
 	}
 
-	query, err := db.Prepare("SELECT id, user_name, date, content FROM todo WHERE plan_id = $1")
+	query, err := db.Prepare("SELECT id, user_name, date, content, status FROM todo WHERE plan_id = $1")
 	if err != nil {
 		return result, err
 	}
@@ -82,8 +82,11 @@ func (r *PlanPostgresRepository) loadTodosFor(planId string) ([]*plan.Todo, erro
 
 	for rows.Next() {
 		var t plan.Todo
-		rows.Scan(&t.Id, &t.UserName, &t.Date, &t.Content)
+		var status string
+		//todo han\dle the error there
+		rows.Scan(&t.Id, &t.UserName, &t.Date, &t.Content, &status)
 		t.Date = t.Date.UTC()
+		t.Status = plan.TodoStatus(status)
 		result = append(result, &t)
 	}
 
@@ -146,12 +149,12 @@ func (r *PlanPostgresRepository) AddTodo(idPlanId string, t plan.Todo) error {
 		return err
 	}
 
-	query, err := db.Prepare("INSERT INTO todo (id, plan_id, user_name, date, content) VALUES ($1, $2, $3, $4, $5)")
+	query, err := db.Prepare("INSERT INTO todo (id, plan_id, user_name, date, content, status) VALUES ($1, $2, $3, $4, $5, $6)")
 	if err != nil {
 		return err
 	}
 
-	_, err = query.Exec(t.Id, idPlanId, t.UserName, t.Date, t.Content)
+	_, err = query.Exec(t.Id, idPlanId, t.UserName, t.Date, t.Content, string(t.Status))
 	logger.LogErrorFor(err)
 	database.CloseResources(nil, query, db)
 	return err
@@ -169,6 +172,23 @@ func (r *PlanPostgresRepository) UpdateTodo(idPlanId string, t plan.Todo) error 
 	}
 
 	_, err = query.Exec(t.Content, t.Date, t.Id, idPlanId)
+	logger.LogErrorFor(err)
+	database.CloseResources(nil, query, db)
+	return err
+}
+
+func (r *PlanPostgresRepository) UpdateTodoStatus(idPlanId string, todoId string, status plan.TodoStatus) error {
+	db, err := database.GetDatabaseConnectionFor(r.ConnectionString)
+	if err != nil {
+		return err
+	}
+
+	query, err := db.Prepare("UPDATE todo SET status = $1 WHERE id = $2 AND plan_id = $3")
+	if err != nil {
+		return err
+	}
+
+	_, err = query.Exec(string(status), todoId, idPlanId)
 	logger.LogErrorFor(err)
 	database.CloseResources(nil, query, db)
 	return err

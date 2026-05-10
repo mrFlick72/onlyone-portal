@@ -5,6 +5,11 @@ type todoRepresentation struct {
 	UserName string `json:"user_name"`
 	Date     string `json:"date"`
 	Content  string `json:"content"`
+	Status   string `json:"status"`
+}
+
+type todoStatusChangeRequest struct {
+	Status string `json:"status"`
 }
 
 type planRepresentation struct {

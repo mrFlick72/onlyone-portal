@@ -7,5 +7,6 @@ type PlanRepository interface {
 	DeletePlan(idPlanId string, userName string) error
 	AddTodo(idPlanId string, t Todo) error
 	UpdateTodo(idPlanId string, t Todo) error
+	UpdateTodoStatus(idPlanId string, todoId string, status TodoStatus) error
 	RemoveTodo(idPlanId string, todoId string) error
 }

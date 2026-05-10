@@ -1,8 +1,11 @@
+export type TodoStatus = "TODO" | "IN_PROGRESS" | "DONE" | "ABORTED";
+
 export type Todo = {
     id: string;
     user_name: string;
     date: string;
     content: string;
+    status: TodoStatus;
 };
 
 export type Plan = {

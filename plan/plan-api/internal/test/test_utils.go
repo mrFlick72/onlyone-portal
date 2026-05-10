@@ -53,5 +53,6 @@ func ANewTodoWith(content string) plan.Todo {
 		UserName: "user-name",
 		Date:     clock.ToDay(),
 		Content:  content,
+		Status:   plan.StatusTodo,
 	}
 }

@@ -1,5 +1,5 @@
 import { getPlanApiBaseUrl } from "../../config/ConfigLoader";
-import Plan, { NewPlan, TodoPayload } from "./Plan";
+import Plan, { NewPlan, TodoPayload, TodoStatus } from "./Plan";
 
 const PLAN_URI = (baseUrl: string, planId?: string) => planId ?
     `${baseUrl}/api/plan/${planId}` :
@@ -90,5 +90,15 @@ export async function removeTodo(planId: string, todoId: string) {
         method: "DELETE",
         credentials: 'include',
         headers: authHeaders(),
+    });
+}
+
+export async function changeTodoStatus(planId: string, todoId: string, status: TodoStatus) {
+    const baseUrl = await getPlanApiBaseUrl();
+    return fetch(`${TODO_URI(baseUrl, planId, todoId)}/status`, {
+        method: "PUT",
+        credentials: 'include',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ status }),
     });
 }

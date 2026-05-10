@@ -27,6 +27,7 @@ func RegisterEndpoints(r *gin.Engine, factory server.ContextFactoryConverter, re
 	g.POST("/plan", e.save)
 	g.PUT("/plan/:id/todo", e.addTodo)
 	g.PUT("/plan/:id/todo/:todoId", e.updateTodo)
+	g.PUT("/plan/:id/todo/:todoId/status", e.changeTodoStatus)
 	g.DELETE("/plan/:id/todo/:todoId", e.removeTodo)
 	g.DELETE("/plan/:id", e.delete)
 }
@@ -102,6 +103,7 @@ func (e *PlanEndpoints) addTodo(c *gin.Context) {
 		UserName: *user.UserName,
 		Date:     clock.ParseDateFor(rep.Date),
 		Content:  rep.Content,
+		Status:   plan.StatusTodo,
 	}
 	if err := e.repository.AddTodo(c.Param("id"), t); err != nil {
 		logger.LogErrorFor(err)
@@ -147,6 +149,54 @@ func (e *PlanEndpoints) updateTodo(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func (e *PlanEndpoints) changeTodoStatus(c *gin.Context) {
+	ctx := e.factory.CreateContextFromGin(c)
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+	var rep todoStatusChangeRequest
+	if err := c.ShouldBindJSON(&rep); err != nil {
+		logger.LogErrorFor(err)
+		c.Status(http.StatusBadRequest)
+		return
+	}
+	target := plan.TodoStatus(rep.Status)
+	if !target.IsValid() {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+	planId := c.Param("id")
+	todoId := c.Param("todoId")
+	p, err := e.repository.GetPlan(planId, *user.UserName)
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	var current *plan.Todo
+	for _, t := range p.Todos {
+		if t.Id == todoId {
+			current = t
+			break
+		}
+	}
+	if current == nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
+	if !current.Status.CanTransitionTo(target) {
+		c.Status(http.StatusConflict)
+		return
+	}
+	if err := e.repository.UpdateTodoStatus(planId, todoId, target); err != nil {
+		logger.LogErrorFor(err)
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 func (e *PlanEndpoints) delete(c *gin.Context) {
 	ctx := e.factory.CreateContextFromGin(c)
 	user, err := security.GetCurrentUser(ctx)
@@ -178,6 +228,7 @@ func toPlanRepresentation(p *plan.Plan) planRepresentation {
 			UserName: t.UserName,
 			Date:     clock.FormatDateFor(t.Date),
 			Content:  t.Content,
+			Status:   string(t.Status),
 		})
 	}
 	return planRepresentation{
