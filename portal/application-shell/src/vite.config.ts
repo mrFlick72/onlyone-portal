@@ -53,6 +53,7 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.REVENUE_API_BASE_URL':          JSON.stringify(env.REVENUE_API_BASE_URL),
       'import.meta.env.ACCOUNT_API_BASE_URL':          JSON.stringify(env.ACCOUNT_API_BASE_URL),
       'import.meta.env.TAG_API_BASE_URL':              JSON.stringify(env.TAG_API_BASE_URL),
+      'import.meta.env.PLAN_API_BASE_URL':             JSON.stringify(env.PLAN_API_BASE_URL),
     },
     build: {
       outDir: path.resolve(__dirname, '../dist'),
