@@ -1,71 +1,75 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with the plan API.
+
+## Current State
+
+`plan-api` is an authenticated Go service for plans and todos. It is fully wired through the shared Gin framework, validates JWTs through vauthenticator JWKS, and stores data in Postgres.
+
+Older plan docs describing a different service/storage shape are obsolete. The current HTTP surface is `/api/plan...`.
 
 ## Tech Stack
 
-| Concern          | Choice                                                                                                                                                                                               |
-|------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Language         | Go 1.25.1                                                                                                                                                                                            |
-| Web framework    | Gin (`github.com/gin-gonic/gin v1.11.0`)                                                                                                                                                             |
-| Persistence      | Postgres                                                                                                                                                                                             |
-| ID generation    | `github.com/google/uuid` — UUIDs are generated server-side inside the repository (not by the caller)                                                                                                 |
-| Auth             | JWT validation via the shared `core-services/golang-web-framework` middleware; JWKS fetched from `http://local.api.vauthenticator.com:9090/oauth2/jwks`                                              |
-| Shared framework | `github.com/mrflick72/onlyone-portal/core-services/golang-web-framework` — resolved via local `replace` directive in `go.mod` pointing to `../../core-services/golang-web-framework`                 |
-| Test assertions  | `github.com/stretchr/testify/assert`                                                                                                                                                                 |
-| Build tag        | `-tags test` required for integration tests. Files guarded by `//go:build test` are never linked into the production binary. Running `go test ./...` without the tag will fail to compile.           |
-
-Config is read by the shared framework's `config.GetConfigurationManagerInstance()` (backed by Viper). The config file
-path is set via the `CONFIG_FILE_LOCATION` env var.
+| Concern | Choice |
+|---------|--------|
+| Language | Go 1.25.1 |
+| Web framework | Gin (`github.com/gin-gonic/gin v1.11.0`) through `core-services/golang-web-framework` |
+| Persistence | Postgres via `database/sql` and `github.com/lib/pq` |
+| ID generation | `github.com/google/uuid`; plan IDs are generated in the repository, todo IDs in the web handler |
+| Auth | Shared JWT middleware; JWKS from config key `idp.jwks-endpoint` |
+| Config | Shared framework config manager backed by Viper; config file selected with `CONFIG_FILE_LOCATION` |
+| Test assertions | `github.com/stretchr/testify` |
+| Build tag | `-tags test` is required for packages that import `internal/test` |
 
 ## Commands
 
+Run from `plan/plan-api`.
+
 ```bash
 go build -o app .
-go test ./web/...                                          # unit tests — no database, no build tag
-go test -tags test ./adapter/...                          # integration tests — require Postgres
-go test -tags test ./...                                  # all tests
-go test -tags test -run TestGetPlan ./adapter/plan/db/... # single integration test
+
+# Unit/domain tests that do not need Postgres.
+go test -tags test ./domain/plan ./pkg/clock ./web/plan
+
+# Adapter tests require local Postgres.
+cd test && docker compose up -d
+cd ..
+CONFIG_FILE_LOCATION=test/application.yml go test -tags test ./adapter/plan/db
+
+# Full package run; requires Postgres because adapter tests are included.
+CONFIG_FILE_LOCATION=test/application.yml go test -tags test ./...
 ```
+
+If the default Go build cache is read-only in the execution environment, set `GOCACHE=/tmp/go-cache` for test commands.
 
 ## Architecture
 
-plan-api is a Go service using the **shared Gin framework** (`core-services/golang-web-framework`). JWT validation
-is handled by the shared middleware.
+Request path:
 
-**Request path:** `main.go` → `web/plan/` (Gin handlers) → `adapter/plan/db/` (Postgres repository) → `domain/plan/`
-(pure domain types).
-
-**Packages:**
-Hexagonal layout — keep changes inside the right layer:
-
-```
-domain/
-  plan/     # Plan, Todo structs + PlanRepository interface (both domain types live here)
-adapter/
-  plan/db/  # Postgres impl of PlanRepository — fully implemented
-web/
-  plan/     # Gin handlers — routes registered, handler bodies are stubs pending implementation
-config/     # composition root — NewPostgresDSN
-pkg/
-  clock/    # date parsing/formatting (YYYY-MM-DD ↔ time.Time)
-  database/ # sql.Open + CloseResources helpers
-main.go     # WebServerProvisioner — needs updating to wire plan endpoints
+```text
+main.go
+  -> server.WebServerProvisioner from core-services/golang-web-framework
+  -> web/plan Gin handlers
+  -> domain/plan PlanRepository interface
+  -> adapter/plan/db Postgres repository
 ```
 
-**Shared framework behaviour (inherited):**
+Package layout:
 
-- `server.WebServerProvisioner` auto-configures CORS, JWT middleware, and `GET /management/health`
-- JWT middleware skips `/management/*` and `OPTIONS`; authenticated user available via `security.GetCurrentUser(ctx)`
-  after `server.GinContextToPlainContextFactory`
-- Config values accessed via `config.GetConfigurationManagerInstance().GetConfigFor("key")`
+```text
+domain/plan/      Plan, Todo, TodoStatus, transition rules, repository port
+adapter/plan/db/  Postgres implementation of PlanRepository
+web/plan/         Gin endpoint registration, request/response mapping, tests
+config/           repository and Postgres DSN construction from shared config
+pkg/clock/        YYYY-MM-DD date parsing/formatting helpers
+pkg/database/     sql.Open and resource cleanup helpers
+internal/test/    test fixtures guarded by //go:build test
+scripts/init.sql  Postgres schema for plan and todo tables
+```
 
 ## Domain Model
 
-Both `Plan` and `Todo` live in the single `domain/plan` package:
-
 ```go
-// domain/plan/model.go
 type Plan struct {
     Id       string
     UserName string
@@ -79,65 +83,115 @@ type Todo struct {
     UserName string
     Date     time.Time
     Content  string
+    Status   TodoStatus
 }
 ```
 
+Todo statuses:
+
+| Status | Meaning |
+|--------|---------|
+| `TODO` | Created and not started. |
+| `IN_PROGRESS` | Work started. |
+| `DONE` | Finished; terminal. |
+| `ABORTED` | Cancelled; terminal. |
+
+Allowed transitions:
+
+| From | To |
+|------|----|
+| `TODO` | `IN_PROGRESS`, `ABORTED` |
+| `IN_PROGRESS` | `TODO`, `DONE`, `ABORTED` |
+| `DONE` | none |
+| `ABORTED` | none |
+
+The backend enforces these transitions in `TodoStatus.CanTransitionTo`. The frontend mirrors the same matrix in `portal/application-shell/src/plan/domain/TodoStatus.ts`.
+
+## Repository Port
+
 ```go
-// domain/plan/repository.go
 type PlanRepository interface {
     GetAllPlanBy(userName string) ([]*Plan, error)
     GetPlan(idPlanId string, userName string) (*Plan, error)
-    CreateNewPlan(p Plan) (string, error)   // returns generated plan ID
+    CreateNewPlan(p Plan) (string, error)
+    DeletePlan(idPlanId string, userName string) error
     AddTodo(idPlanId string, t Todo) error
+    UpdateTodo(idPlanId string, t Todo) error
+    UpdateTodoStatus(idPlanId string, todoId string, status TodoStatus) error
     RemoveTodo(idPlanId string, todoId string) error
 }
 ```
 
-At the database level, one Plan may have zero or more Todos. The FK `todo.plan_id → plan.id` is set with `ON DELETE CASCADE`.
+## Repository Implementation
 
-## Repository Implementation (`adapter/plan/db/repository.go`)
+`adapter/plan/db/repository.go` implements all repository methods.
 
-All methods implemented:
+| Method | Behavior |
+|--------|----------|
+| `CreateNewPlan` | Generates a UUID and inserts into `plan`; returns the generated ID. |
+| `GetPlan` | Fetches a plan by `id AND user_name`; eagerly loads todos; returns not-found error when missing. |
+| `GetAllPlanBy` | Fetches all plans for one user; initializes non-nil todo slices. |
+| `DeletePlan` | Deletes by `id AND user_name`; Postgres cascade deletes todos. |
+| `AddTodo` | Inserts a todo with status persisted from the domain value, normally `TODO`. |
+| `UpdateTodo` | Updates todo content and date only; status is intentionally unchanged. |
+| `UpdateTodoStatus` | Updates the status column for one todo. |
+| `RemoveTodo` | Deletes a todo by `id AND plan_id`. |
 
-| Method | Behaviour |
-|--------|-----------|
-| `CreateNewPlan` | Generates UUID server-side; inserts into `plan` table; returns the new ID |
-| `GetPlan` | Queries `plan` by `id AND user_name`; calls private `loadTodosFor` for eager loading; returns not-found error when missing |
-| `GetAllPlanBy` | Queries all `plan` rows by `user_name`; calls `loadTodosFor` for each plan |
-| `AddTodo` | Inserts into `todo` with `plan_id` FK set |
-| `RemoveTodo` | Deletes from `todo` by `id AND plan_id` |
+Important details:
 
-**Key internals:**
-- `loadTodosFor(planId string)` — private method; `SELECT … FROM todo WHERE plan_id = $1`; always returns a non-nil slice; normalises Postgres TIMESTAMP → `time.UTC` via `.UTC()`
-- `buildPlans(rows)` — row mapper; initialises with `make([]*Plan, 0)` (never nil); normalises date to UTC; sets `Todos` to `[]*Todo{}`
-- All methods open a new connection per call via `database.GetDatabaseConnectionFor` and defer cleanup with `database.CloseResources`
+- Schema lives in `scripts/init.sql`. The script is idempotent: `CREATE TABLE IF NOT EXISTS` plus an `ALTER TABLE todo ADD COLUMN IF NOT EXISTS status` so it can run against both fresh and pre-status databases.
+- `todo.plan_id -> plan.id` uses `ON DELETE CASCADE`; deleting a plan removes its todos in one statement.
+- `loadTodosFor` returns a non-nil slice and normalizes timestamps to UTC.
+- Each repository method opens a new connection via `database.GetDatabaseConnectionFor` (`sql.Open("postgres", dsn)`) and closes rows/stmt/db through `database.CloseResources`. There is no shared pool held by the repository struct.
+- Only `GetAllPlanBy`, `GetPlan`, and `DeletePlan` filter by `user_name`. `UpdateTodo`, `UpdateTodoStatus`, and `RemoveTodo` filter by `id` (and `plan_id` for todo rows) only — ownership must be enforced by the caller. `changeTodoStatus` does this by loading the plan for the current user before issuing the update; `updateTodo` and `removeTodo` currently rely on todo IDs being unguessable.
 
-## Web Layer (`web/plan/endpoints.go`)
+## Web API
 
-| Method | Path | Handler | Status |
-|--------|------|---------|--------|
-| GET | `/api/plan` | `getAll` | calls `GetAllPlanBy(*user.UserName)` → 200 JSON array |
-| GET | `/api/plan/:id` | `getOne` | calls `GetPlan(id, *user.UserName)` → 200 JSON / 404 |
-| POST | `/api/plan` | `save` | calls `CreateNewPlan(...)` → 201 `{"id": "<uuid>"}` |
-| PUT | `/api/plan/:id/todo` | `addTodo` | generates todo UUID; calls `AddTodo(planId, todo)` → 201 |
-| DELETE | `/api/plan/:id/todo/:todoId` | `removeTodo` | calls `RemoveTodo(planId, todoId)` → 204 |
-| PUT | `/api/plan/:id/todo/:todoId` | `updateTodo` | stub — no repo backing yet |
-| DELETE | `/api/plan/:id` | `delete` | stub — no repo backing yet |
+Routes are registered under `/api` in `web/plan/endpoints.go`.
 
-**Representation types** (in `web/plan/`):
-- `planRepresentation` — `{id, user_name, title, date, todos[]}` — used for GET responses
-- `todoRepresentation` — `{id, user_name, date, content}` — used inside plan and as PUT body
+| Method | Path | Handler | Success |
+|--------|------|---------|---------|
+| `GET` | `/api/plan` | `getAll` | `200` JSON array |
+| `GET` | `/api/plan/:id` | `getOne` | `200` JSON object, `404` when missing |
+| `POST` | `/api/plan` | `save` | `201 {"id":"<uuid>"}` |
+| `DELETE` | `/api/plan/:id` | `delete` | `204` |
+| `PUT` | `/api/plan/:id/todo` | `addTodo` | `201` |
+| `PUT` | `/api/plan/:id/todo/:todoId` | `updateTodo` | `204` |
+| `PUT` | `/api/plan/:id/todo/:todoId/status` | `changeTodoStatus` | `204`; `400` unknown status, `404` missing plan/todo, `409` invalid transition |
+| `DELETE` | `/api/plan/:id/todo/:todoId` | `removeTodo` | `204` |
 
-**Handler conventions:**
-- `user_name` is always taken from the JWT (`security.GetCurrentUser`), never from the request body
-- Todo UUIDs are generated in the handler (`uuid.NewString()`); plan UUIDs are generated inside the repo
-- `clock.ParseDateFor` / `clock.FormatDateFor` handle `"YYYY-MM-DD"` ↔ `time.Time` conversion for dates in JSON
+Representations in `web/plan/representations.go`:
 
-**Unit test mock** (`web/plan/endpoints_test.go`) implements `plan.PlanRepository` in-memory; compile-time checked with `var _ plan.PlanRepository = (*mockRepo)(nil)`.
+```json
+{
+  "id": "plan-id",
+  "user_name": "user-name",
+  "title": "Plan title",
+  "date": "2026-05-10",
+  "todos": [
+    {
+      "id": "todo-id",
+      "user_name": "user-name",
+      "date": "2026-05-10",
+      "content": "Do something",
+      "status": "TODO"
+    }
+  ]
+}
+```
+
+Handler conventions:
+
+- The authenticated user comes from `security.GetCurrentUser` after `factory.CreateContextFromGin(c)`; request bodies must not be trusted for `user_name`. Every handler except `removeTodo` performs this lookup and returns `401` when it fails.
+- Dates in JSON use `YYYY-MM-DD` through `pkg/clock`. `clock.ParseDateFor` returns the zero time on parse error rather than rejecting the request.
+- Plan IDs are minted in the repository (`uuid.NewRandom`) and returned to the caller; todo IDs are minted in the `addTodo` handler (`uuid.NewString`) and persisted by `AddTodo`.
+- New todos always start with `TODO`.
+- `updateTodo` writes only `content` and `date`; the status column is intentionally left untouched.
+- `changeTodoStatus` runs in this order: validate target with `TodoStatus.IsValid` (`400` on unknown), load the plan for the current user (`404` if missing), find the todo (`404` if missing), enforce `CanTransitionTo` (`409` on disallowed), then update. The frontend mirrors the same matrix in `portal/application-shell/src/plan/domain/TodoStatus.ts`.
 
 ## Configuration
 
-Set `CONFIG_FILE_LOCATION` to a YAML config file path. Required keys:
+Set `CONFIG_FILE_LOCATION` to a YAML file. Local config is `test/application.yml`.
 
 ```yaml
 server:
@@ -164,29 +218,39 @@ logger:
   file-name: log.log
 ```
 
-A ready-to-use local config is at `test/application.yml`.
-
 ## Testing
 
-**Unit tests** (`web/plan/`) — use `httptest` + in-memory mock; no database, no build tag:
+Tests are split one file per endpoint or behaviour rather than one big file. All web tests share `setupRouter` and `mockRepo` from `web/plan/endpoints_test.go`; assertions and mocking use `github.com/stretchr/testify`.
 
-**Integration tests** (`adapter/plan/db/`) — require Postgres and `-tags test`:
+Web layer (`web/plan/`, no Postgres needed but `-tags test` is still required because the package imports `internal/test` fixtures):
+
+- `endpoints_test.go` — `setupRouter` (injects a fake `security.User` into the Gin context) and the `mockRepo` shared by every other test in the package.
+- `save_plan_test.go`, `get_plan_test.go`, `get_all_plans_test.go`, `delete_plan_test.go` — plan CRUD.
+- `add_todo_test.go`, `update_todo_test.go`, `remove_todo_test.go` — todo CRUD.
+- `change_todo_status_test.go` — every transition outcome (`204`, `400`, `404`, `409`).
+
+Domain layer (`domain/plan/`, no infra, no build tag would also work but `-tags test` is harmless):
+
+- `status_test.go` — `IsValid` and the full `CanTransitionTo` truth table.
+
+Clock helpers (`pkg/clock/clock_test.go`) — round-trip parsing/formatting of `YYYY-MM-DD`.
+
+Adapter layer (`adapter/plan/db/`, requires Postgres on `localhost:5432` with `postgres/postgres/postgres`):
 
 ```bash
 cd test && docker compose up -d
-CONFIG_FILE_LOCATION=test/application.yml go test -tags test ./adapter/...
+cd ..
+CONFIG_FILE_LOCATION=test/application.yml go test -tags test ./adapter/plan/db
 ```
 
-Schema is applied automatically by `initDatabase()` in `test_utils.go` (reads `scripts/init.sql`). No manual
-schema apply step is needed after the first run.
+- `repository_test.go` — `TestMain` runs `test.ClearDatabase()` once for the whole package.
+- `create_plan_test.go`, `get_plan_test.go`, `get_all_plans_test.go`, `delete_plan_test.go`, `add_todo_test.go`, `update_todo_test.go`, `update_todo_status_test.go`, `remove_todo_test.go`.
 
-**Test lifecycle (`adapter/plan/db/`):**
-- `TestMain` calls `clearDatabase()` once before all tests (`TRUNCATE TABLE todo, plan` — both in one statement to respect the FK constraint)
-- Individual tests do **not** clean up between themselves — data accumulates across tests
-- Tests that insert under `"user-name"` coexist; `TestGetAllPlanBy` uses the distinct username `"all-plans-user"` for isolation
+`internal/test/test_utils.go` is guarded by `//go:build test` and exposes:
 
-**Test helpers (`adapter/plan/db/test_utils.go`, guarded by `//go:build test`):**
-- `aNewPlan()` — returns a `plan.Plan` with empty `Todos: []*plan.Todo{}`; `Id` is not set (repo generates it)
-- `aNewTodoWith(content)` — returns a `plan.Todo` with a random UUID `Id`
-- `assertEqualPlan(t, expected, actual)` — compares `expected plan.Plan` against dereferenced `*actual`; set `expected.Id` from the value returned by `CreateNewPlan` before calling
-- `clearDatabase()` — runs `TRUNCATE TABLE todo, plan` (single statement); safe to call from `TestMain`
+- `TestDSN` — the Postgres DSN used by adapter tests.
+- `ANewPlan()` / `ANewTodoWith(content)` — fixtures with `UserName: "user-name"` and today's date in UTC.
+- `ClearDatabase()` — re-runs `scripts/init.sql` and `TRUNCATE TABLE todo, plan`.
+- `InitDatabase(conn)` — applies `scripts/init.sql` via the supplied connection.
+
+Adapter tests do not reset state between each test, so use distinct users or fresh plans when isolation matters.
