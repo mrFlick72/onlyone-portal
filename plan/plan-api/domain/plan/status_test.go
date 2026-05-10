@@ -30,7 +30,7 @@ func TestAllowedTransitions(t *testing.T) {
 		{StatusTodo, StatusTodo, false},
 		{StatusInProgress, StatusDone, true},
 		{StatusInProgress, StatusAborted, true},
-		{StatusInProgress, StatusTodo, false},
+		{StatusInProgress, StatusTodo, true},
 		{StatusInProgress, StatusInProgress, false},
 		{StatusDone, StatusTodo, false},
 		{StatusDone, StatusInProgress, false},

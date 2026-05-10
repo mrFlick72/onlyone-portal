@@ -61,6 +61,19 @@ func TestChangeTodoStatusFromInProgressToDone(t *testing.T) {
 	repo.AssertExpectations(t)
 }
 
+func TestChangeTodoStatusFromInProgressToTodo(t *testing.T) {
+	todoId := "t-7"
+	p := aPlanWithTodo(todoId, plan.StatusInProgress)
+	repo := &mockRepo{}
+	repo.On("GetPlan", p.Id, testUser).Return(p, nil)
+	repo.On("UpdateTodoStatus", p.Id, todoId, plan.StatusTodo).Return(nil)
+
+	w := performStatusChange(t, repo, p.Id, todoId, "TODO")
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	repo.AssertExpectations(t)
+}
+
 func TestChangeTodoStatusToAbortedFromTodo(t *testing.T) {
 	todoId := "t-3"
 	p := aPlanWithTodo(todoId, plan.StatusTodo)
