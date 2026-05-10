@@ -2,7 +2,7 @@ import { TodoStatus } from "./Plan";
 
 const transitions: Record<TodoStatus, TodoStatus[]> = {
     TODO:        ["IN_PROGRESS", "ABORTED"],
-    IN_PROGRESS: ["DONE", "ABORTED"],
+    IN_PROGRESS: ["TODO", "DONE", "ABORTED"],
     DONE:        [],
     ABORTED:     [],
 };

@@ -31,7 +31,7 @@ const (
 
 var allowedTransitions = map[TodoStatus]map[TodoStatus]struct{}{
 	StatusTodo:       {StatusInProgress: {}, StatusAborted: {}},
-	StatusInProgress: {StatusDone: {}, StatusAborted: {}},
+	StatusInProgress: {StatusTodo: {}, StatusDone: {}, StatusAborted: {}},
 	StatusDone:       {},
 	StatusAborted:    {},
 }
