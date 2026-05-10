@@ -50,6 +50,11 @@ func (m *mockRepo) UpdateTodo(planId string, t plan.Todo) error {
 	return args.Error(0)
 }
 
+func (m *mockRepo) UpdateTodoStatus(planId string, todoId string, status plan.TodoStatus) error {
+	args := m.Called(planId, todoId, status)
+	return args.Error(0)
+}
+
 func (m *mockRepo) RemoveTodo(planId string, todoId string) error {
 	args := m.Called(planId, todoId)
 	return args.Error(0)

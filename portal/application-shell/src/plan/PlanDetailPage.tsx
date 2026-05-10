@@ -8,11 +8,12 @@ import OpenPopUpMenuItem from "../components/menu/OpenPopUpMenuItem";
 import MenuItem from "../components/menu/MenuItem";
 import { ApiDateFormatPattern, FormDateFormatPattern } from "../components/form/FormDatePicker";
 import { OnlyonePortalPagesConfigMap } from "../messages/OnlyonePortalPagesConfigMap";
-import Plan, { Todo } from "./domain/Plan";
-import { addTodo, getPlan, removeTodo, updateTodo } from "./domain/PlanRepository";
+import Plan, { Todo, TodoStatus } from "./domain/Plan";
+import { addTodo, changeTodoStatus, getPlan, removeTodo, updateTodo } from "./domain/PlanRepository";
 import TodoContent from "./TodoContent";
 import SaveTodoPopUp from "./SaveTodoPopUp";
 import DeleteTodoConfirmationPopUp from "./DeleteTodoConfirmationPopUp";
+import ChangeTodoStatusPopUp from "./ChangeTodoStatusPopUp";
 
 interface PlanDetailPageProps {
     messageRegistry: any;
@@ -31,6 +32,9 @@ const PlanDetailPage: React.FC<PlanDetailPageProps> = ({ messageRegistry }) => {
 
     const [deletable, setDeletable] = useState<Todo | null>(null)
     const [openDeletePopUp, setOpenDeletePopUp] = useState(false)
+
+    const [statusTarget, setStatusTarget] = useState<Todo | null>(null)
+    const [openStatusPopUp, setOpenStatusPopUp] = useState(false)
 
     const refresh = useCallback(() => {
         if (!planId) {
@@ -92,6 +96,25 @@ const PlanDetailPage: React.FC<PlanDetailPageProps> = ({ messageRegistry }) => {
         })
     }, [planId, deletable, refresh])
 
+    const openChangeStatus = useCallback((todo: Todo) => {
+        setStatusTarget(todo)
+        setOpenStatusPopUp(true)
+    }, [])
+
+    const closeChangeStatus = useCallback(() => setOpenStatusPopUp(false), [])
+
+    const applyStatus = useCallback((status: TodoStatus) => {
+        if (!statusTarget) {
+            return
+        }
+        changeTodoStatus(planId, statusTarget.id, status).then(response => {
+            if (response.status === 204) {
+                setOpenStatusPopUp(false)
+                refresh()
+            }
+        })
+    }, [planId, statusTarget, refresh])
+
     const planMessages = configMap.plan(messageRegistry)
     const detailMessages = configMap.planDetail(messageRegistry)
 
@@ -137,10 +160,17 @@ const PlanDetailPage: React.FC<PlanDetailPageProps> = ({ messageRegistry }) => {
                     saveCallback={confirmDelete}
                     modal={detailMessages.deleteTodoModal} />
 
+                <ChangeTodoStatusPopUp
+                    open={openStatusPopUp}
+                    todo={statusTarget}
+                    handleClose={closeChangeStatus}
+                    onSelect={applyStatus} />
+
                 <TodoContent
                     todos={plan?.todos ?? []}
                     openUpdate={openUpdate}
-                    openDelete={openDelete} />
+                    openDelete={openDelete}
+                    openChangeStatus={openChangeStatus} />
             </Container>
         </Paper>
     </ThemeProvider>

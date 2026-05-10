@@ -7,15 +7,17 @@ interface TodoContentProps {
     todos: Todo[];
     openUpdate: (todo: Todo) => void;
     openDelete: (todo: Todo) => void;
+    openChangeStatus: (todo: Todo) => void;
 }
 
-const TodoContent: React.FC<TodoContentProps> = ({ todos, openUpdate, openDelete }) => (
+const TodoContent: React.FC<TodoContentProps> = ({ todos, openUpdate, openDelete, openChangeStatus }) => (
     <TableContainer component={Paper}>
         <Table>
             <TableHead>
                 <TableRow>
                     <TableCell>Date</TableCell>
                     <TableCell>Content</TableCell>
+                    <TableCell>Status</TableCell>
                     <TableCell>Options</TableCell>
                 </TableRow>
             </TableHead>
@@ -25,7 +27,8 @@ const TodoContent: React.FC<TodoContentProps> = ({ todos, openUpdate, openDelete
                         key={todo.id}
                         todo={todo}
                         openUpdate={() => openUpdate(todo)}
-                        openDelete={() => openDelete(todo)} />)}
+                        openDelete={() => openDelete(todo)}
+                        openChangeStatus={() => openChangeStatus(todo)} />)}
             </TableBody>
         </Table>
     </TableContainer>
