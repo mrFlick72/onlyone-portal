@@ -1,6 +1,7 @@
-package i18n-api
+package i18n
 
 import "strings"
+
 type Locale string
 
 func (l Locale) Normalized() Locale {

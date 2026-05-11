@@ -9,15 +9,15 @@ idp:
   jwks-endpoint: http://local.api.vauthenticator.com:9090/oauth2/jwks
 
 user:
-  required-role: i18n-api_READER
+  required-role: i18n_READER
 
-i18n-api:
+i18n:
   default-language: en_en
   jwt:
     language-claim: preferred_language
   s3:
     bundle:
-      bucket-name: onlyone-portal-i18n-api-test
+      bucket-name: onlyone-portal-i18n-test
 
 logger:
   level: info

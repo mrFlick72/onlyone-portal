@@ -1,33 +1,33 @@
-package i18n-api
+package i18n
 
 import (
-"errors"
-"net/http"
+	"errors"
+	"net/http"
 
-"github.com/gin-gonic/gin"
-"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
-"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
-"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
-"github.com/mrflick72/onlyone-portal/portal/i18n-api/domain/i18n-api"
+	"github.com/gin-gonic/gin"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
+	"github.com/mrflick72/onlyone-portal/portal/i18n-api/domain/i18n"
 )
 
-var logger = logging.GetLoggerInstanceForComponentByTypeName("i18n-apiEndpoints")
+var logger = logging.GetLoggerInstanceForComponentByTypeName("i18nEndpoints")
 
 type Endpoints struct {
-	repository i18n-api.BundleRepository
-	resolver   *i18n-api.LanguageResolver
+	repository i18n.BundleRepository
+	resolver   *i18n.LanguageResolver
 	factory    server.ContextFactoryConverter
 }
 
 func RegisterEndpoints(
 	r *gin.Engine,
 	factory server.ContextFactoryConverter,
-	repository i18n-api.BundleRepository,
-	resolver *i18n-api.LanguageResolver,
+	repository i18n.BundleRepository,
+	resolver *i18n.LanguageResolver,
 ) {
 	e := &Endpoints{repository: repository, resolver: resolver, factory: factory}
 	g := r.Group("/api")
-	g.GET("/i18n-api/:application/:page", e.getBundle)
+	g.GET("/i18n/:application/:page", e.getBundle)
 }
 
 func (e *Endpoints) getBundle(c *gin.Context) {
@@ -38,7 +38,7 @@ func (e *Endpoints) getBundle(c *gin.Context) {
 		return
 	}
 
-	language := i18n - api.Locale(c.Query("lang")).Normalized()
+	language := i18n.Locale(c.Query("lang")).Normalized()
 	if language.IsEmpty() && user.AccessToken != nil {
 		language = e.resolver.ResolveFromAccessToken(*user.AccessToken)
 	}
@@ -46,20 +46,20 @@ func (e *Endpoints) getBundle(c *gin.Context) {
 		language = e.resolver.DefaultLanguage
 	}
 
-	key := i18n - api.BundleKey{
+	key := i18n.BundleKey{
 		Application: c.Param("application"),
 		Page:        c.Param("page"),
 		Language:    language,
 	}
 
 	bundle, err := e.repository.GetBundle(ctx, key)
-	if errors.Is(err, i18n-api.ErrBundleNotFound) && language != e.resolver.DefaultLanguage {
+	if errors.Is(err, i18n.ErrBundleNotFound) && language != e.resolver.DefaultLanguage {
 		logger.LogInfofFor("bundle %s/%s not found for language %s, falling back to %s",
 			key.Application, key.Page, language, e.resolver.DefaultLanguage)
 		key.Language = e.resolver.DefaultLanguage
 		bundle, err = e.repository.GetBundle(ctx, key)
 	}
-	if errors.Is(err, i18n-api.ErrBundleNotFound) {
+	if errors.Is(err, i18n.ErrBundleNotFound) {
 		c.Status(http.StatusNotFound)
 		return
 	}
