@@ -10,6 +10,13 @@ jobs:
     defaults:
       run:
         working-directory: portal/i18n-api
+      services:
+        localstack:
+          image: localstack/localstack:3.2
+          ports:
+            - "4566-4599:4566-4599"
+          env:
+            SERVICES: s3
     steps:
       - name: checkout
         uses: actions/checkout@v6
