@@ -1,8 +1,8 @@
-package i18n
+package i18n-api
 
 import (
-	"context"
-	"errors"
+"context"
+"errors"
 )
 
 var ErrBundleNotFound = errors.New("message bundle not found")
