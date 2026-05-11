@@ -1,0 +1,64 @@
+menu:
+  title: "Home"
+  userProfile:
+    label: "User Profile"
+  budgetPage:
+    label: "Budget"
+  revenuePage:
+    label: "Revenue"
+  planPage:
+    label: "Plans"
+  logOut:
+    label: "Log Out"
+
+budgetExpensePage:
+  menu:
+    newBudgetExpense: "New Budget Expense"
+    search: "Search"
+    searchTags: "Search Tags"
+    diagrams: "Diagram Chart"
+  cards:
+    dailyDetails: "Daily details"
+    totalByCategories: "Total by categories"
+  newBudgetExpense:
+    popup:
+      title: "Save a Budget Expense"
+  search:
+    popup:
+      title: "Filter by tag"
+  delete:
+    popup:
+      title: "Delete Budget Expense Attachments"
+      message: "Are you sure of delete the Budget Expense from the list?"
+  attachment:
+    popup:
+      title: "Load Attachments"
+  loadCsvFile:
+    popup:
+      title: "Load data by a csv file"
+      save: "Load File..."
+      formUploadFileLabel: "File:"
+
+common:
+  button:
+    save:
+      label: "Save"
+    close:
+      label: "Close"
+    upload:
+      label: "Upload"
+
+attachment:
+  popup:
+    chooseFile:
+      label: "Choose file"
+    noFileSelected:
+      label: "No file selected"
+    existingAttachments:
+      label: "Existing attachments"
+    noAttachments:
+      label: "No attachments yet"
+    download:
+      label: "Download attachment"
+    delete:
+      label: "Delete attachment"

@@ -1,0 +1,24 @@
+menu:
+  title: "Home"
+  userProfile:
+    label: "User Profile"
+  logOut:
+    label: "Log Out"
+
+form:
+  firstName:
+    label: "First Name:"
+    placeholder: "First Name"
+  lastName:
+    label: "Last Name:"
+    placeholder: "Last Name"
+  birthDate:
+    label: "Birth Date:"
+  email:
+    label: "Mail:"
+    placeholder: "Mail"
+  phone:
+    label: "Phone:"
+    placeholder: "Phone"
+  save:
+    value: "Save changes"
