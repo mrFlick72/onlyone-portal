@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
-	"github.com/mrflick72/onlyone-portal/portal/i18n/config"
-	web "github.com/mrflick72/onlyone-portal/portal/i18n/web/i18n"
+	"github.com/mrflick72/onlyone-portal/portal/i18n-api/config"
+	web "github.com/mrflick72/onlyone-portal/portal/i18n-api/web/i18n-api"
 )
 
 func main() {

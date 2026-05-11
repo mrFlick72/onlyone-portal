@@ -1,9 +1,8 @@
-package i18n
+package i18n-api
 
 import (
-	"github.com/lestrrat-go/jwx/v3/jwt"
+"github.com/lestrrat-go/jwx/v3/jwt"
 )
-
 type LanguageResolver struct {
 	ClaimName       string
 	DefaultLanguage Locale

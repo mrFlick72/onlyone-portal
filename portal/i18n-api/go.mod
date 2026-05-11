@@ -1,4 +1,4 @@
-module github.com/mrflick72/onlyone-portal/portal/i18n
+module github.com/mrflick72/onlyone-portal/portal/i18n-api
 
 replace github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../core-services/golang-web-framework
 

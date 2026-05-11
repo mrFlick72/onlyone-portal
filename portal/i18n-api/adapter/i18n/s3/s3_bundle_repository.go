@@ -10,7 +10,6 @@ import (
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
-	"github.com/mrflick72/onlyone-portal/portal/i18n/domain/i18n"
 	"gopkg.in/yaml.v3"
 )
 
@@ -28,11 +27,11 @@ func NewS3BundleRepository(bucket string, client *awss3.Client) *S3BundleReposit
 	}
 }
 
-func ObjectKeyFor(key i18n.BundleKey) string {
+func ObjectKeyFor(key i18n-api.BundleKey) string {
 	return fmt.Sprintf("%s/%s/message_bundle_%s.yaml", key.Application, key.Page, key.Language)
 }
 
-func (r *S3BundleRepository) GetBundle(ctx context.Context, key i18n.BundleKey) (*i18n.MessageBundle, error) {
+func (r *S3BundleRepository) GetBundle(ctx context.Context, key i18n-api.BundleKey) (*i18n-api.MessageBundle, error) {
 	objectKey := ObjectKeyFor(key)
 	out, err := r.Client.GetObject(ctx, &awss3.GetObjectInput{
 		Bucket: aws.String(r.Bucket),
@@ -41,7 +40,7 @@ func (r *S3BundleRepository) GetBundle(ctx context.Context, key i18n.BundleKey) 
 	if err != nil {
 		var notFound *types.NoSuchKey
 		if errors.As(err, &notFound) {
-			return nil, i18n.ErrBundleNotFound
+			return nil, i18n - api.ErrBundleNotFound
 		}
 		r.logger.LogErrorfFor("error fetching message bundle from s3 key %s: %v", objectKey, err)
 		return nil, err
@@ -60,7 +59,7 @@ func (r *S3BundleRepository) GetBundle(ctx context.Context, key i18n.BundleKey) 
 		return nil, err
 	}
 
-	return &i18n.MessageBundle{
+	return &i18n - api.MessageBundle{
 		Application: key.Application,
 		Page:        key.Page,
 		Language:    key.Language,
