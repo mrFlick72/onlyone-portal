@@ -18,8 +18,8 @@ const BudgetRevenueRow: React.FC<BudgetRevenueRowProps> = ({ revenue, openDelete
         <TableCell>{revenue.note}</TableCell>
         <TableCell>
             <ButtonGroup variant="contained" aria-label="outlined primary button group">
-                <Button onClick={openUploadAttachmentPopUp}><AttachFile /> Attach</Button>
                 <Button onClick={openUpdatePopUp}><Edit /> Edit</Button>
+                <Button onClick={openUploadAttachmentPopUp}><AttachFile /> Attach</Button>
                 <Button onClick={openDeletePopUp}><Delete />Delete </Button>
             </ButtonGroup>
         </TableCell>
