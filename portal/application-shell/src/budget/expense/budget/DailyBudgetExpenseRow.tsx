@@ -19,7 +19,6 @@ const DailyBudgetExpenseRow: React.FC<DailyBudgetExpenseRowProps> = ({ key, dail
         <TableCell>{dailyBudgetExpense.tagValue}</TableCell>
         <TableCell>
             <ButtonGroup variant="contained" aria-label="outlined primary button group">
-                <Button onClick={() => openUploadAttachmentPopUp(dailyBudgetExpense)}><AttachFile /> Attach</Button>
                 <Button onClick={() => openUpdateBudgetExpensePopUp({
                     id: dailyBudgetExpense.id,
                     amount: dailyBudgetExpense.amount,
@@ -27,6 +26,7 @@ const DailyBudgetExpenseRow: React.FC<DailyBudgetExpenseRowProps> = ({ key, dail
                     note: dailyBudgetExpense.note,
                     searchTag: { value: dailyBudgetExpense.tagKey, label: dailyBudgetExpense.tagValue }
                 })}><Edit /> Edit</Button>
+                <Button onClick={() => openUploadAttachmentPopUp(dailyBudgetExpense)}><AttachFile /> Attach</Button>
                 <Button onClick={() => openDeleteBudgetExpensePopUp(dailyBudgetExpense)}><Delete />Delete </Button>
             </ButtonGroup>
         </TableCell>
