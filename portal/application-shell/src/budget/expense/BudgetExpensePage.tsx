@@ -79,6 +79,7 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
         findBudgetExpense({
             month: getMonthSearchCriteria(),
             year: getYearSearchCriteria(),
+            searchTagList: getSearchTagsSearchCriteria()
         }).then((data) => {
             setSpentBudget(data)
         })

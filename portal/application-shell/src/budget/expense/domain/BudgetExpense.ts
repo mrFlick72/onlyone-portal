@@ -17,7 +17,8 @@ export type SavedBudgetExpense = {
 
 export type BudgetExpenseSearchCriteria = {
     month: string,
-    year: string
+    year: string,
+    searchTagList: string[]
 }
 
 export type SpentBudget = {
