@@ -27,7 +27,7 @@ func TestWhenABudgetExpenseUpdateSucceed(t *testing.T) {
 		Date:     *aDate,
 		Amount:   anAmount,
 		Note:     "A_NOTE",
-		Tag:      tags.SearchTag{Key: "super-market", Value: "super-market"},
+		Tag:      []tags.SearchTag{tags.SearchTag{Key: "super-market", Value: "super-market"}},
 	}
 
 	ctx := testutils.NewUserContext()
@@ -62,7 +62,7 @@ func TestWhenABudgetExpenseUpdateDoesDoneNothingBecauseTheBudgetExpenseDoesNotEx
 		Date:     *aDate,
 		Amount:   anAmount,
 		Note:     "A_NOTE",
-		Tag:      tags.SearchTag{Key: "super-market", Value: "super-market"},
+		Tag:      []tags.SearchTag{tags.SearchTag{Key: "super-market", Value: "super-market"}},
 	}
 
 	ctx := testutils.NewUserContext()
@@ -92,7 +92,7 @@ func TestWhenABudgetExpenseUpdateFails(t *testing.T) {
 		Date:     *aDate,
 		Amount:   anAmount,
 		Note:     "A_NOTE",
-		Tag:      tags.SearchTag{Key: "super-market", Value: "super-market"},
+		Tag:      []tags.SearchTag{tags.SearchTag{Key: "super-market", Value: "super-market"}},
 	}
 
 	ctx := testutils.NewUserContext()

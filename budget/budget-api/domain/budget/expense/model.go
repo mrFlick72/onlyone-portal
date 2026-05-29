@@ -46,7 +46,7 @@ func (spentBudget *SpentBudget) Total() money.Money {
 func (spentBudget *SpentBudget) TotalForSearchTags() map[tags.SearchTag]money.Money {
 	result := make(map[tags.SearchTag]money.Money)
 	for _, budgetExpense := range spentBudget.BudgetExpenseList {
-		searchTag := spentBudget.findSearchTagFor(budgetExpense.Tag.Key)
+		searchTag := spentBudget.findSearchTagFor(budgetExpense.Tag[0].Key)
 		if searchTag != nil {
 			currentTotal, exists := result[*searchTag]
 			if !exists {
@@ -103,7 +103,7 @@ type BudgetExpense struct {
 	Date     date.Date
 	Amount   money.Money
 	Note     string
-	Tag      tags.SearchTag
+	Tag      []tags.SearchTag
 }
 
 type BudgetExpenseId = string
