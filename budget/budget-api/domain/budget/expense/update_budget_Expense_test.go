@@ -11,22 +11,6 @@ import (
 	"github.com/mrflick72/budget/budget-api/internal/testutils"
 )
 
-/*
-	public void updateWithoutAttachment(BudgetExpense budgetExpense) {
-	    budgetExpenseRepository.findFor(budgetExpense.id())
-	            .ifPresent(foundBudgetExpense -> {
-	                BudgetExpense updatedBudgetExpense = new BudgetExpense(budgetExpense.id(),
-	                        budgetExpense.userName(),
-	                        budgetExpense.date(),
-	                        budgetExpense.amount(), budgetExpense.note(),
-	                        budgetExpense.tag()
-	                );
-
-	                budgetExpenseRepository.save(updatedBudgetExpense);
-	            });
-
-
-*/
 
 func TestWhenABudgetExpenseUpdateSucceed(t *testing.T) {
 
