@@ -46,14 +46,17 @@ func (action *FindSpentBudget) getAllSearchTagFor(ctx context.Context, budgetExp
 	var searchTags []tags.SearchTag
 	seen := make(map[string]bool)
 	for _, expense := range budgetExpenses {
-		if !seen[expense.Tag.Key] {
-			seen[expense.Tag.Key] = true
-			searchTag, err := action.SearchTagRepository.GetTagBy(ctx, expense.Tag.Key)
-			if err != nil {
-				return nil, err
+		for _, tag := range expense.Tag {
+			if !seen[tag.Key] {
+				seen[tag.Key] = true
+				searchTag, err := action.SearchTagRepository.GetTagBy(ctx, tag.Key)
+				if err != nil {
+					return nil, err
+				}
+				searchTags = append(searchTags, *searchTag)
 			}
-			searchTags = append(searchTags, *searchTag)
 		}
+
 	}
 	return searchTags, nil
 }

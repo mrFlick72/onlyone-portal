@@ -31,7 +31,7 @@ func TestCreateANewBudgetExpense(t *testing.T) {
 		Date:   testutils.SafeDateFor("01/01/2018"),
 		Amount: testutils.SafeMoneyFor("100.00"),
 		Note:   "Test note",
-		Tag:    tags.SearchTag{Key: "tagKey", Value: "tagValue"},
+		Tag:    []tags.SearchTag{{Key: "tagKey", Value: "tagValue"}},
 	}
 
 	budgetExpenseRepresentation := BudgetExpenseRepresentation{
@@ -71,7 +71,7 @@ func TestUpdateABudgetExpense(t *testing.T) {
 		Date:   testutils.SafeDateFor("01/01/2018"),
 		Amount: testutils.SafeMoneyFor("100.00"),
 		Note:   "Test note",
-		Tag:    tags.SearchTag{Key: "tagKey", Value: "tagValue"},
+		Tag:    []tags.SearchTag{{Key: "tagKey", Value: "tagValue"}},
 	}
 
 	budgetExpenseRepresentation := BudgetExpenseRepresentation{
@@ -185,7 +185,7 @@ func TestFindBudgetExpensesByTimeRange(t *testing.T) {
 				Date:     testutils.SafeDateFor("01/01/2018"),
 				Amount:   testutils.SafeMoneyFor("100.00"),
 				Note:     "Test note",
-				Tag:      tags.SearchTag{Key: "tagKey", Value: "tagValue"},
+				Tag:      []tags.SearchTag{{Key: "tagKey", Value: "tagValue"}},
 			},
 			{
 				Id:       "123-789",
@@ -193,7 +193,7 @@ func TestFindBudgetExpensesByTimeRange(t *testing.T) {
 				Date:     testutils.SafeDateFor("05/01/2018"),
 				Amount:   testutils.SafeMoneyFor("100.00"),
 				Note:     "Test note",
-				Tag:      tags.SearchTag{Key: "tagKey", Value: "tagValue"},
+				Tag:      []tags.SearchTag{{Key: "tagKey", Value: "tagValue"}},
 			},
 		},
 

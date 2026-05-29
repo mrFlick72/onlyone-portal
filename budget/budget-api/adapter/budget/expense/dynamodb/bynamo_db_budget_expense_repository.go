@@ -101,7 +101,7 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Contex
 		Date:     *date,
 		Amount:   moneyAmount,
 		Note:     item["note"].(*types.AttributeValueMemberS).Value,
-		Tag:      *tag,
+		Tag:      []tags.SearchTag{*tag},
 	}
 	return budgetExpense, nil
 }
@@ -197,7 +197,7 @@ func (repository *DynamoDbBudgetExpenseRepository) Save(ctx context.Context, bud
 			"transaction_date": &types.AttributeValueMemberS{Value: budgetExpense.Date.GetIsoFormattedDate()},
 			"amount":           &types.AttributeValueMemberS{Value: budgetExpense.Amount.StringifyAmount()},
 			"note":             &types.AttributeValueMemberS{Value: budgetExpense.Note},
-			"tag":              &types.AttributeValueMemberS{Value: budgetExpense.Tag.Key},
+			"tag":              &types.AttributeValueMemberS{Value: budgetExpense.Tag[0].Key},
 		},
 	}
 
