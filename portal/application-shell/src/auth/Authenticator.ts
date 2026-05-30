@@ -153,7 +153,7 @@ export const authenticate = async (code: string) => {
 
 export const endOfSession = async () => {
     const oauth2Config = await applicationConfigLoader()
-    const returnTo = document.referrer
+    const returnTo =  `${window.location.origin}/index`
     const idTokenHint = window.sessionStorage.getItem(ID_TOKEN_ID)
 
     window.sessionStorage.removeItem(ID_TOKEN_ID);
