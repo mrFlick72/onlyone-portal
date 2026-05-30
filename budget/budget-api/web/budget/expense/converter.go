@@ -23,7 +23,7 @@ func RepresentationModelToDomainModel(budgetExpenseRepresentation BudgetExpenseR
 		Date:     *date,
 		Amount:   money,
 		Note:     budgetExpenseRepresentation.Note,
-		Tag:      []tags.SearchTag{{Key: budgetExpenseRepresentation.TagKey, Value: budgetExpenseRepresentation.TagValue}},
+		Tag:      []tags.SearchTag{{Key: budgetExpenseRepresentation.Tag.Key, Value: budgetExpenseRepresentation.Tag.Value}},
 	}, nil
 }
 
@@ -68,8 +68,6 @@ func budgetExpenseRepresentationList(dailyBudgetExpense *expense.DailyBudgetExpe
 			Date:     budgetExpense.Date.GetFormattedDate(),
 			Amount:   budgetExpense.Amount.StringifyAmount(),
 			Note:     budgetExpense.Note,
-			TagKey:   budgetExpense.Tag[0].Key,
-			TagValue: budgetExpense.Tag[0].Value,
 			Tag: tagRep.SearchTagRepresentation{
 				Key:   budgetExpense.Tag[0].Key,
 				Value: budgetExpense.Tag[0].Value,
