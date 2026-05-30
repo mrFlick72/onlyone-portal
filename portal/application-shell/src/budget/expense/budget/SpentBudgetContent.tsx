@@ -29,7 +29,7 @@ const SpentBudgetContent: React.FC<SpentBudgetContentProps> = ({ spentBudget, op
                     date: budgetExpenseRepresentation.date,
                     amount: budgetExpenseRepresentation.amount,
                     note: budgetExpenseRepresentation.note,
-                    searchTag: { value: budgetExpenseRepresentation.tagKey, label: budgetExpenseRepresentation.tagValue }
+                    searchTag: { value: budgetExpenseRepresentation.tag?.tagKey ?? "", label: budgetExpenseRepresentation.tag?.tagValue ?? "" }
 
                 })}
                 openDeleteBudgetExpensePopUp={openDeleteBudgetExpensePopUp.bind(budgetExpenseRepresentation)}
