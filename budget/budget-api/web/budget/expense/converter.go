@@ -1,10 +1,11 @@
 package expense
 
-import (	
+import (
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
 	"github.com/mrflick72/budget/budget-api/domain/money"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
+	tagRep "github.com/mrflick72/budget/budget-api/web/tags"
 )
 
 func RepresentationModelToDomainModel(budgetExpenseRepresentation BudgetExpenseRepresentation) (*expense.BudgetExpense, error) {
@@ -69,6 +70,10 @@ func budgetExpenseRepresentationList(dailyBudgetExpense *expense.DailyBudgetExpe
 			Note:     budgetExpense.Note,
 			TagKey:   budgetExpense.Tag[0].Key,
 			TagValue: budgetExpense.Tag[0].Value,
+			Tag: tagRep.SearchTagRepresentation{
+				Key:   budgetExpense.Tag[0].Key,
+				Value: budgetExpense.Tag[0].Value,
+			},
 		})
 	}
 	return budgetExpenseRepresentationList

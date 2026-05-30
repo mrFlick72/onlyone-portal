@@ -1,3 +1,8 @@
+export type SearchTag = {
+    tagKey: string,
+    tagValue: string,
+}
+
 export type BudgetExpense = {
     id?: string,
     date: string,
@@ -5,6 +10,7 @@ export type BudgetExpense = {
     note: string,
     tagKey: string,
     tagValue: string,
+    tag?: SearchTag,
 }
 
 export type SavedBudgetExpense = {
