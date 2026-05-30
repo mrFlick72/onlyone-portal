@@ -90,18 +90,25 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Contex
 		return nil, errors.New("invalid data format in BudgetExpense")
 	}
 
-	tag, err := repository.SearchTagRepository.GetTagBy(ctx, item["tag"].(*types.AttributeValueMemberS).Value)
-	if err != nil {
-		repository.logger.LogErrorfFor("Error getting tag: %v", err)
-		return nil, errors.New("invalid tag in BudgetExpense")
+	tagKeys := strings.Split(item["tag"].(*types.AttributeValueMemberS).Value, ",")
+	searchTags := make([]tags.SearchTag, 0, len(tagKeys))
+
+	for _, tagKey := range tagKeys {
+		searchTag, err := repository.SearchTagRepository.GetTagBy(ctx, tagKey)
+		if err != nil {
+			repository.logger.LogErrorfFor("Error getting tag: %v", err)
+			return nil, errors.New("invalid tag in BudgetExpense")
+		}
+		searchTags = append(searchTags, *searchTag)
 	}
+
 	budgetExpense := &expense.BudgetExpense{
 		Id:       item["budget_id"].(*types.AttributeValueMemberS).Value,
 		UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
 		Date:     *date,
 		Amount:   moneyAmount,
 		Note:     item["note"].(*types.AttributeValueMemberS).Value,
-		Tag:      []tags.SearchTag{*tag},
+		Tag:      searchTags,
 	}
 	return budgetExpense, nil
 }
@@ -186,6 +193,11 @@ func (repository *DynamoDbBudgetExpenseRepository) Save(ctx context.Context, bud
 	}
 	budgetExpense.UserName = *user.UserName
 
+	tagKeys := make([]string, 0, len(budgetExpense.Tag))
+	for _, tag := range budgetExpense.Tag {
+		tagKeys = append(tagKeys, tag.Key)
+	}
+
 	queryInput := &dynamodb.PutItemInput{
 		TableName: &repository.TableName,
 
@@ -197,7 +209,7 @@ func (repository *DynamoDbBudgetExpenseRepository) Save(ctx context.Context, bud
 			"transaction_date": &types.AttributeValueMemberS{Value: budgetExpense.Date.GetIsoFormattedDate()},
 			"amount":           &types.AttributeValueMemberS{Value: budgetExpense.Amount.StringifyAmount()},
 			"note":             &types.AttributeValueMemberS{Value: budgetExpense.Note},
-			"tag":              &types.AttributeValueMemberS{Value: budgetExpense.Tag[0].Key},
+			"tag":              &types.AttributeValueMemberS{Value: strings.Join(tagKeys, ",")},
 		},
 	}
 
