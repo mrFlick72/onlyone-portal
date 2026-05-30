@@ -8,9 +8,7 @@ export type BudgetExpense = {
     date: string,
     amount: number,
     note: string,
-    tagKey: string,
-    tagValue: string,
-    tag?: SearchTag,
+    tag: SearchTag,
 }
 
 export type SavedBudgetExpense = {
