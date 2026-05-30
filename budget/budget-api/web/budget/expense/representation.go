@@ -14,8 +14,6 @@ type BudgetExpenseRepresentation struct {
 	Date     string                         `json:"date"`
 	Amount   string                         `json:"amount"`
 	Note     string                         `json:"note"`
-	TagKey   string                         `json:"tagKey"`
-	TagValue string                         `json:"tagValue"`
 	Tag      tagRep.SearchTagRepresentation `json:"tag"`
 }
 

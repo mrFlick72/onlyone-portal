@@ -13,6 +13,7 @@ import (
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/budget/budget-api/internal/testutils"
+	tagRep "github.com/mrflick72/budget/budget-api/web/tags"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -35,11 +36,10 @@ func TestCreateANewBudgetExpense(t *testing.T) {
 	}
 
 	budgetExpenseRepresentation := BudgetExpenseRepresentation{
-		Date:     "01/01/2018",
-		Amount:   "100.00",
-		Note:     "Test note",
-		TagKey:   "tagKey",
-		TagValue: "tagValue",
+		Date:   "01/01/2018",
+		Amount: "100.00",
+		Note:   "Test note",
+		Tag:    tagRep.SearchTagRepresentation{Key: "tagKey", Value: "tagValue"},
 	}
 	jsonValue, err := json.Marshal(budgetExpenseRepresentation)
 	if err != nil {
@@ -75,11 +75,10 @@ func TestUpdateABudgetExpense(t *testing.T) {
 	}
 
 	budgetExpenseRepresentation := BudgetExpenseRepresentation{
-		Date:     "01/01/2018",
-		Amount:   "100.00",
-		Note:     "Test note",
-		TagKey:   "tagKey",
-		TagValue: "tagValue",
+		Date:   "01/01/2018",
+		Amount: "100.00",
+		Note:   "Test note",
+		Tag: tagRep.SearchTagRepresentation{Key: "tagKey", Value: "tagValue"},
 	}
 	jsonValue, err := json.Marshal(budgetExpenseRepresentation)
 	if err != nil {
@@ -110,8 +109,7 @@ func TestCreateANewBudgetExpenseWithBadDateReturns400(t *testing.T) {
 		Date:     "not-a-date",
 		Amount:   "100.00",
 		Note:     "Test note",
-		TagKey:   "tagKey",
-		TagValue: "tagValue",
+		Tag:    tagRep.SearchTagRepresentation{Key: "tagKey", Value: "tagValue"},
 	}
 	jsonValue, _ := json.Marshal(rep)
 
@@ -137,8 +135,7 @@ func TestUpdateABudgetExpenseWithBadDateReturns400(t *testing.T) {
 		Date:     "not-a-date",
 		Amount:   "100.00",
 		Note:     "Test note",
-		TagKey:   "tagKey",
-		TagValue: "tagValue",
+		Tag:    tagRep.SearchTagRepresentation{Key: "tagKey", Value: "tagValue"},
 	}
 	jsonValue, _ := json.Marshal(rep)
 
