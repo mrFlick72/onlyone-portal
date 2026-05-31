@@ -24,7 +24,7 @@ func TestWhenANewBudgetExpenseISCreated(t *testing.T) {
 		Date:   *aDate,
 		Amount: anAmount,
 		Note:   "A_NOTE",
-		Tag:    []tags.SearchTag{{Key: "super-market", Value: "super-market"}},
+		Tags:   []tags.SearchTag{{Key: "super-market", Value: "super-market"}},
 	}
 
 	ctx := testutils.NewUserContext()
@@ -52,7 +52,7 @@ func TestWhenANewBudgetExpenseCreationFails(t *testing.T) {
 		Date:   *aDate,
 		Amount: anAmount,
 		Note:   "A_NOTE",
-		Tag:    []tags.SearchTag{{Key: "super-market", Value: "super-market"}},
+		Tags:   []tags.SearchTag{{Key: "super-market", Value: "super-market"}},
 	}
 
 	ctx := testutils.NewUserContext()

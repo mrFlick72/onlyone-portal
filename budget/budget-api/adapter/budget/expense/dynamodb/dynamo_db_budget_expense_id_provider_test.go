@@ -18,7 +18,7 @@ func TestANewBudgetIdCreation(t *testing.T) {
 		Date:     testutils.SafeDateFor("01/01/2018"),
 		Amount:   testutils.SafeMoneyFor("1.00"),
 		Note:     "",
-		Tag:      []tags.SearchTag{{Key: "TAG", Value: "TAG"}},
+		Tags:     []tags.SearchTag{{Key: "TAG", Value: "TAG"}},
 	}
 
 	id := provider.GenerateIdFor(&budgetExpense)

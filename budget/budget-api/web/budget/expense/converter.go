@@ -17,16 +17,21 @@ func RepresentationModelToDomainModel(budgetExpenseRepresentation BudgetExpenseR
 	if err != nil {
 		return nil, err
 	}
+
+	searchTags := make([]tags.SearchTag, 0, len(budgetExpenseRepresentation.Tags))
+	for _, tag := range budgetExpenseRepresentation.Tags {
+		searchTags = append(searchTags, tags.SearchTag{Key: tag.Key, Value: tag.Value})
+	}
+
 	return &expense.BudgetExpense{
 		Id:       expense.BudgetExpenseId(budgetExpenseRepresentation.Id),
 		UserName: "", // This will be set in the service layer using the current logged user
 		Date:     *date,
 		Amount:   money,
 		Note:     budgetExpenseRepresentation.Note,
-		Tag:      []tags.SearchTag{{Key: budgetExpenseRepresentation.Tag.Key, Value: budgetExpenseRepresentation.Tag.Value}},
+		Tags:     searchTags,
 	}, nil
 }
-
 
 func SpentBudgetDomainToRepresentationModel(spentBudget *expense.SpentBudget) *SpentBudgetRepresentation {
 
@@ -38,7 +43,6 @@ func SpentBudgetDomainToRepresentationModel(spentBudget *expense.SpentBudget) *S
 			Total:                           dailyBudgetExpense.Total.StringifyAmount(),
 		}
 		dailyBudgetExpenseRepresentations = append(dailyBudgetExpenseRepresentations, dailyBudgetExpenseRepresentation)
-	
 	}
 
 	totalBySearchTagDetails := make([]TotalBySearchTagDetail, 0)
@@ -59,19 +63,21 @@ func SpentBudgetDomainToRepresentationModel(spentBudget *expense.SpentBudget) *S
 	return result
 }
 
-
 func budgetExpenseRepresentationList(dailyBudgetExpense *expense.DailyBudgetExpense) []BudgetExpenseRepresentation {
 	budgetExpenseRepresentationList := make([]BudgetExpenseRepresentation, 0)
 	for _, budgetExpense := range *dailyBudgetExpense.BudgetExpenseList {
+
+		searchTagsRepresentation := make([]tagRep.SearchTagRepresentation, 0, len(budgetExpense.Tags))
+		for _, tag := range budgetExpense.Tags {
+			searchTagsRepresentation = append(searchTagsRepresentation, tagRep.SearchTagRepresentation{Key: tag.Key, Value: tag.Value})
+		}
+
 		budgetExpenseRepresentationList = append(budgetExpenseRepresentationList, BudgetExpenseRepresentation{
-			Id:       string(budgetExpense.Id),
-			Date:     budgetExpense.Date.GetFormattedDate(),
-			Amount:   budgetExpense.Amount.StringifyAmount(),
-			Note:     budgetExpense.Note,
-			Tag: tagRep.SearchTagRepresentation{
-				Key:   budgetExpense.Tag[0].Key,
-				Value: budgetExpense.Tag[0].Value,
-			},
+			Id:     string(budgetExpense.Id),
+			Date:   budgetExpense.Date.GetFormattedDate(),
+			Amount: budgetExpense.Amount.StringifyAmount(),
+			Note:   budgetExpense.Note,
+			Tags:   searchTagsRepresentation,
 		})
 	}
 	return budgetExpenseRepresentationList

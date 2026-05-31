@@ -121,7 +121,7 @@ func loadBudgetExpensesFromCSVFile(filePath string, mockedBudgetExpenseIdProvide
 			Date:     testutils.SafeDateFor(record[1]),
 			Amount:   testutils.SafeMoneyFor(record[2]),
 			Note:     record[3],
-			Tag:      []tags.SearchTag{{Key: record[4], Value: record[5]}},
+			Tags:     []tags.SearchTag{{Key: record[4], Value: record[5]}},
 		}
 
 		err := repository.Save(testutils.NewStubbedContextWith(record[0]), &budgetExpense)

@@ -12,7 +12,7 @@ type SpentBudgetFormProps = {
         date: string,
         amount: number,
         note: string,
-        searchTag: { value: string, label: string }
+        searchTags: { value: string, label: string }[]
     },
     spentBudgetHandlers: {
         date: (args: any) => void,
@@ -40,10 +40,10 @@ const SpentBudgetForm: React.FC<SpentBudgetFormProps> = ({ spentBudgetData, spen
             handler={spentBudgetHandlers.amount}
             value={spentBudgetData.amount} />
 
-        <FormSelect multi={false}
+        <FormSelect multi={true}
             id={uuidv1()}
-            label="Search Tag:"
-            value={spentBudgetData.searchTag}
+            label="Search Tags:"
+            value={spentBudgetData.searchTags}
             onChangeHandler={spentBudgetHandlers.searchTag}
             options={searchTagRegistry} />
 

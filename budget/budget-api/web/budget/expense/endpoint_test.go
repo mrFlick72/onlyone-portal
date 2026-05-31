@@ -32,14 +32,14 @@ func TestCreateANewBudgetExpense(t *testing.T) {
 		Date:   testutils.SafeDateFor("01/01/2018"),
 		Amount: testutils.SafeMoneyFor("100.00"),
 		Note:   "Test note",
-		Tag:    []tags.SearchTag{{Key: "tagKey", Value: "tagValue"}},
+		Tags:   []tags.SearchTag{{Key: "tagKey", Value: "tagValue"}},
 	}
 
 	budgetExpenseRepresentation := BudgetExpenseRepresentation{
 		Date:   "01/01/2018",
 		Amount: "100.00",
 		Note:   "Test note",
-		Tag:    tagRep.SearchTagRepresentation{Key: "tagKey", Value: "tagValue"},
+		Tags:    []tagRep.SearchTagRepresentation{{Key: "tagKey", Value: "tagValue"}},
 	}
 	jsonValue, err := json.Marshal(budgetExpenseRepresentation)
 	if err != nil {
@@ -71,14 +71,14 @@ func TestUpdateABudgetExpense(t *testing.T) {
 		Date:   testutils.SafeDateFor("01/01/2018"),
 		Amount: testutils.SafeMoneyFor("100.00"),
 		Note:   "Test note",
-		Tag:    []tags.SearchTag{{Key: "tagKey", Value: "tagValue"}},
+		Tags:   []tags.SearchTag{{Key: "tagKey", Value: "tagValue"}},
 	}
 
 	budgetExpenseRepresentation := BudgetExpenseRepresentation{
 		Date:   "01/01/2018",
 		Amount: "100.00",
 		Note:   "Test note",
-		Tag: tagRep.SearchTagRepresentation{Key: "tagKey", Value: "tagValue"},
+		Tags:    []tagRep.SearchTagRepresentation{{Key: "tagKey", Value: "tagValue"}},
 	}
 	jsonValue, err := json.Marshal(budgetExpenseRepresentation)
 	if err != nil {
@@ -106,10 +106,10 @@ func TestCreateANewBudgetExpenseWithBadDateReturns400(t *testing.T) {
 	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
 
 	rep := BudgetExpenseRepresentation{
-		Date:     "not-a-date",
-		Amount:   "100.00",
-		Note:     "Test note",
-		Tag:    tagRep.SearchTagRepresentation{Key: "tagKey", Value: "tagValue"},
+		Date:   "not-a-date",
+		Amount: "100.00",
+		Note:   "Test note",
+		Tags:    []tagRep.SearchTagRepresentation{{Key: "tagKey", Value: "tagValue"}},
 	}
 	jsonValue, _ := json.Marshal(rep)
 
@@ -132,10 +132,10 @@ func TestUpdateABudgetExpenseWithBadDateReturns400(t *testing.T) {
 	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
 
 	rep := BudgetExpenseRepresentation{
-		Date:     "not-a-date",
-		Amount:   "100.00",
-		Note:     "Test note",
-		Tag:    tagRep.SearchTagRepresentation{Key: "tagKey", Value: "tagValue"},
+		Date:   "not-a-date",
+		Amount: "100.00",
+		Note:   "Test note",
+		Tags:    []tagRep.SearchTagRepresentation{{Key: "tagKey", Value: "tagValue"}},
 	}
 	jsonValue, _ := json.Marshal(rep)
 
@@ -182,7 +182,7 @@ func TestFindBudgetExpensesByTimeRange(t *testing.T) {
 				Date:     testutils.SafeDateFor("01/01/2018"),
 				Amount:   testutils.SafeMoneyFor("100.00"),
 				Note:     "Test note",
-				Tag:      []tags.SearchTag{{Key: "tagKey", Value: "tagValue"}},
+				Tags:     []tags.SearchTag{{Key: "tagKey", Value: "tagValue"}},
 			},
 			{
 				Id:       "123-789",
@@ -190,7 +190,7 @@ func TestFindBudgetExpensesByTimeRange(t *testing.T) {
 				Date:     testutils.SafeDateFor("05/01/2018"),
 				Amount:   testutils.SafeMoneyFor("100.00"),
 				Note:     "Test note",
-				Tag:      []tags.SearchTag{{Key: "tagKey", Value: "tagValue"}},
+				Tags:     []tags.SearchTag{{Key: "tagKey", Value: "tagValue"}},
 			},
 		},
 

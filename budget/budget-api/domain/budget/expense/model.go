@@ -13,7 +13,6 @@ type SpentBudget struct {
 	SearchTags        map[tags.SearchTagKey]tags.SearchTagValue
 }
 
-
 func NewSpentBudget(
 	budgetExpenseList []BudgetExpense,
 	searchTags []tags.SearchTag) *SpentBudget {
@@ -42,18 +41,20 @@ func (spentBudget *SpentBudget) Total() money.Money {
 	return total
 }
 
-
 func (spentBudget *SpentBudget) TotalForSearchTags() map[tags.SearchTag]money.Money {
 	result := make(map[tags.SearchTag]money.Money)
 	for _, budgetExpense := range spentBudget.BudgetExpenseList {
-		searchTag := spentBudget.findSearchTagFor(budgetExpense.Tag[0].Key)
-		if searchTag != nil {
-			currentTotal, exists := result[*searchTag]
-			if !exists {
-				currentTotal = money.Zero()
+		for _, tag := range budgetExpense.Tags {
+			searchTag := spentBudget.findSearchTagFor(tag.Key)
+			if searchTag != nil {
+				currentTotal, exists := result[*searchTag]
+				if !exists {
+					currentTotal = money.Zero()
+				}
+				result[*searchTag] = currentTotal.Plus(budgetExpense.Amount)
 			}
-			result[*searchTag] = currentTotal.Plus(budgetExpense.Amount)
 		}
+
 	}
 	return result
 }
@@ -91,9 +92,9 @@ func (spentBudget *SpentBudget) DailyBudgetExpenseList() []DailyBudgetExpense {
 			Total:             total,
 		})
 	}
-		slices.SortFunc(resultList, func(a, b DailyBudgetExpense) int {
-			return a.Date.GetTime().Compare(b.Date.GetTime())
-		})
+	slices.SortFunc(resultList, func(a, b DailyBudgetExpense) int {
+		return a.Date.GetTime().Compare(b.Date.GetTime())
+	})
 	return resultList
 }
 
@@ -103,7 +104,7 @@ type BudgetExpense struct {
 	Date     date.Date
 	Amount   money.Money
 	Note     string
-	Tag      []tags.SearchTag
+	Tags     []tags.SearchTag
 }
 
 type BudgetExpenseId = string
@@ -112,7 +113,6 @@ type UserName = string
 type BudgetExpenseIdProvider interface {
 	GenerateIdFor(budgetExpense *BudgetExpense) BudgetExpenseId
 }
-
 
 type DailyBudgetExpense struct {
 	BudgetExpenseList *[]BudgetExpense

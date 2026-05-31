@@ -8,7 +8,7 @@ export type BudgetExpense = {
     date: string,
     amount: number,
     note: string,
-    tag: SearchTag,
+    tags: SearchTag[],
 }
 
 export type SavedBudgetExpense = {
@@ -16,7 +16,7 @@ export type SavedBudgetExpense = {
     date: string,
     amount: number,
     note: string,
-    searchTag: { value: string, label: string }
+    searchTags: { value: string, label: string }[]
 }
 
 export type BudgetExpenseSearchCriteria = {

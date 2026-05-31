@@ -19,8 +19,7 @@ export async function saveBudgetExpense(budgetExpense: BudgetExpense) {
             date: budgetExpense.date,
             amount: budgetExpense.amount.toString(),
             note: budgetExpense.note,
-            tagKey: budgetExpense.tagKey,
-            tagValue: budgetExpense.tagValue,
+            tags: budgetExpense.tags,
         })
     })
 }
