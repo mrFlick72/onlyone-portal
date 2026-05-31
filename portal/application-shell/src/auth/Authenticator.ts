@@ -153,13 +153,13 @@ export const authenticate = async (code: string) => {
 
 export const endOfSession = async () => {
     const oauth2Config = await applicationConfigLoader()
-    const returnTo = document.referrer
+    const returnTo =  `${window.location.origin}/index`
     const idTokenHint = window.sessionStorage.getItem(ID_TOKEN_ID)
 
     window.sessionStorage.removeItem(ID_TOKEN_ID);
     window.sessionStorage.removeItem(ACCESS_TOKEN_ID);
 
-    window.location.href = `${oauth2Config.idpBaseUrl}/connect/logout?id_token_hint=${idTokenHint}&post_logout_redirect_uri=${returnTo}`
+    window.location.replace(encodeURI(`${oauth2Config.idpBaseUrl}/connect/logout?id_token_hint=${idTokenHint}&post_logout_redirect_uri=${returnTo}`))
 }
 
 export const authenticationChecker = () => {

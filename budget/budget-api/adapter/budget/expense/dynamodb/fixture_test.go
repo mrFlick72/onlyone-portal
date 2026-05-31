@@ -51,7 +51,7 @@ func newDynamoDBClient() (*dynamodb.Client, error) {
 var TableName = "BUDGET_EXPENSE_TABLE_NAME_STAGING"
 
 func newBudgetExpenseRepository(budgetExpenseIdProvider expense.BudgetExpenseIdProvider, searchTagRepository tags.SearchTagRepository) *DynamoDbBudgetExpenseRepository {
-	return NewDynamoDbBudgetExpenseRepository(TableName, client, budgetExpenseIdProvider, searchTagRepository).(*DynamoDbBudgetExpenseRepository)	
+	return NewDynamoDbBudgetExpenseRepository(TableName, client, budgetExpenseIdProvider, searchTagRepository).(*DynamoDbBudgetExpenseRepository)
 }
 func setupTestDynamoDBTable() error {
 	// it is an attempt to clean up possible dirty state before creating
@@ -121,7 +121,7 @@ func loadBudgetExpensesFromCSVFile(filePath string, mockedBudgetExpenseIdProvide
 			Date:     testutils.SafeDateFor(record[1]),
 			Amount:   testutils.SafeMoneyFor(record[2]),
 			Note:     record[3],
-			Tag:      tags.SearchTag{Key: record[4], Value: record[5]},
+			Tags:     []tags.SearchTag{{Key: record[4], Value: record[5]}},
 		}
 
 		err := repository.Save(testutils.NewStubbedContextWith(record[0]), &budgetExpense)
