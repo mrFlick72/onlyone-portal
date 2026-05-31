@@ -42,11 +42,6 @@ const emptySpentBudget: SpentBudget = {
     total: "0.00",
 }
 
-const emptySearchTag: SelectOption = {
-    value: "",
-    label: "",
-}
-
 const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }) => {
     const configMap = new OnlyonePortalPagesConfigMap()
 
@@ -55,7 +50,7 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
     const [date, setDate] = useState<Moment>(moment())
     const [amount, setAmount] = useState("0.00")
     const [note, setNote] = useState("")
-    const [searchTag, setSearchTag] = useState<SelectOption>(emptySearchTag)
+    const [searchTags, setSearchTags] = useState<SelectOption[]>([])
     const [spentBudget, setSpentBudget] = useState<SpentBudget>(emptySpentBudget)
     const [deletableItem, setDeletableItem] = useState<BudgetExpense | null>(null)
     const [searchTagRegistry, setSearchTagRegistry] = useState<SearchTag[]>([])
@@ -105,7 +100,7 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
         setDate(moment())
         setAmount("0.00")
         setNote("")
-        setSearchTag(emptySearchTag)
+        setSearchTags([])
         setOpenSaveBudgetExpensePopUp(true)
     }, [])
 
@@ -114,7 +109,7 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
         setDate(moment(expense.date, FormDateFormatPattern))
         setAmount(expense.amount.toString())
         setNote(expense.note)
-        setSearchTag(expense.searchTag)
+        setSearchTags(expense.searchTags)
         setOpenSaveBudgetExpensePopUp(true)
     }, [])
 
@@ -177,8 +172,8 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
         amount: (event: React.ChangeEvent<HTMLInputElement>) => {
             setAmount(event.target.value)
         },
-        searchTag: (selectedSearchTag: SelectOption | null) => {
-            setSearchTag(selectedSearchTag ?? emptySearchTag)
+        searchTag: (selectedOptions: readonly SelectOption[] | null) => {
+            setSearchTags(selectedOptions ? [...selectedOptions] : [])
         },
         note: (event: React.ChangeEvent<HTMLTextAreaElement>) => {
             setNote(event.target.value)
@@ -203,15 +198,14 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
             date: date.format(FormDateFormatPattern),
             amount: Number(amount),
             note,
-            tagKey: searchTag.value,
-            tagValue: searchTag.label,
+            tags: searchTags.map((tag) => ({ tagKey: tag.value, tagValue: tag.label })),
         }).then((response) => {
             if (response.status === 201 || response.status === 204) {
                 getSpentBudget()
                 setOpenSaveBudgetExpensePopUp(false)
             }
         })
-    }, [amount, date, getSpentBudget, id, note, searchTag])
+    }, [amount, date, getSpentBudget, id, note, searchTags])
 
     useEffect(() => {
         loadCommonData()
@@ -255,7 +249,7 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
                         date: date.format(FormDateFormatPattern),
                         amount: Number(amount),
                         note,
-                        searchTag,
+                        searchTags,
                     }}
                     saveCallback={saveExpense}
                     searchTagRegistry={searchTagRegistry}

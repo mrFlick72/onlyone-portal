@@ -4,7 +4,7 @@ import { Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material
 import { AddShoppingCart } from "@mui/icons-material";
 import selectUiAdapterFor from "../../search-tags/SearchTagsUIAdapter";
 import YesAndNoButtonGroup from "../../../components/layout/YesAndNoButtonGroup";
-import { BudgetExpense, SavedBudgetExpense } from "../domain/BudgetExpense";
+import { SavedBudgetExpense } from "../domain/BudgetExpense";
 
 type SaveBudgetExpensePopUpProps = {
     open: boolean,
@@ -44,7 +44,7 @@ const SaveBudgetExpensePopUp: React.FC<SaveBudgetExpensePopUpProps> = ({
                 date: budgetExpense.date,
                 amount: budgetExpense.amount,
                 note: budgetExpense.note,
-                searchTag: budgetExpense.searchTag
+                searchTags: budgetExpense.searchTags
             }}
                 spentBudgetHandlers={spentBudgetHandlers}
                 searchTagRegistry={selectUiAdapterFor(searchTagRegistry)} />

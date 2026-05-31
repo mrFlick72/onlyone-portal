@@ -3,6 +3,7 @@ package expense
 import (
 	"context"
 	"errors"
+
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
@@ -46,7 +47,7 @@ func (action *FindSpentBudget) getAllSearchTagFor(ctx context.Context, budgetExp
 	var searchTags []tags.SearchTag
 	seen := make(map[string]bool)
 	for _, expense := range budgetExpenses {
-		for _, tag := range expense.Tag {
+		for _, tag := range expense.Tags {
 			if !seen[tag.Key] {
 				seen[tag.Key] = true
 				searchTag, err := action.SearchTagRepository.GetTagBy(ctx, tag.Key)
