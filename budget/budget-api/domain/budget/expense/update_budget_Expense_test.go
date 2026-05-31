@@ -11,23 +11,6 @@ import (
 	"github.com/mrflick72/budget/budget-api/internal/testutils"
 )
 
-/*
-	public void updateWithoutAttachment(BudgetExpense budgetExpense) {
-	    budgetExpenseRepository.findFor(budgetExpense.id())
-	            .ifPresent(foundBudgetExpense -> {
-	                BudgetExpense updatedBudgetExpense = new BudgetExpense(budgetExpense.id(),
-	                        budgetExpense.userName(),
-	                        budgetExpense.date(),
-	                        budgetExpense.amount(), budgetExpense.note(),
-	                        budgetExpense.tag()
-	                );
-
-	                budgetExpenseRepository.save(updatedBudgetExpense);
-	            });
-
-
-*/
-
 func TestWhenABudgetExpenseUpdateSucceed(t *testing.T) {
 
 	mockedRepository := new(BudgetExpenseRepositoryMock)
@@ -43,11 +26,10 @@ func TestWhenABudgetExpenseUpdateSucceed(t *testing.T) {
 		Date:     *aDate,
 		Amount:   anAmount,
 		Note:     "A_NOTE",
-		Tag:      tags.SearchTag{Key: "super-market", Value: "super-market"},
+		Tags:     []tags.SearchTag{{Key: "super-market", Value: "super-market"}},
 	}
 
 	ctx := testutils.NewUserContext()
-
 
 	foundBudgetExpense := &BudgetExpense{
 		Id:       "A_BUDGET_ID",
@@ -78,7 +60,7 @@ func TestWhenABudgetExpenseUpdateDoesDoneNothingBecauseTheBudgetExpenseDoesNotEx
 		Date:     *aDate,
 		Amount:   anAmount,
 		Note:     "A_NOTE",
-		Tag:      tags.SearchTag{Key: "super-market", Value: "super-market"},
+		Tags:     []tags.SearchTag{{Key: "super-market", Value: "super-market"}},
 	}
 
 	ctx := testutils.NewUserContext()
@@ -108,7 +90,7 @@ func TestWhenABudgetExpenseUpdateFails(t *testing.T) {
 		Date:     *aDate,
 		Amount:   anAmount,
 		Note:     "A_NOTE",
-		Tag:      tags.SearchTag{Key: "super-market", Value: "super-market"},
+		Tags:     []tags.SearchTag{{Key: "super-market", Value: "super-market"}},
 	}
 
 	ctx := testutils.NewUserContext()
@@ -127,7 +109,6 @@ func TestWhenABudgetExpenseUpdateFails(t *testing.T) {
 	mockedRepository.AssertCalled(t, "FindFor", ctx, "A_BUDGET_ID")
 	mockedRepository.AssertCalled(t, "Save", ctx, &aBudgetExpense)
 }
-
 
 func TestWhenABudgetExpenseUpdateFailsBecauseUserOwnership(t *testing.T) {
 	mockedRepository := new(BudgetExpenseRepositoryMock)
