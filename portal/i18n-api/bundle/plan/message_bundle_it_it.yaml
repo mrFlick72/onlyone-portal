@@ -1,0 +1,24 @@
+menu:
+  title: "Home"
+  userProfile:
+    label: "Profilo utente"
+  logOut:
+    label: "Esci"
+
+planPage:
+  menu:
+    newPlan: "Nuovo piano"
+  savePlan:
+    popup:
+      title: "Salva un piano"
+  deletePlan:
+    popup:
+      title: "Elimina piano"
+      message: "Sei sicuro di voler eliminare questo piano e tutte le sue attività?"
+
+common:
+  button:
+    save:
+      label: "Salva"
+    close:
+      label: "Chiudi"
