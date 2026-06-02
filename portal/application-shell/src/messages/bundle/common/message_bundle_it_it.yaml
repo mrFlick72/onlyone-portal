@@ -1,0 +1,45 @@
+menu:
+  accountPage:
+    label: "Account"
+  otherFeature:
+    label: "Altre funzionalità"
+
+common:
+  table:
+    date: "Data"
+    amount: "Importo"
+    note: "Note"
+    type: "Tipo"
+    details: "Dettagli"
+    options: "Opzioni"
+    total: "Totale"
+    category: "Categoria"
+    title: "Titolo"
+    todos: "Attività"
+    content: "Contenuto"
+    status: "Stato"
+    description: "Descrizione"
+    operation: "Operazione"
+  action:
+    edit: "Modifica"
+    delete: "Elimina"
+    attach: "Allega"
+    open: "Apri"
+    changeStatus: "Stato"
+  confirm:
+    yesLabel: "Sì"
+    noLabel: "No"
+  form:
+    date: "Data:"
+    amount: "Importo:"
+    note: "Note:"
+    searchTags: "Tag di ricerca:"
+    title: "Titolo:"
+    content: "Contenuto:"
+  total:
+    label: "Totale:"
+  nav:
+    budget: "Budget"
+    revenue: "Entrate"
+    plans: "Piani"
+    account: "Account"

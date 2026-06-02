@@ -1,0 +1,67 @@
+menu:
+  title: "Home"
+  userProfile:
+    label: "Profilo utente"
+  budgetPage:
+    label: "Budget"
+  revenuePage:
+    label: "Entrate"
+  planPage:
+    label: "Piani"
+  logOut:
+    label: "Esci"
+
+budgetExpensePage:
+  menu:
+    newBudgetExpense: "Nuova spesa"
+    search: "Cerca"
+    searchTags: "Cerca tag"
+    diagrams: "Grafico"
+  cards:
+    dailyDetails: "Dettaglio giornaliero"
+    totalByCategories: "Totale per categorie"
+  tabs:
+    dailyView: "Vista giornaliera"
+    byTagsView: "Vista per tag"
+  newBudgetExpense:
+    popup:
+      title: "Salva una spesa"
+  search:
+    popup:
+      title: "Filtra per tag"
+  delete:
+    popup:
+      title: "Elimina allegati della spesa"
+      message: "Sei sicuro di voler eliminare la spesa dalla lista?"
+  attachment:
+    popup:
+      title: "Carica allegati"
+  loadCsvFile:
+    popup:
+      title: "Carica dati da file CSV"
+      save: "Carica file..."
+      formUploadFileLabel: "File:"
+
+common:
+  button:
+    save:
+      label: "Salva"
+    close:
+      label: "Chiudi"
+    upload:
+      label: "Carica"
+
+attachment:
+  popup:
+    chooseFile:
+      label: "Scegli file"
+    noFileSelected:
+      label: "Nessun file selezionato"
+    existingAttachments:
+      label: "Allegati esistenti"
+    noAttachments:
+      label: "Nessun allegato"
+    download:
+      label: "Scarica allegato"
+    delete:
+      label: "Elimina allegato"

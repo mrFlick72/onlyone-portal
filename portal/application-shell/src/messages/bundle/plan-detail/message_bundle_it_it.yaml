@@ -1,0 +1,39 @@
+menu:
+  title: "Home"
+  userProfile:
+    label: "Profilo utente"
+  logOut:
+    label: "Esci"
+
+planDetailPage:
+  menu:
+    newTodo: "Aggiungi attività"
+    backToList: "Torna ai piani"
+  saveTodo:
+    popup:
+      title: "Aggiungi un'attività"
+  updateTodo:
+    popup:
+      title: "Modifica attività"
+  deleteTodo:
+    popup:
+      title: "Elimina attività"
+      message: "Sei sicuro di voler eliminare questa attività?"
+  changeStatus:
+    popup:
+      title: "Cambia stato"
+      current: "Stato attuale:"
+      moveTo: "Sposta a:"
+      noTransitions: "Nessuna transizione consentita per questo stato."
+  status:
+    todo: "Da fare"
+    inProgress: "In corso"
+    done: "Completato"
+    aborted: "Annullato"
+
+common:
+  button:
+    save:
+      label: "Salva"
+    close:
+      label: "Chiudi"

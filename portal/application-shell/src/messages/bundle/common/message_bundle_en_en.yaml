@@ -1,0 +1,45 @@
+menu:
+  accountPage:
+    label: "Account"
+  otherFeature:
+    label: "Other Feature"
+
+common:
+  table:
+    date: "Date"
+    amount: "Amount"
+    note: "Note"
+    type: "Type"
+    details: "Details"
+    options: "Options"
+    total: "Total"
+    category: "Category"
+    title: "Title"
+    todos: "Todos"
+    content: "Content"
+    status: "Status"
+    description: "Description"
+    operation: "Operation"
+  action:
+    edit: "Edit"
+    delete: "Delete"
+    attach: "Attach"
+    open: "Open"
+    changeStatus: "Status"
+  confirm:
+    yesLabel: "Yes"
+    noLabel: "No"
+  form:
+    date: "Date:"
+    amount: "Amount:"
+    note: "Note:"
+    searchTags: "Search Tags:"
+    title: "Title:"
+    content: "Content:"
+  total:
+    label: "Total:"
+  nav:
+    budget: "Budget"
+    revenue: "Revenue"
+    plans: "Plans"
+    account: "Account"

@@ -1,0 +1,24 @@
+menu:
+  title: "Home"
+  userProfile:
+    label: "Profilo utente"
+  logOut:
+    label: "Esci"
+
+form:
+  firstName:
+    label: "Nome:"
+    placeholder: "Nome"
+  lastName:
+    label: "Cognome:"
+    placeholder: "Cognome"
+  birthDate:
+    label: "Data di nascita:"
+  email:
+    label: "Email:"
+    placeholder: "Email"
+  phone:
+    label: "Telefono:"
+    placeholder: "Telefono"
+  save:
+    value: "Salva modifiche"

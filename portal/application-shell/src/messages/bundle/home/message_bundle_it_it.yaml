@@ -1,0 +1,21 @@
+menu:
+  title: "Home"
+  userProfile:
+    label: "Profilo utente"
+  logOut:
+    label: "Esci"
+
+homePage:
+  homeMenuContent:
+    account: 
+        titleText: "Sezione Account Management"
+        body: "In questa sezione potrai gestire il tuo account"
+    budget: 
+        titleText: "Sezione Budget Management"
+        body: "In questa sezione potrai gestire il tuo budget"
+    revenue:
+        titleText: "Sezione Revenue Management"
+        body: "In questa sezione potrai gestire le tue revenue"
+    plan:
+        titleText: "Sezione Plan Management"
+        body: "In questa sezione potrai gestire i tuoi piani e todo"

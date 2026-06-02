@@ -1,0 +1,13 @@
+menu:
+  title: "Home"
+  userProfile:
+    label: "Profilo utente"
+  logOut:
+    label: "Esci"
+
+searchTagsPage:
+  form:
+    value:
+      label: "Valore tag di ricerca"
+    save:
+      label: "Salva"
