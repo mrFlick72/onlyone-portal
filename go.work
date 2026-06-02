@@ -5,6 +5,5 @@ use (
 	./budget/budget-api
 	./core-services/golang-web-framework
 	./plan/plan-api
-	./portal/i18n-api
 	./tagging/tag-api
 )
