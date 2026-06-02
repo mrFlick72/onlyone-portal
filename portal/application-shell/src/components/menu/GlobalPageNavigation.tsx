@@ -2,14 +2,10 @@ import React from 'react';
 import MenuItem from './MenuItem';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import { FormatListBulleted, Money, Person } from '@mui/icons-material';
+import { GlobalNavMessageBundle } from '../../messages/MessageBundles';
 
 type GlobalPageNavigationProps = {
-    messages: {
-        budget: string,
-        revenue: string,
-        plans: string,
-        account: string
-    }
+    messages: GlobalNavMessageBundle
 }
 
 const GlobalPageNavigation: React.FC<GlobalPageNavigationProps> = ({ messages }) => (

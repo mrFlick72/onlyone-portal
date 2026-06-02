@@ -2,12 +2,7 @@ import React from "react";
 import BudgetRevenueRow from "./BudgetRevenueRow";
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import BudgetRevenue from "./domain/BudgetRevenue";
-
-interface BudgetRevenueTableMessages {
-    headers: { date: string; amount: string; note: string; options: string };
-    totalLabel: string;
-    actions: { edit: string; attach: string; delete: string };
-}
+import { BudgetRevenueTableMessageBundle } from "../../messages/MessageBundles";
 
 interface BudgetRevenueTableProps {
     revenues: BudgetRevenue[];
@@ -15,7 +10,7 @@ interface BudgetRevenueTableProps {
     openDeletePopUp: (revenue: BudgetRevenue) => void;
     openUpdatePopUp: (revenue: BudgetRevenue) => void;
     openUploadAttachmentPopUp: (revenue: BudgetRevenue) => void;
-    messages: BudgetRevenueTableMessages;
+    messages: BudgetRevenueTableMessageBundle;
 }
 
 const BudgetRevenueTable: React.FC<BudgetRevenueTableProps> = ({ revenues, total, openDeletePopUp, openUpdatePopUp, openUploadAttachmentPopUp, messages }) => {

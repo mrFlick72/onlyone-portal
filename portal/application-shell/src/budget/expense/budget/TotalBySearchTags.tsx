@@ -1,10 +1,11 @@
 import React from "react"
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import { TotalDetail } from "../domain/BudgetExpense";
+import { TotalBySearchTagsMessageBundle } from "../../../messages/MessageBundles";
 
 type TotalBySearchTagsProps = {
     totals:  TotalDetail[],
-    messages: { category: string, total: string }
+    messages: TotalBySearchTagsMessageBundle
 }
 
 const TotalBySearchTags: React.FC<TotalBySearchTagsProps> = ({ totals, messages }) => {

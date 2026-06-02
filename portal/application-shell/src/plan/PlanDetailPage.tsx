@@ -14,9 +14,10 @@ import TodoContent from "./TodoContent";
 import SaveTodoPopUp from "./SaveTodoPopUp";
 import DeleteTodoConfirmationPopUp from "./DeleteTodoConfirmationPopUp";
 import ChangeTodoStatusPopUp from "./ChangeTodoStatusPopUp";
+import { MessageBundle } from "../messages/MessageRepository";
 
 interface PlanDetailPageProps {
-    messageRegistry: any;
+    messageRegistry: MessageBundle;
 }
 
 const PlanDetailPage: React.FC<PlanDetailPageProps> = ({ messageRegistry }) => {

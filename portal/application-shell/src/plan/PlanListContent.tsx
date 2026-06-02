@@ -2,17 +2,13 @@ import React from "react";
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import Plan from "./domain/Plan";
 import PlanListRow from "./PlanListRow";
-
-interface PlanListContentMessages {
-    headers: { date: string; title: string; todos: string; options: string };
-    actions: { open: string; delete: string };
-}
+import { PlanListContentMessageBundle } from "../messages/MessageBundles";
 
 interface PlanListContentProps {
     plans: Plan[];
     openDetail: (plan: Plan) => void;
     openDelete: (plan: Plan) => void;
-    messages: PlanListContentMessages;
+    messages: PlanListContentMessageBundle;
 }
 
 const PlanListContent: React.FC<PlanListContentProps> = ({ plans, openDetail, openDelete, messages }) => (

@@ -3,11 +3,12 @@ import { Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material
 import { Search } from "@mui/icons-material"
 import YearSelector from "../expense/YearSelector"
 import YesAndNoButtonGroup from "../../components/layout/YesAndNoButtonGroup"
+import { SaveModalMessageBundle } from "../../messages/MessageBundles"
 
 type RevenueSearchPopUpProps = {
     open: boolean
     handleClose: () => void
-    modal: { title: string; saveButtonLabel: string; closeButtonLabel: string }
+    modal: SaveModalMessageBundle
     year: string
     handler: (event: React.ChangeEvent<HTMLInputElement>) => void
     saveCallback: () => void

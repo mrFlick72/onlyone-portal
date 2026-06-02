@@ -16,8 +16,9 @@ import { FormDateFormatPattern } from "../../components/form/FormDatePicker";
 import BudgetRevenue from "./domain/BudgetRevenue";
 import UploadAttachmentPopUp from "../attachment/UploadAttachmentPopUp";
 import type { AttachmentTarget } from "../attachment/domain/Attachment";
+import { MessageBundle } from "../../messages/MessageRepository";
 interface BudgetRevenuePageProps {
-    messageRegistry: any;
+    messageRegistry: MessageBundle;
 }
 
 const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }) => {

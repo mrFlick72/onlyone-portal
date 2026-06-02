@@ -2,6 +2,7 @@ import React from "react"
 import { Button, ButtonGroup, TableCell, TableRow } from "@mui/material";
 import { AttachFile, Delete, Edit } from "@mui/icons-material";
 import { BudgetExpense, SavedBudgetExpense } from "../domain/BudgetExpense";
+import { BudgetActionsMessageBundle } from "../../../messages/MessageBundles";
 
 type DailyBudgetExpenseRowProps = {
     key: string,
@@ -9,7 +10,7 @@ type DailyBudgetExpenseRowProps = {
     openUpdateBudgetExpensePopUp: (budgetExpense: SavedBudgetExpense) => void,
     openDeleteBudgetExpensePopUp: (budgetExpense: BudgetExpense) => void,
     openUploadAttachmentPopUp: (budgetExpense: BudgetExpense) => void,
-    actions: { edit: string, attach: string, delete: string }
+    actions: BudgetActionsMessageBundle
 }
 
 const DailyBudgetExpenseRow: React.FC<DailyBudgetExpenseRowProps> = ({ key, dailyBudgetExpense, openUpdateBudgetExpensePopUp, openDeleteBudgetExpensePopUp, openUploadAttachmentPopUp, actions }: DailyBudgetExpenseRowProps) => {

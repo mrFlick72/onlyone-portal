@@ -4,13 +4,14 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import GlobalPageNavigation from "./GlobalPageNavigation";
 import MenuSectionTitle from "./MenuSectionTitle";
+import { MenuMessageBundle } from "../../messages/MessageBundles";
 
 type MenuItemProps = {
     text: string
 }
 
 type MenuProps = {
-    messages: { [key: string]: string },
+    messages: MenuMessageBundle,
     children?: React.ReactNode,
     navBarItems: React.ReactNode,
     showGlobalNav?: boolean

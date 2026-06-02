@@ -4,6 +4,7 @@ import { PlaylistAdd } from "@mui/icons-material";
 import moment from "moment";
 import PlanForm, { PlanFormData } from "./PlanForm";
 import YesAndNoButtonGroup from "../components/layout/YesAndNoButtonGroup";
+import { PlanFormMessageBundle, SaveModalMessageBundle } from "../messages/MessageBundles";
 
 interface SavePlanPopUpProps {
     open: boolean;
@@ -14,12 +15,8 @@ interface SavePlanPopUpProps {
         date: (date: moment.Moment) => void;
     };
     saveCallback: () => void;
-    modal: {
-        title: string;
-        saveButtonLabel: string;
-        closeButtonLabel: string;
-    };
-    formMessages: { title: string; date: string };
+    modal: SaveModalMessageBundle;
+    formMessages: PlanFormMessageBundle;
 }
 
 const SavePlanPopUp: React.FC<SavePlanPopUpProps> = ({ open, handleClose, plan, handlers, saveCallback, modal, formMessages }) => (

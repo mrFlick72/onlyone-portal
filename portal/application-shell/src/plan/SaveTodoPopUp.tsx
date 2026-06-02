@@ -4,6 +4,7 @@ import { Check } from "@mui/icons-material";
 import moment from "moment";
 import TodoForm, { TodoFormData } from "./TodoForm";
 import YesAndNoButtonGroup from "../components/layout/YesAndNoButtonGroup";
+import { SaveModalMessageBundle, TodoFormMessageBundle } from "../messages/MessageBundles";
 
 interface SaveTodoPopUpProps {
     open: boolean;
@@ -14,12 +15,8 @@ interface SaveTodoPopUpProps {
         date: (date: moment.Moment) => void;
     };
     saveCallback: () => void;
-    modal: {
-        title: string;
-        saveButtonLabel: string;
-        closeButtonLabel: string;
-    };
-    formMessages: { date: string; content: string };
+    modal: SaveModalMessageBundle;
+    formMessages: TodoFormMessageBundle;
 }
 
 const SaveTodoPopUp: React.FC<SaveTodoPopUpProps> = ({ open, handleClose, todo, handlers, saveCallback, modal, formMessages }) => (

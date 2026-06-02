@@ -5,15 +5,12 @@ import { AddShoppingCart } from "@mui/icons-material";
 import selectUiAdapterFor from "../../search-tags/SearchTagsUIAdapter";
 import YesAndNoButtonGroup from "../../../components/layout/YesAndNoButtonGroup";
 import { SavedBudgetExpense } from "../domain/BudgetExpense";
+import { SaveModalMessageBundle, SpentBudgetFormMessageBundle } from "../../../messages/MessageBundles";
 
 type SaveBudgetExpensePopUpProps = {
     open: boolean,
     handleClose: () => void,
-    modal: {
-        title: string,
-        saveButtonLabel: string,
-        closeButtonLabel: string
-    },
+    modal: SaveModalMessageBundle,
     searchTagRegistry: SearchTag[],
     spentBudgetHandlers: {
         date: any,
@@ -24,7 +21,7 @@ type SaveBudgetExpensePopUpProps = {
     },
     budgetExpense: SavedBudgetExpense,
     saveCallback: () => void,
-    formMessages: { date: string, amount: string, searchTags: string, note: string }
+    formMessages: SpentBudgetFormMessageBundle
 }
 
 const SaveBudgetExpensePopUp: React.FC<SaveBudgetExpensePopUpProps> = ({

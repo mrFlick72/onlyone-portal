@@ -20,22 +20,13 @@ import { AttachFile, CloudDownload, CloudUpload, Delete, UploadFile } from "@mui
 import YesAndNoButtonGroup from "../../components/layout/YesAndNoButtonGroup"
 import { deleteAttachment, downloadAttachment, getAttachmentsFor, saveAttachment } from "./domain/AttachmentRepository"
 import { AttachmentMetadata, AttachmentTarget } from "./domain/Attachment"
+import { UploadAttachmentModalMessageBundle } from "../../messages/MessageBundles"
 
 type UploadAttachmentPopUpProps = {
     open: boolean
     handleClose: () => void
     target: AttachmentTarget | null
-    modal: {
-        title: string
-        uploadButtonLabel: string
-        closeButtonLabel: string
-        chooseFileLabel: string
-        noFileSelectedLabel: string
-        existingAttachmentsLabel: string
-        noAttachmentsLabel: string
-        downloadAttachmentLabel: string
-        deleteAttachmentLabel: string
-    }
+    modal: UploadAttachmentModalMessageBundle
     onUploaded?: () => void
 }
 

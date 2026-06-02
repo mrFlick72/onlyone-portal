@@ -4,12 +4,13 @@ import { Delete, FormatListBulleted } from "@mui/icons-material";
 import moment from "moment";
 import Plan from "./domain/Plan";
 import { ApiDateFormatPattern, FormDateFormatPattern } from "../components/form/FormDatePicker";
+import { PlanListRowActionsMessageBundle } from "../messages/MessageBundles";
 
 interface PlanListRowProps {
     plan: Plan;
     openDetail: () => void;
     openDelete: () => void;
-    actions: { open: string; delete: string };
+    actions: PlanListRowActionsMessageBundle;
 }
 
 const PlanListRow: React.FC<PlanListRowProps> = ({ plan, openDetail, openDelete, actions }) => (

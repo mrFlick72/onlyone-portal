@@ -4,6 +4,7 @@ import { v1 as uuidv1 } from "uuid";
 import moment from "moment";
 import FormDatePicker, { FormDateFormatPattern } from "../components/form/FormDatePicker";
 import FormTextArea from "../components/form/FormTextArea";
+import { TodoFormMessageBundle } from "../messages/MessageBundles";
 
 export type TodoFormData = {
     content: string;
@@ -16,7 +17,7 @@ interface TodoFormProps {
         content: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
         date: (date: moment.Moment) => void;
     };
-    messages: { date: string; content: string };
+    messages: TodoFormMessageBundle;
 }
 
 const TodoForm: React.FC<TodoFormProps> = ({ data, handlers, messages }) => (
