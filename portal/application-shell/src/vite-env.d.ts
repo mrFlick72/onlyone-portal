@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="@modyfi/vite-plugin-yaml/modules" />
 
 interface ImportMetaEnv {
   readonly REDIRECT_URI: string;
