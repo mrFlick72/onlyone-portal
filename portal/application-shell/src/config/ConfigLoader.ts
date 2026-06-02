@@ -13,7 +13,7 @@ type ApplicationConfig = {
 }
 export const applicationConfigLoader = async () => {
     const configData = {
-        scope: "openid",
+        scope: "openid email profile",
         redirectUri: import.meta.env.REDIRECT_URI,
         clientApplicationId: import.meta.env.CLIENT_APPLICATION_ID,
         idpBaseUrl: import.meta.env.IDP_BASE_URL,
