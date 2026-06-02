@@ -92,6 +92,7 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
     }, [])
 
     let configMap = new OnlyonePortalPagesConfigMap()
+    const common = configMap.common(messageRegistry)
     useEffect(() => budgetRevenue(), [])
 
     const budgetRevenue = () => {
@@ -138,11 +139,7 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
         })
     }, [currentBudgetRevenueId, currentBudgetRevenueDate, currentBudgetRevenueAmount, currentBudgetRevenueNote])
 
-    let deleteConfirmationPopupMessages = {
-        id: "deleteBudgetRevenueModal",
-        title: "Delete Budget Revenue",
-        message: "Are you sure of delete the Budget Revenue from the list?"
-    };
+    let deleteConfirmationPopupMessages = configMap.budgetRevenue(messageRegistry).deleteModal
     let theme = themeProvider
     return <ThemeProvider theme={theme}>
         <Paper variant="outlined">
@@ -169,6 +166,7 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
                     }}
                     handlers={budgetRevenueHandlers}
                     modal={configMap.budgetRevenue(messageRegistry).saveBudgetRevenueModal}
+                    formMessages={{ date: common.form.date, amount: common.form.amount, note: common.form.note }}
                     saveCallback={saveRevenue} />
 
                 <DeleteBudgetRevenueConfirmationPopUp
@@ -196,7 +194,21 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
                     openDeletePopUp={makeDeleteBudgetRevenuePopUpOpen}
                     openUploadAttachmentPopUp={makeUploadAttachmentPopUpOpen}
                     revenues={revenues}
-                    total={total} />
+                    total={total}
+                    messages={{
+                        headers: {
+                            date: common.table.date,
+                            amount: common.table.amount,
+                            note: common.table.note,
+                            options: common.table.options
+                        },
+                        totalLabel: common.totalLabel,
+                        actions: {
+                            edit: common.action.edit,
+                            attach: common.action.attach,
+                            delete: common.action.delete
+                        }
+                    }} />
             </Container>
 
         </Paper>

@@ -45,6 +45,8 @@ const emptySpentBudget: SpentBudget = {
 
 const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }) => {
     const configMap = new OnlyonePortalPagesConfigMap()
+    const common = configMap.common(messageRegistry)
+    const budgetExpenseMessages = configMap.budgetExpense(messageRegistry)
 
     const [tabPanel, setTabPanel] = useState(0)
     const [id, setId] = useState("")
@@ -217,7 +219,7 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
         setTabPanel(newValue)
     }
 
-    const navBarItems = [<SpentBudgetTotalBanner key="spent-budget-total" total={spentBudget.total} />]
+    const navBarItems = [<SpentBudgetTotalBanner key="spent-budget-total" totalLabel={common.totalLabel} total={spentBudget.total} />]
 
     return (
         <ThemeProvider theme={themeProvider}>
@@ -255,6 +257,12 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
                     saveCallback={saveExpense}
                     searchTagRegistry={searchTagRegistry}
                     modal={configMap.budgetExpense(messageRegistry).newBudgetExpenseModal}
+                    formMessages={{
+                        date: common.form.date,
+                        amount: common.form.amount,
+                        searchTags: common.form.searchTags,
+                        note: common.form.note
+                    }}
                 />
 
                 <DeleteBudgetExpenseConfirmationPopUp
@@ -278,7 +286,7 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
                         text={configMap.budgetExpense(messageRegistry).menuMessages.insertBudgetModal}
                     />
 
-                    <OpenPopUpMenuItem icon={<Search />} openPopupHandler={makeSearchBudgetExpensePopUpOpen} text="Search" />
+                    <OpenPopUpMenuItem icon={<Search />} openPopupHandler={makeSearchBudgetExpensePopUpOpen} text={budgetExpenseMessages.menuMessages.searchModal} />
 
                     <SearchTagsPageMenuItem text={configMap.budgetExpense(messageRegistry).menuMessages.searchTags} />
                 </Menu>
@@ -291,8 +299,8 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
                         indicatorColor="secondary"
                         aria-label="secondary tabs example"
                     >
-                        <Tab value={0} label="Daily View" />
-                        <Tab value={1} label="By Tags View" />
+                        <Tab value={0} label={budgetExpenseMessages.tabs.dailyView} />
+                        <Tab value={1} label={budgetExpenseMessages.tabs.byTagsView} />
                     </Tabs>
                     <Box sx={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
                         <TabPanel value={tabPanel} index={0}>
@@ -301,10 +309,27 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
                                 openUpdateBudgetExpensePopUp={makeUpdateBudgetExpensePopUpOpen}
                                 openDeleteBudgetExpensePopUp={makeDeleteBudgetExpensePopUpOpen}
                                 openUploadAttachmentPopUp={makeUploadAttachmentPopUpOpen}
+                                messages={{
+                                    headers: {
+                                        date: common.table.date,
+                                        amount: common.table.amount,
+                                        note: common.table.note,
+                                        type: common.table.type,
+                                        details: common.table.details
+                                    },
+                                    totalLabel: common.totalLabel,
+                                    actions: {
+                                        edit: common.action.edit,
+                                        attach: common.action.attach,
+                                        delete: common.action.delete
+                                    }
+                                }}
                             />
                         </TabPanel>
                         <TabPanel value={tabPanel} index={1}>
-                            <TotalBySearchTags totals={spentBudget.totalDetailList || []} />
+                            <TotalBySearchTags
+                                totals={spentBudget.totalDetailList || []}
+                                messages={{ category: common.table.category, total: common.table.total }} />
                         </TabPanel>
                     </Box>
                 </Container>

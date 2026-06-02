@@ -23,7 +23,8 @@ type SaveBudgetExpensePopUpProps = {
 
     },
     budgetExpense: SavedBudgetExpense,
-    saveCallback: () => void
+    saveCallback: () => void,
+    formMessages: { date: string, amount: string, searchTags: string, note: string }
 }
 
 const SaveBudgetExpensePopUp: React.FC<SaveBudgetExpensePopUpProps> = ({
@@ -33,7 +34,8 @@ const SaveBudgetExpensePopUp: React.FC<SaveBudgetExpensePopUpProps> = ({
     searchTagRegistry,
     spentBudgetHandlers,
     budgetExpense,
-    saveCallback
+    saveCallback,
+    formMessages
 }) => {
     console.log("SaveBudgetExpensePopUp render with data: ", budgetExpense)
     return <Dialog onClose={handleClose} open={open} fullWidth scroll="paper">
@@ -47,7 +49,8 @@ const SaveBudgetExpensePopUp: React.FC<SaveBudgetExpensePopUpProps> = ({
                 searchTags: budgetExpense.searchTags
             }}
                 spentBudgetHandlers={spentBudgetHandlers}
-                searchTagRegistry={selectUiAdapterFor(searchTagRegistry)} />
+                searchTagRegistry={selectUiAdapterFor(searchTagRegistry)}
+                messages={formMessages} />
         </DialogContent>
         <DialogActions>
             <YesAndNoButtonGroup yesIcon={<AddShoppingCart />}

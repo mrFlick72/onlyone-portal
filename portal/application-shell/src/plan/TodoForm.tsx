@@ -16,19 +16,20 @@ interface TodoFormProps {
         content: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
         date: (date: moment.Moment) => void;
     };
+    messages: { date: string; content: string };
 }
 
-const TodoForm: React.FC<TodoFormProps> = ({ data, handlers }) => (
+const TodoForm: React.FC<TodoFormProps> = ({ data, handlers, messages }) => (
     <Box>
         <FormDatePicker
             pattern={FormDateFormatPattern}
-            label="Date:"
+            label={messages.date}
             value={data.date}
             onClickHandler={handlers.date} />
 
         <FormTextArea
             id={uuidv1()}
-            label="Content:"
+            label={messages.content}
             value={data.content}
             onChangeHandler={handlers.content} />
     </Box>

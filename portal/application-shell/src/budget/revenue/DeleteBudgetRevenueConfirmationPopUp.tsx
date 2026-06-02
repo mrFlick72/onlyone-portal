@@ -3,9 +3,11 @@ import ConfirmationPopUp from "../../components/layout/ConfirmationPopUp";
 
 interface DeleteBudgetRevenueConfirmationPopUpProps {
     saveCallback: () => void;
-    modal: {        
+    modal: {
         title: string;
         message: string;
+        yesLabel: string;
+        noLabel: string;
     };
     open: boolean;
     handleClose: () => void;
@@ -16,6 +18,8 @@ const DeleteBudgetRevenueConfirmationPopUp: React.FC<DeleteBudgetRevenueConfirma
         handleClose={handleClose}
         open={open}
         modalMessageBody={modal.message}
-        modalTitle={modal.title} />
+        modalTitle={modal.title}
+        yesLabel={modal.yesLabel}
+        noLabel={modal.noLabel} />
 
 export default DeleteBudgetRevenueConfirmationPopUp;

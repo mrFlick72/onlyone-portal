@@ -5,10 +5,12 @@ import FormButton from "../../components/form/FormButton";
 interface SearchTagFormProps {
     searchTag: SearchTag;
     handler: any;
+    messages: { valueLabel: string; saveLabel: string };
 }
 const SearchTagForm: React.FC<SearchTagFormProps> = ({
     searchTag,
     handler,
+    messages,
 }) => {
     return (
         <div>
@@ -17,12 +19,12 @@ const SearchTagForm: React.FC<SearchTagFormProps> = ({
                 autoFocus={true}
                 value={searchTag.value}
                 id="searchTagValue"
-                label="Search Tag Value"
+                label={messages.valueLabel}
             />
             <FormButton
                 type="button"
                 labelPrefix={<Save />}
-                label="Save"
+                label={messages.saveLabel}
                 onClickHandler={handler.submitHandler.bind(
                     this,
                     searchTag.key,

@@ -16,18 +16,19 @@ interface BudgetRevenueFormProps {
         amount: (event: React.ChangeEvent<HTMLInputElement>) => void;
         note: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
     };
+    messages: { date: string; amount: string; note: string };
 }
-const BudgetRevenueForm: React.FC<BudgetRevenueFormProps> = ({ budgetRevenueData, budgetRevenueHandlers }) => {
+const BudgetRevenueForm: React.FC<BudgetRevenueFormProps> = ({ budgetRevenueData, budgetRevenueHandlers, messages }) => {
     return <Box>
         <FormDatePicker
             pattern={FormDateFormatPattern}
-            label={"Date:"}
+            label={messages.date}
             value={budgetRevenueData.date}
             onClickHandler={budgetRevenueHandlers.date} />
 
         <FormMoneyFormat
             id="amount"
-            label="Amount:"
+            label={messages.amount}
             required={true}
             handler={budgetRevenueHandlers.amount}
             value={budgetRevenueData.amount} />
@@ -37,7 +38,7 @@ const BudgetRevenueForm: React.FC<BudgetRevenueFormProps> = ({ budgetRevenueData
             id={uuidv1()}
             value={budgetRevenueData.note}
             onChangeHandler={budgetRevenueHandlers.note}
-            label="Note:" />
+            label={messages.note} />
 
     </Box>
 }

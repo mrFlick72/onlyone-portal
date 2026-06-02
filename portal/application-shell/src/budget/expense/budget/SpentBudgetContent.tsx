@@ -4,14 +4,21 @@ import DailyBudgetExpenseRow from "./DailyBudgetExpenseRow";
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import { BudgetExpense, SavedBudgetExpense, SpentBudget } from "../domain/BudgetExpense";
 
+type SpentBudgetContentMessages = {
+    headers: { date: string, amount: string, note: string, type: string, details: string },
+    totalLabel: string,
+    actions: { edit: string, attach: string, delete: string }
+}
+
 type SpentBudgetContentProps = {
     spentBudget: SpentBudget
     openUpdateBudgetExpensePopUp: (budgetExpense: SavedBudgetExpense) => void,
     openDeleteBudgetExpensePopUp: (budgetExpense: BudgetExpense) => void,
-    openUploadAttachmentPopUp: (budgetExpense: BudgetExpense) => void
+    openUploadAttachmentPopUp: (budgetExpense: BudgetExpense) => void,
+    messages: SpentBudgetContentMessages
 }
 
-const SpentBudgetContent: React.FC<SpentBudgetContentProps> = ({ spentBudget, openUpdateBudgetExpensePopUp, openDeleteBudgetExpensePopUp, openUploadAttachmentPopUp }) => {
+const SpentBudgetContent: React.FC<SpentBudgetContentProps> = ({ spentBudget, openUpdateBudgetExpensePopUp, openDeleteBudgetExpensePopUp, openUploadAttachmentPopUp, messages }) => {
     const tableContent: React.ReactNode[] = [];
     const dailyBudgetExpenseRepresentationList = spentBudget.dailyBudgetExpenseRepresentationList || []
 
@@ -19,6 +26,7 @@ const SpentBudgetContent: React.FC<SpentBudgetContentProps> = ({ spentBudget, op
 
         tableContent.push(<DailyBudgetExpenseHeader key={"H-" + dailyBudgetHeaderIndex}
             date={dailySpentBudget.date}
+            totalLabel={messages.totalLabel}
             total={dailySpentBudget.total} />)
 
         dailySpentBudget.budgetExpenseRepresentationList.forEach((budgetExpenseRepresentation, dailyBudgetColumnIndex) => {
@@ -33,7 +41,8 @@ const SpentBudgetContent: React.FC<SpentBudgetContentProps> = ({ spentBudget, op
 
                 })}
                 openDeleteBudgetExpensePopUp={openDeleteBudgetExpensePopUp.bind(budgetExpenseRepresentation)}
-                openUploadAttachmentPopUp={openUploadAttachmentPopUp.bind(budgetExpenseRepresentation)} />)
+                openUploadAttachmentPopUp={openUploadAttachmentPopUp.bind(budgetExpenseRepresentation)}
+                actions={messages.actions} />)
         })
     });
 
@@ -41,18 +50,18 @@ const SpentBudgetContent: React.FC<SpentBudgetContentProps> = ({ spentBudget, op
         <Table>
             <TableHead>
                 <TableRow>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Amount</TableCell>
-                    <TableCell>Note</TableCell>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Details</TableCell>
+                    <TableCell>{messages.headers.date}</TableCell>
+                    <TableCell>{messages.headers.amount}</TableCell>
+                    <TableCell>{messages.headers.note}</TableCell>
+                    <TableCell>{messages.headers.type}</TableCell>
+                    <TableCell>{messages.headers.details}</TableCell>
                 </TableRow>
             </TableHead>
             <TableBody>
                 {tableContent}
 
                 <TableRow>
-                    <TableCell>Total:</TableCell><TableCell /><TableCell /><TableCell /><TableCell align="right">{spentBudget.total}</TableCell>
+                    <TableCell>{messages.totalLabel}</TableCell><TableCell /><TableCell /><TableCell /><TableCell align="right">{spentBudget.total}</TableCell>
                 </TableRow>
             </TableBody>
         </Table>

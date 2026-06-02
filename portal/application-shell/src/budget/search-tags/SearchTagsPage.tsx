@@ -56,11 +56,20 @@ const SearchTagsPage: FC<SearchTagsPageProps> = ({ messageRegistry }) => {
             <Menu messages={configMap.searchTags(messageRegistry).menuMessages} navBarItems={[]} />
 
             <Container>
-                <SearchTagsForm searchTag={{ key: searchTag.key, value: searchTag.value }} handler={formHandler} />
+                <SearchTagsForm
+                    searchTag={{ key: searchTag.key, value: searchTag.value }}
+                    handler={formHandler}
+                    messages={configMap.searchTags(messageRegistry).form} />
 
                 <Separator />
 
-                <SearchTagsTable searchTagsRegistry={searchTagsRegistry} handler={tableHandler} />
+                <SearchTagsTable
+                    searchTagsRegistry={searchTagsRegistry}
+                    handler={tableHandler}
+                    messages={{
+                        description: configMap.common(messageRegistry).table.description,
+                        operation: configMap.common(messageRegistry).table.operation
+                    }} />
             </Container>
         </Paper>
     </ThemeProvider>

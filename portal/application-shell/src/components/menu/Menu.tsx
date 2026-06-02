@@ -69,9 +69,14 @@ const Menu: React.FC<MenuProps> = ({messages, children, navBarItems, showGlobalN
                             {children && showGlobalNav && <Divider/>}
                             {showGlobalNav && <>
 
-                                <MenuSectionTitle content={"Other Feature"}/>
+                                <MenuSectionTitle content={messages.otherFeatureLabel}/>
 
-                                <GlobalPageNavigation/>
+                                <GlobalPageNavigation messages={{
+                                    budget: messages.budgetPageLabel,
+                                    revenue: messages.revenuePageLabel,
+                                    plans: messages.planPageLabel,
+                                    account: messages.accountPageLabel
+                                }}/>
                             </>}
                         </List>
                     </Box>

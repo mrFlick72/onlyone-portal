@@ -15,13 +15,14 @@ interface PlanFormProps {
         title: (event: React.ChangeEvent<HTMLInputElement>) => void;
         date: (date: moment.Moment) => void;
     };
+    messages: { title: string; date: string };
 }
 
-const PlanForm: React.FC<PlanFormProps> = ({ data, handlers }) => (
+const PlanForm: React.FC<PlanFormProps> = ({ data, handlers, messages }) => (
     <Box>
         <FormInputTextField
             id="plan-title"
-            label="Title:"
+            label={messages.title}
             required
             autoFocus
             value={data.title}
@@ -29,7 +30,7 @@ const PlanForm: React.FC<PlanFormProps> = ({ data, handlers }) => (
 
         <FormDatePicker
             pattern={FormDateFormatPattern}
-            label="Date:"
+            label={messages.date}
             value={data.date}
             onClickHandler={handlers.date} />
     </Box>
