@@ -1,0 +1,21 @@
+menu:
+  title: "Home"
+  userProfile:
+    label: "User Profile"
+  logOut:
+    label: "Log Out"
+
+homePage:
+  homeMenuContent:
+    account: 
+        titleText: "Account Management Section"
+        body: "In this section you can manage your account details"
+    budget: 
+        titleText: "Budget Management Section"
+        body: "In this section you can manage your budget"
+    revenue:
+        titleText: "Revenue Management Section"
+        body: "In this section you can manage your revenue"
+    plan:
+        titleText: "Plan Management Section"
+        body: "In this section you can manage your plans and todos"

@@ -1,0 +1,46 @@
+menu:
+  title: "Home"
+  userProfile:
+    label: "User Profile"
+  logOut:
+    label: "Log Out"
+
+budgetRevenuePage:
+  menu:
+    changeYear: "Search"
+  newBudgetRevenueModal:
+    title: "Save a Revenue Expense"
+  changeYear:
+    popup:
+      title: "Search"
+  delete:
+    popup:
+      title: "Delete Budget Revenue"
+      message: "Are you sure of delete the Budget Revenue from the list?"
+  attachment:
+    popup:
+      title: "Load Attachments"
+
+common:
+  button:
+    save:
+      label: "Save"
+    close:
+      label: "Close"
+    upload:
+      label: "Upload"
+
+attachment:
+  popup:
+    chooseFile:
+      label: "Choose file"
+    noFileSelected:
+      label: "No file selected"
+    existingAttachments:
+      label: "Existing attachments"
+    noAttachments:
+      label: "No attachments yet"
+    download:
+      label: "Download attachment"
+    delete:
+      label: "Delete attachment"
