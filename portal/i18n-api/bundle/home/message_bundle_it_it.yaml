@@ -1,6 +1,0 @@
-menu:
-  title: "Home"
-  userProfile:
-    label: "Profilo utente"
-  logOut:
-    label: "Esci"
