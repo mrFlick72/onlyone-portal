@@ -6,15 +6,16 @@ import { FC } from "react";
 interface SearchTagsTableProps {
     searchTagsRegistry: SearchTag[];
     handler: (searchTagKey: string, searchTagValue: string) => void;
+    messages: { description: string; operation: string };
 }
 
-const SearchTagsTable: FC<SearchTagsTableProps> = ({ searchTagsRegistry, handler }) => {
+const SearchTagsTable: FC<SearchTagsTableProps> = ({ searchTagsRegistry, handler, messages }) => {
     return <TableContainer component={Paper}>
         <Table aria-label="simple table">
             <TableHead>
                 <TableRow>
-                    <TableCell>Description</TableCell>
-                    <TableCell>Operation</TableCell>
+                    <TableCell>{messages.description}</TableCell>
+                    <TableCell>{messages.operation}</TableCell>
                 </TableRow>
             </TableHead>
             <TableBody>

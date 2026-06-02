@@ -9,18 +9,19 @@ interface BudgetRevenueRowProps {
     openDeletePopUp: () => void;
     openUpdatePopUp: () => void;
     openUploadAttachmentPopUp: () => void;
+    actions: { edit: string; attach: string; delete: string };
 }
 
-const BudgetRevenueRow: React.FC<BudgetRevenueRowProps> = ({ revenue, openDeletePopUp, openUpdatePopUp, openUploadAttachmentPopUp }) => {
+const BudgetRevenueRow: React.FC<BudgetRevenueRowProps> = ({ revenue, openDeletePopUp, openUpdatePopUp, openUploadAttachmentPopUp, actions }) => {
     return <TableRow key={uuidv1()} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
         <TableCell>{revenue.date}</TableCell>
         <TableCell>{revenue.amount}</TableCell>
         <TableCell>{revenue.note}</TableCell>
         <TableCell>
             <ButtonGroup variant="contained" aria-label="outlined primary button group">
-                <Button onClick={openUpdatePopUp}><Edit /> Edit</Button>
-                <Button onClick={openUploadAttachmentPopUp}><AttachFile /> Attach</Button>
-                <Button onClick={openDeletePopUp}><Delete />Delete </Button>
+                <Button onClick={openUpdatePopUp}><Edit /> {actions.edit}</Button>
+                <Button onClick={openUploadAttachmentPopUp}><AttachFile /> {actions.attach}</Button>
+                <Button onClick={openDeletePopUp}><Delete /> {actions.delete}</Button>
             </ButtonGroup>
         </TableCell>
     </TableRow>

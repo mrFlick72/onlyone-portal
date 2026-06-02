@@ -8,6 +8,8 @@ interface DeletePlanConfirmationPopUpProps {
     modal: {
         title: string;
         message: string;
+        yesLabel: string;
+        noLabel: string;
     };
 }
 
@@ -17,7 +19,9 @@ const DeletePlanConfirmationPopUp: React.FC<DeletePlanConfirmationPopUpProps> = 
         handleClose={handleClose}
         confirmationHandler={saveCallback}
         modalTitle={modal.title}
-        modalMessageBody={modal.message} />
+        modalMessageBody={modal.message}
+        yesLabel={modal.yesLabel}
+        noLabel={modal.noLabel} />
 );
 
 export default DeletePlanConfirmationPopUp;

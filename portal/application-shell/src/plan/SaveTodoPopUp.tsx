@@ -19,13 +19,14 @@ interface SaveTodoPopUpProps {
         saveButtonLabel: string;
         closeButtonLabel: string;
     };
+    formMessages: { date: string; content: string };
 }
 
-const SaveTodoPopUp: React.FC<SaveTodoPopUpProps> = ({ open, handleClose, todo, handlers, saveCallback, modal }) => (
+const SaveTodoPopUp: React.FC<SaveTodoPopUpProps> = ({ open, handleClose, todo, handlers, saveCallback, modal, formMessages }) => (
     <Dialog onClose={handleClose} open={open} fullWidth scroll="paper">
         <DialogTitle>{modal.title}</DialogTitle>
         <DialogContent>
-            <TodoForm data={todo} handlers={handlers} />
+            <TodoForm data={todo} handlers={handlers} messages={formMessages} />
         </DialogContent>
         <DialogActions>
             <YesAndNoButtonGroup

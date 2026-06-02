@@ -117,6 +117,7 @@ const PlanDetailPage: React.FC<PlanDetailPageProps> = ({ messageRegistry }) => {
 
     const planMessages = configMap.plan(messageRegistry)
     const detailMessages = configMap.planDetail(messageRegistry)
+    const common = configMap.common(messageRegistry)
 
     const formattedDate = plan
         ? moment(plan.date, ApiDateFormatPattern).format(FormDateFormatPattern)
@@ -152,7 +153,8 @@ const PlanDetailPage: React.FC<PlanDetailPageProps> = ({ messageRegistry }) => {
                         date: (value) => setTodoDate(value),
                     }}
                     saveCallback={save}
-                    modal={todoId ? detailMessages.updateTodoModal : detailMessages.saveTodoModal} />
+                    modal={todoId ? detailMessages.updateTodoModal : detailMessages.saveTodoModal}
+                    formMessages={{ date: common.form.date, content: common.form.content }} />
 
                 <DeleteTodoConfirmationPopUp
                     open={openDeletePopUp}
@@ -164,13 +166,29 @@ const PlanDetailPage: React.FC<PlanDetailPageProps> = ({ messageRegistry }) => {
                     open={openStatusPopUp}
                     todo={statusTarget}
                     handleClose={closeChangeStatus}
-                    onSelect={applyStatus} />
+                    onSelect={applyStatus}
+                    messages={detailMessages.changeStatusModal}
+                    statusMessages={detailMessages.statusMessages} />
 
                 <TodoContent
                     todos={plan?.todos ?? []}
                     openUpdate={openUpdate}
                     openDelete={openDelete}
-                    openChangeStatus={openChangeStatus} />
+                    openChangeStatus={openChangeStatus}
+                    messages={{
+                        headers: {
+                            date: common.table.date,
+                            content: common.table.content,
+                            status: common.table.status,
+                            options: common.table.options
+                        },
+                        actions: {
+                            changeStatus: common.action.changeStatus,
+                            edit: common.action.edit,
+                            delete: common.action.delete
+                        },
+                        status: detailMessages.statusMessages
+                    }} />
             </Container>
         </Paper>
     </ThemeProvider>

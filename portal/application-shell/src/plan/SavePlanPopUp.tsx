@@ -19,13 +19,14 @@ interface SavePlanPopUpProps {
         saveButtonLabel: string;
         closeButtonLabel: string;
     };
+    formMessages: { title: string; date: string };
 }
 
-const SavePlanPopUp: React.FC<SavePlanPopUpProps> = ({ open, handleClose, plan, handlers, saveCallback, modal }) => (
+const SavePlanPopUp: React.FC<SavePlanPopUpProps> = ({ open, handleClose, plan, handlers, saveCallback, modal, formMessages }) => (
     <Dialog onClose={handleClose} open={open} fullWidth scroll="paper">
         <DialogTitle>{modal.title}</DialogTitle>
         <DialogContent>
-            <PlanForm data={plan} handlers={handlers} />
+            <PlanForm data={plan} handlers={handlers} messages={formMessages} />
         </DialogContent>
         <DialogActions>
             <YesAndNoButtonGroup

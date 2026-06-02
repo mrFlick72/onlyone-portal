@@ -20,29 +20,30 @@ type SpentBudgetFormProps = {
         note: (...args: any) => void,
         searchTag: (...args: any) => void
     },
-    searchTagRegistry: { value: string, label: string }[]
+    searchTagRegistry: { value: string, label: string }[],
+    messages: { date: string, amount: string, searchTags: string, note: string }
 }
 
-const SpentBudgetForm: React.FC<SpentBudgetFormProps> = ({ spentBudgetData, spentBudgetHandlers, searchTagRegistry }) => {
+const SpentBudgetForm: React.FC<SpentBudgetFormProps> = ({ spentBudgetData, spentBudgetHandlers, searchTagRegistry, messages }) => {
     console.log("SpentBudgetForm render")
     console.log("SpentBudgetForm render with data: ", spentBudgetData)
     return <Box>
         <FormDatePicker
             pattern={FormDateFormatPattern}
-            label={"Date:"}
+            label={messages.date}
             value={spentBudgetData.date}
             onClickHandler={spentBudgetHandlers.date} />
 
         <FormMoneyFormat
             id={uuidv1()}
-            label="Amount:"
+            label={messages.amount}
             required={true}
             handler={spentBudgetHandlers.amount}
             value={spentBudgetData.amount} />
 
         <FormSelect multi={true}
             id={uuidv1()}
-            label="Search Tags:"
+            label={messages.searchTags}
             value={spentBudgetData.searchTags}
             onChangeHandler={spentBudgetHandlers.searchTag}
             options={searchTagRegistry} />
@@ -50,7 +51,7 @@ const SpentBudgetForm: React.FC<SpentBudgetFormProps> = ({ spentBudgetData, spen
         <FormTextArea value={spentBudgetData.note}
             onChangeHandler={spentBudgetHandlers.note}
             id={uuidv1()}
-            label="Note:" />
+            label={messages.note} />
     </Box>
 }
 

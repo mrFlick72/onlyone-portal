@@ -18,17 +18,19 @@ interface SaveBudgetRevenuePopUpProps {
         saveButtonLabel: string;
         closeButtonLabel: string;
     };
+    formMessages: { date: string; amount: string; note: string };
     open: boolean;
     handleClose: () => void;
 }
 
-const SaveBudgetRevenuePopUp: React.FC<SaveBudgetRevenuePopUpProps> = ({ budgetRevenue, handlers, saveCallback, modal, open, handleClose }) =>
+const SaveBudgetRevenuePopUp: React.FC<SaveBudgetRevenuePopUpProps> = ({ budgetRevenue, handlers, saveCallback, modal, formMessages, open, handleClose }) =>
     <Dialog onClose={handleClose} open={open} fullWidth scroll="paper">
         <DialogTitle>{modal.title}</DialogTitle>
 
         <DialogContent>
             <BudgetRevenueForm budgetRevenueData={budgetRevenue}
-                budgetRevenueHandlers={handlers} />
+                budgetRevenueHandlers={handlers}
+                messages={formMessages} />
         </DialogContent>
         <DialogActions>
             <YesAndNoButtonGroup yesIcon={<AddShoppingCart />}

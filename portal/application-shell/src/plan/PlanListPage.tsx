@@ -78,6 +78,7 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ messageRegistry }) => {
     }, [])
 
     const planMessages = configMap.plan(messageRegistry)
+    const common = configMap.common(messageRegistry)
 
     return <ThemeProvider theme={themeProvider}>
         <Paper variant="outlined">
@@ -100,7 +101,8 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ messageRegistry }) => {
                         date: (value) => setDate(value),
                     }}
                     saveCallback={save}
-                    modal={planMessages.savePlanModal} />
+                    modal={planMessages.savePlanModal}
+                    formMessages={{ title: common.form.title, date: common.form.date }} />
 
                 <DeletePlanConfirmationPopUp
                     open={openDeletePopUp}
@@ -111,7 +113,16 @@ const PlanListPage: React.FC<PlanListPageProps> = ({ messageRegistry }) => {
                 <PlanListContent
                     plans={plans}
                     openDetail={openDetail}
-                    openDelete={openDelete} />
+                    openDelete={openDelete}
+                    messages={{
+                        headers: {
+                            date: common.table.date,
+                            title: common.table.title,
+                            todos: common.table.todos,
+                            options: common.table.options
+                        },
+                        actions: { open: common.action.open, delete: common.action.delete }
+                    }} />
             </Container>
         </Paper>
     </ThemeProvider>

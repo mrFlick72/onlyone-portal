@@ -3,16 +3,17 @@ import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow
 import { TotalDetail } from "../domain/BudgetExpense";
 
 type TotalBySearchTagsProps = {
-    totals:  TotalDetail[]
+    totals:  TotalDetail[],
+    messages: { category: string, total: string }
 }
 
-const TotalBySearchTags: React.FC<TotalBySearchTagsProps> = ({ totals }) => {
+const TotalBySearchTags: React.FC<TotalBySearchTagsProps> = ({ totals, messages }) => {
     return <TableContainer component={Paper}>
         <Table>
             <TableHead>
                 <TableRow>
-                    <TableCell>Category</TableCell>
-                    <TableCell>Total</TableCell>
+                    <TableCell>{messages.category}</TableCell>
+                    <TableCell>{messages.total}</TableCell>
                 </TableRow>
             </TableHead>
             <TableBody>

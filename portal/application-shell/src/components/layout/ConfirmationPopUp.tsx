@@ -7,11 +7,13 @@ type ConfirmationPopUpProps = {
     confirmationHandler: () => void
     modalTitle: string
     modalMessageBody: string
+    yesLabel: string
+    noLabel: string
     open: boolean
     handleClose: () => void
 }
 
-const ConfirmationPopUp: React.FC<ConfirmationPopUpProps> = ({ confirmationHandler, modalTitle, modalMessageBody, open, handleClose }) =>
+const ConfirmationPopUp: React.FC<ConfirmationPopUpProps> = ({ confirmationHandler, modalTitle, modalMessageBody, yesLabel, noLabel, open, handleClose }) =>
     <Dialog onClose={handleClose} open={open} fullWidth scroll="paper">
         <DialogTitle>{modalTitle}</DialogTitle>
 
@@ -23,8 +25,8 @@ const ConfirmationPopUp: React.FC<ConfirmationPopUpProps> = ({ confirmationHandl
                 yesFun={confirmationHandler}
                 noFun={handleClose}
                 buttonMessages={{
-                    "noLabel": "No",
-                    "yesLabel": "Yes"
+                    "noLabel": noLabel,
+                    "yesLabel": yesLabel
                 }} />
         </DialogActions>
     </Dialog>

@@ -1,14 +1,87 @@
 import { getMessageFor, MessageBundle } from "./MessageRepository";
 
+/**
+ * Labels shown in the global navigation drawer (rendered by `Menu` ->
+ * `GlobalPageNavigation` / `MenuSectionTitle`). They are added to every page's
+ * `menuMessages` so the drawer is fully localized regardless of which page is
+ * currently mounted.
+ */
+function globalNavLabels(bundle: MessageBundle) {
+    return {
+        budgetPageLabel: getMessageFor(bundle, "menu.budgetPage.label"),
+        revenuePageLabel: getMessageFor(bundle, "menu.revenuePage.label"),
+        planPageLabel: getMessageFor(bundle, "menu.planPage.label"),
+        accountPageLabel: getMessageFor(bundle, "menu.accountPage.label"),
+        otherFeatureLabel: getMessageFor(bundle, "menu.otherFeature.label"),
+    };
+}
+
+function baseMenuMessages(bundle: MessageBundle) {
+    return {
+        title: getMessageFor(bundle, "menu.title"),
+        userProfileLabel: getMessageFor(bundle, "menu.userProfile.label"),
+        logOutLabel: getMessageFor(bundle, "menu.logOut.label"),
+        ...globalNavLabels(bundle),
+    };
+}
+
 export class OnlyonePortalPagesConfigMap {
+
+    /**
+     * Shared labels reused across pages: table headers, row action buttons,
+     * confirmation buttons and form field labels. Pages pull the group they
+     * need and pass it down to the relevant leaf component.
+     */
+    common(bundle: MessageBundle) {
+        return {
+            table: {
+                date: getMessageFor(bundle, "common.table.date"),
+                amount: getMessageFor(bundle, "common.table.amount"),
+                note: getMessageFor(bundle, "common.table.note"),
+                type: getMessageFor(bundle, "common.table.type"),
+                details: getMessageFor(bundle, "common.table.details"),
+                options: getMessageFor(bundle, "common.table.options"),
+                total: getMessageFor(bundle, "common.table.total"),
+                category: getMessageFor(bundle, "common.table.category"),
+                title: getMessageFor(bundle, "common.table.title"),
+                todos: getMessageFor(bundle, "common.table.todos"),
+                content: getMessageFor(bundle, "common.table.content"),
+                status: getMessageFor(bundle, "common.table.status"),
+                description: getMessageFor(bundle, "common.table.description"),
+                operation: getMessageFor(bundle, "common.table.operation"),
+            },
+            action: {
+                edit: getMessageFor(bundle, "common.action.edit"),
+                delete: getMessageFor(bundle, "common.action.delete"),
+                attach: getMessageFor(bundle, "common.action.attach"),
+                open: getMessageFor(bundle, "common.action.open"),
+                changeStatus: getMessageFor(bundle, "common.action.changeStatus"),
+            },
+            confirm: {
+                yesLabel: getMessageFor(bundle, "common.confirm.yesLabel"),
+                noLabel: getMessageFor(bundle, "common.confirm.noLabel"),
+            },
+            form: {
+                date: getMessageFor(bundle, "common.form.date"),
+                amount: getMessageFor(bundle, "common.form.amount"),
+                note: getMessageFor(bundle, "common.form.note"),
+                searchTags: getMessageFor(bundle, "common.form.searchTags"),
+                title: getMessageFor(bundle, "common.form.title"),
+                content: getMessageFor(bundle, "common.form.content"),
+            },
+            totalLabel: getMessageFor(bundle, "common.total.label"),
+            nav: {
+                budget: getMessageFor(bundle, "common.nav.budget"),
+                revenue: getMessageFor(bundle, "common.nav.revenue"),
+                plans: getMessageFor(bundle, "common.nav.plans"),
+                account: getMessageFor(bundle, "common.nav.account"),
+            },
+        }
+    }
 
     home(bundle: MessageBundle) {
         return {
-            menuMessages: {
-                title: getMessageFor(bundle, "menu.title"),
-                userProfileLabel: getMessageFor(bundle, "menu.userProfile.label"),
-                logOutLabel: getMessageFor(bundle, "menu.logOut.label")
-            },
+            menuMessages: baseMenuMessages(bundle),
             homePage: {
                 homeMenuContent: {
                     account: {
@@ -35,20 +108,20 @@ export class OnlyonePortalPagesConfigMap {
     budgetExpense(bundle: MessageBundle) {
         return {
             menuMessages: {
+                ...baseMenuMessages(bundle),
                 insertBudgetModal: getMessageFor(bundle, "budgetExpensePage.menu.newBudgetExpense"),
                 searchModal: getMessageFor(bundle, "budgetExpensePage.menu.search"),
                 diagrams: getMessageFor(bundle, "budgetExpensePage.menu.diagrams"),
                 searchTags: getMessageFor(bundle, "budgetExpensePage.menu.searchTags"),
-                title: getMessageFor(bundle, "menu.title"),
-                userProfileLabel: getMessageFor(bundle, "menu.userProfile.label"),
-                budgetPageLabel: getMessageFor(bundle, "menu.budgetPage.label"),
-                revenuePageLabel: getMessageFor(bundle, "menu.revenuePage.label"),
-                planPageLabel: getMessageFor(bundle, "menu.planPage.label"),
-                logOutLabel: getMessageFor(bundle, "menu.logOut.label")
             },
             cards: {
                 dailyDetails: getMessageFor(bundle, "budgetExpensePage.cards.dailyDetails"),
                 totalByCategories: getMessageFor(bundle, "budgetExpensePage.cards.totalByCategories")
+            },
+
+            tabs: {
+                dailyView: getMessageFor(bundle, "budgetExpensePage.tabs.dailyView"),
+                byTagsView: getMessageFor(bundle, "budgetExpensePage.tabs.byTagsView")
             },
 
             newBudgetExpenseModal: {
@@ -68,7 +141,9 @@ export class OnlyonePortalPagesConfigMap {
             deleteModal: {
                 id: "deleteModal",
                 title: getMessageFor(bundle, "budgetExpensePage.delete.popup.title"),
-                message: getMessageFor(bundle, "budgetExpensePage.delete.popup.message")
+                message: getMessageFor(bundle, "budgetExpensePage.delete.popup.message"),
+                yesLabel: getMessageFor(bundle, "common.confirm.yesLabel"),
+                noLabel: getMessageFor(bundle, "common.confirm.noLabel")
             },
 
             uploadAttachmentModal: {
@@ -89,12 +164,16 @@ export class OnlyonePortalPagesConfigMap {
     budgetRevenue(bundle: MessageBundle) {
         return {
             menuMessages: {
-                title: getMessageFor(bundle, "menu.title"),
-                userProfileLabel: getMessageFor(bundle, "menu.userProfile.label"),
-                logOutLabel: getMessageFor(bundle, "menu.logOut.label"),
+                ...baseMenuMessages(bundle),
                 changeYearModal: getMessageFor(bundle, "budgetRevenuePage.menu.changeYear")
             },
-            deleteModal: { id: "deleteBudgetRevenueModal" },
+            deleteModal: {
+                id: "deleteBudgetRevenueModal",
+                title: getMessageFor(bundle, "budgetRevenuePage.delete.popup.title"),
+                message: getMessageFor(bundle, "budgetRevenuePage.delete.popup.message"),
+                yesLabel: getMessageFor(bundle, "common.confirm.yesLabel"),
+                noLabel: getMessageFor(bundle, "common.confirm.noLabel")
+            },
             saveBudgetRevenueModal: {
                 id: "saveBudgetRevenueModal",
                 title: getMessageFor(bundle, "budgetRevenuePage.newBudgetRevenueModal.title"),
@@ -124,10 +203,10 @@ export class OnlyonePortalPagesConfigMap {
 
     searchTags(bundle: MessageBundle) {
         return {
-            menuMessages: {
-                title: getMessageFor(bundle, "menu.title"),
-                userProfileLabel: getMessageFor(bundle, "menu.userProfile.label"),
-                logOutLabel: getMessageFor(bundle, "menu.logOut.label")
+            menuMessages: baseMenuMessages(bundle),
+            form: {
+                valueLabel: getMessageFor(bundle, "searchTagsPage.form.value.label"),
+                saveLabel: getMessageFor(bundle, "searchTagsPage.form.save.label")
             }
         }
     }
@@ -135,9 +214,7 @@ export class OnlyonePortalPagesConfigMap {
     plan(bundle: MessageBundle) {
         return {
             menuMessages: {
-                title: getMessageFor(bundle, "menu.title"),
-                userProfileLabel: getMessageFor(bundle, "menu.userProfile.label"),
-                logOutLabel: getMessageFor(bundle, "menu.logOut.label"),
+                ...baseMenuMessages(bundle),
                 newPlan: getMessageFor(bundle, "planPage.menu.newPlan"),
             },
             savePlanModal: {
@@ -149,7 +226,9 @@ export class OnlyonePortalPagesConfigMap {
             deletePlanModal: {
                 id: "deletePlanModal",
                 title: getMessageFor(bundle, "planPage.deletePlan.popup.title"),
-                message: getMessageFor(bundle, "planPage.deletePlan.popup.message")
+                message: getMessageFor(bundle, "planPage.deletePlan.popup.message"),
+                yesLabel: getMessageFor(bundle, "common.confirm.yesLabel"),
+                noLabel: getMessageFor(bundle, "common.confirm.noLabel")
             }
         }
     }
@@ -157,11 +236,15 @@ export class OnlyonePortalPagesConfigMap {
     planDetail(bundle: MessageBundle) {
         return {
             menuMessages: {
-                title: getMessageFor(bundle, "menu.title"),
-                userProfileLabel: getMessageFor(bundle, "menu.userProfile.label"),
-                logOutLabel: getMessageFor(bundle, "menu.logOut.label"),
+                ...baseMenuMessages(bundle),
                 newTodo: getMessageFor(bundle, "planDetailPage.menu.newTodo"),
                 backToList: getMessageFor(bundle, "planDetailPage.menu.backToList"),
+            },
+            statusMessages: {
+                TODO: getMessageFor(bundle, "planDetailPage.status.todo"),
+                IN_PROGRESS: getMessageFor(bundle, "planDetailPage.status.inProgress"),
+                DONE: getMessageFor(bundle, "planDetailPage.status.done"),
+                ABORTED: getMessageFor(bundle, "planDetailPage.status.aborted"),
             },
             saveTodoModal: {
                 id: "saveTodoModal",
@@ -178,18 +261,24 @@ export class OnlyonePortalPagesConfigMap {
             deleteTodoModal: {
                 id: "deleteTodoModal",
                 title: getMessageFor(bundle, "planDetailPage.deleteTodo.popup.title"),
-                message: getMessageFor(bundle, "planDetailPage.deleteTodo.popup.message")
+                message: getMessageFor(bundle, "planDetailPage.deleteTodo.popup.message"),
+                yesLabel: getMessageFor(bundle, "common.confirm.yesLabel"),
+                noLabel: getMessageFor(bundle, "common.confirm.noLabel")
+            },
+            changeStatusModal: {
+                id: "changeStatusModal",
+                title: getMessageFor(bundle, "planDetailPage.changeStatus.popup.title"),
+                currentLabel: getMessageFor(bundle, "planDetailPage.changeStatus.popup.current"),
+                moveToLabel: getMessageFor(bundle, "planDetailPage.changeStatus.popup.moveTo"),
+                noTransitionsLabel: getMessageFor(bundle, "planDetailPage.changeStatus.popup.noTransitions"),
+                closeButtonLabel: getMessageFor(bundle, "common.button.close.label")
             }
         }
     }
 
     account(bundle: MessageBundle) {
         return {
-            menuMessages: {
-                title: getMessageFor(bundle, "menu.title"),
-                userProfileLabel: getMessageFor(bundle, "menu.userProfile.label"),
-                logOutLabel: getMessageFor(bundle, "menu.logOut.label")
-            },
+            menuMessages: baseMenuMessages(bundle),
             form: {
                 firstNameLabel: getMessageFor(bundle, "form.firstName.label"),
                 lastNameLabel: getMessageFor(bundle, "form.lastName.label"),
