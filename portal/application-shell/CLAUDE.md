@@ -19,6 +19,7 @@ Use the local `typescript-expert`, `typescript-react-reviewer`, or `vercel-react
 | Auth | OAuth2 PKCE against vauthenticator; token introspection via `jose` 6 |
 | Date handling | `moment` 2.30 with `@date-io/moment` for the MUI date pickers |
 | Forms | `react-imask`, `react-number-format`, `react-select` |
+| Messages | YAML bundles (`en_en` + `it_it`) compiled in at build time via `@modyfi/vite-plugin-yaml`; no runtime i18n library |
 | Tests | None configured (no test runner, no test scripts, no test deps). Behaviour is verified through `portal/e2e/ai/` Playwright MCP scenarios. |
 
 ## Build Commands
@@ -86,7 +87,8 @@ src/
     attachment/     # File attachments shared by expense + revenue
   plan/             # Plan and todo management, including todo status transitions
   components/       # Shared UI: Menu, form inputs, layout helpers
-  messages/         # Hardcoded English message bundle (no i18n library)
+  messages/         # YAML message bundles (en_en + it_it) loaded at build time; no runtime i18n library
+    bundle/         # Per-feature message_bundle_<lang>.yaml files
   theme/            # MUI theme configuration
   time/             # Month/date utilities
 ```
@@ -134,9 +136,19 @@ All repository files (`*Repository.ts`) use the browser `fetch` API with:
 
 ### Messages and Page Configs
 
-There is no i18n library. `messages/MessageRepository.ts` holds a single hardcoded English `MessageBundle`; `getMessageFor(bundle, key)` returns the value or the key itself as fallback.
+There is no runtime i18n library. The message strings that used to be served by the now-removed `portal/i18n-api` service are vendored into the frontend as YAML bundles under `messages/bundle/<feature>/message_bundle_<lang>.yaml`. Feature folders are `account`, `budget-expense`, `budget-revenue`, `common`, `home`, `plan`, `plan-detail`, `search-tags`; each ships an `en_en` and an `it_it` file. The YAMLs are parsed at **build time** by `@modyfi/vite-plugin-yaml` (`yaml()` in `vite.config.ts`) — nothing is fetched at runtime.
 
-`messages/OnlyonePortalPagesConfigMap.tsx` is the single place that turns the message bundle into per-page label objects (`menuMessages`, dialog titles, button labels). Pages call `new OnlyonePortalPagesConfigMap()` and pick the section they need (`configMap.plan(...)`, `configMap.budgetExpense(...)`, `configMap.budgetRevenue(...)`, etc.). Adding a new dialog or menu item normally means editing both `MessageRepository.ts` (the raw strings) and `OnlyonePortalPagesConfigMap.tsx` (the per-page mapping).
+`messages/MessageRepository.ts` is the registry loader:
+- `import.meta.glob("./bundle/**/*.yaml", { eager: true })` pulls in every language bundle (Vite needs a static glob, so all locales are loaded and then filtered).
+- `flattenMessages` turns the nested YAML into a flat `MessageBundle` with dot-separated keys (e.g. `menu.budgetPage.label`).
+- `getAllMessageRegistry(language = "it_it")` filters to one locale and merges every feature bundle into a single flat registry. The default locale is `it_it`.
+- `getMessageFor(bundle, key)` returns the value or `""` (empty string) on a miss.
+
+Pages load the registry once in a `useEffect` (`setMessageRegistry(getAllMessageRegistry())`) into `MessageBundle` state, then hand it to the config map.
+
+`messages/OnlyonePortalPagesConfigMap.tsx` turns that flat registry into per-page label objects (`menuMessages`, dialog titles, button labels). It is stateless: pages call `new OnlyonePortalPagesConfigMap()` and pass the registry into the section method they need (`configMap.plan(registry)`, `configMap.budgetExpense(registry)`, `configMap.common(registry)`, etc.). The structured label types those methods return live in `messages/MessageBundles.ts`, shared by both the config map (producer) and the components (consumers) so a mismatch is a compile error.
+
+Adding a new dialog or menu item normally means: add the key to the relevant `bundle/<feature>/message_bundle_*.yaml` (both `en_en` and `it_it`), map it in `OnlyonePortalPagesConfigMap.tsx`, and — if it introduces a new label object — declare its type in `MessageBundles.ts`.
 
 ### Environment Config
 
