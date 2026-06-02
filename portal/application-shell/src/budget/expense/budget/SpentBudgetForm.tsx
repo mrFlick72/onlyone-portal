@@ -6,6 +6,7 @@ import FormDatePicker, { FormDateFormatPattern } from "../../../components/form/
 import FormMoneyFormat from "../../../components/form/FormMoneyFormat";
 import FormSelect from "../../../components/form/FormSelect";
 import FormTextArea from "../../../components/form/FormTextArea";
+import { SpentBudgetFormMessageBundle } from "../../../messages/MessageBundles";
 
 type SpentBudgetFormProps = {
     spentBudgetData: {
@@ -21,7 +22,7 @@ type SpentBudgetFormProps = {
         searchTag: (...args: any) => void
     },
     searchTagRegistry: { value: string, label: string }[],
-    messages: { date: string, amount: string, searchTags: string, note: string }
+    messages: SpentBudgetFormMessageBundle
 }
 
 const SpentBudgetForm: React.FC<SpentBudgetFormProps> = ({ spentBudgetData, spentBudgetHandlers, searchTagRegistry, messages }) => {

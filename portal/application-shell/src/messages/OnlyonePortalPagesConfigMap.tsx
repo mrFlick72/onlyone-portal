@@ -1,4 +1,15 @@
 import { getMessageFor, MessageBundle } from "./MessageRepository";
+import {
+    AccountPageMessageBundle,
+    BudgetExpensePageMessageBundle,
+    BudgetRevenuePageMessageBundle,
+    CommonMessageBundle,
+    HomePageMessageBundle,
+    MenuMessageBundle,
+    PlanDetailPageMessageBundle,
+    PlanPageMessageBundle,
+    SearchTagsPageMessageBundle,
+} from "./MessageBundles";
 
 /**
  * Labels shown in the global navigation drawer (rendered by `Menu` ->
@@ -16,7 +27,7 @@ function globalNavLabels(bundle: MessageBundle) {
     };
 }
 
-function baseMenuMessages(bundle: MessageBundle) {
+function baseMenuMessages(bundle: MessageBundle): MenuMessageBundle {
     return {
         title: getMessageFor(bundle, "menu.title"),
         userProfileLabel: getMessageFor(bundle, "menu.userProfile.label"),
@@ -32,7 +43,7 @@ export class OnlyonePortalPagesConfigMap {
      * confirmation buttons and form field labels. Pages pull the group they
      * need and pass it down to the relevant leaf component.
      */
-    common(bundle: MessageBundle) {
+    common(bundle: MessageBundle): CommonMessageBundle {
         return {
             table: {
                 date: getMessageFor(bundle, "common.table.date"),
@@ -79,7 +90,7 @@ export class OnlyonePortalPagesConfigMap {
         }
     }
 
-    home(bundle: MessageBundle) {
+    home(bundle: MessageBundle): HomePageMessageBundle {
         return {
             menuMessages: baseMenuMessages(bundle),
             homePage: {
@@ -105,7 +116,7 @@ export class OnlyonePortalPagesConfigMap {
         }
     }
 
-    budgetExpense(bundle: MessageBundle) {
+    budgetExpense(bundle: MessageBundle): BudgetExpensePageMessageBundle {
         return {
             menuMessages: {
                 ...baseMenuMessages(bundle),
@@ -161,7 +172,7 @@ export class OnlyonePortalPagesConfigMap {
         }
     }
 
-    budgetRevenue(bundle: MessageBundle) {
+    budgetRevenue(bundle: MessageBundle): BudgetRevenuePageMessageBundle {
         return {
             menuMessages: {
                 ...baseMenuMessages(bundle),
@@ -201,7 +212,7 @@ export class OnlyonePortalPagesConfigMap {
         }
     }
 
-    searchTags(bundle: MessageBundle) {
+    searchTags(bundle: MessageBundle): SearchTagsPageMessageBundle {
         return {
             menuMessages: baseMenuMessages(bundle),
             form: {
@@ -211,7 +222,7 @@ export class OnlyonePortalPagesConfigMap {
         }
     }
 
-    plan(bundle: MessageBundle) {
+    plan(bundle: MessageBundle): PlanPageMessageBundle {
         return {
             menuMessages: {
                 ...baseMenuMessages(bundle),
@@ -233,7 +244,7 @@ export class OnlyonePortalPagesConfigMap {
         }
     }
 
-    planDetail(bundle: MessageBundle) {
+    planDetail(bundle: MessageBundle): PlanDetailPageMessageBundle {
         return {
             menuMessages: {
                 ...baseMenuMessages(bundle),
@@ -276,7 +287,7 @@ export class OnlyonePortalPagesConfigMap {
         }
     }
 
-    account(bundle: MessageBundle) {
+    account(bundle: MessageBundle): AccountPageMessageBundle {
         return {
             menuMessages: baseMenuMessages(bundle),
             form: {

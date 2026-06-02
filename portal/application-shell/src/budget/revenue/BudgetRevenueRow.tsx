@@ -3,13 +3,14 @@ import { Button, ButtonGroup, TableCell, TableRow } from "@mui/material";
 import { AttachFile, Delete, Edit } from "@mui/icons-material";
 import { v1 as uuidv1 } from "uuid";
 import BudgetRevenue from "./domain/BudgetRevenue";
+import { BudgetActionsMessageBundle } from "../../messages/MessageBundles";
 
 interface BudgetRevenueRowProps {
     revenue: BudgetRevenue
     openDeletePopUp: () => void;
     openUpdatePopUp: () => void;
     openUploadAttachmentPopUp: () => void;
-    actions: { edit: string; attach: string; delete: string };
+    actions: BudgetActionsMessageBundle;
 }
 
 const BudgetRevenueRow: React.FC<BudgetRevenueRowProps> = ({ revenue, openDeletePopUp, openUpdatePopUp, openUploadAttachmentPopUp, actions }) => {

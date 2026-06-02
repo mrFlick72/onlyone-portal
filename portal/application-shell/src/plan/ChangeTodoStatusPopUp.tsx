@@ -2,20 +2,15 @@ import React from "react";
 import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from "@mui/material";
 import { Todo, TodoStatus } from "./domain/Plan";
 import { allowedTransitionsFor, colorFor } from "./domain/TodoStatus";
+import { ChangeTodoStatusModalMessageBundle, TodoStatusMessageBundle } from "../messages/MessageBundles";
 
 interface ChangeTodoStatusPopUpProps {
     open: boolean;
     todo: Todo | null;
     handleClose: () => void;
     onSelect: (status: TodoStatus) => void;
-    messages: {
-        title: string;
-        currentLabel: string;
-        moveToLabel: string;
-        noTransitionsLabel: string;
-        closeButtonLabel: string;
-    };
-    statusMessages: Record<TodoStatus, string>;
+    messages: ChangeTodoStatusModalMessageBundle;
+    statusMessages: TodoStatusMessageBundle;
 }
 
 const buttonColorFor = (status: TodoStatus) => {

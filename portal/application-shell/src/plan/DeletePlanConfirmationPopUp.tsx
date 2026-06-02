@@ -1,16 +1,12 @@
 import React from "react"
 import ConfirmationPopUp from "../components/layout/ConfirmationPopUp";
+import { DeleteModalMessageBundle } from "../messages/MessageBundles";
 
 interface DeletePlanConfirmationPopUpProps {
     open: boolean;
     handleClose: () => void;
     saveCallback: () => void;
-    modal: {
-        title: string;
-        message: string;
-        yesLabel: string;
-        noLabel: string;
-    };
+    modal: DeleteModalMessageBundle;
 }
 
 const DeletePlanConfirmationPopUp: React.FC<DeletePlanConfirmationPopUpProps> = ({ open, handleClose, saveCallback, modal }) => (

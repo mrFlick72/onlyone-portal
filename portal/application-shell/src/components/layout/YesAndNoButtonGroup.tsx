@@ -1,9 +1,10 @@
 import React, { ReactNode } from "react"
 import { Box, Button } from "@mui/material";
 import { Close } from "@mui/icons-material";
+import { ConfirmMessageBundle } from "../../messages/MessageBundles";
 
 type YesAndNoButtonGroupProps = {
-    buttonMessages: {[name:string]:string}
+    buttonMessages: ConfirmMessageBundle
     yesIcon: ReactNode
     yesFun: () => void
     noFun: () => void

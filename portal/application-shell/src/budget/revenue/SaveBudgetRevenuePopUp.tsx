@@ -4,6 +4,7 @@ import BudgetRevenueForm from "./BudgetRevenueForm";
 import YesAndNoButtonGroup from "../../components/layout/YesAndNoButtonGroup";
 import BudgetRevenue from "./domain/BudgetRevenue";
 import { AddShoppingCart } from "@mui/icons-material";
+import { BudgetRevenueFormMessageBundle, SaveModalMessageBundle } from "../../messages/MessageBundles";
 
 interface SaveBudgetRevenuePopUpProps {
     budgetRevenue: BudgetRevenue;
@@ -13,12 +14,8 @@ interface SaveBudgetRevenuePopUpProps {
         note: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
     };
     saveCallback: () => void;
-    modal: {
-        title: string;
-        saveButtonLabel: string;
-        closeButtonLabel: string;
-    };
-    formMessages: { date: string; amount: string; note: string };
+    modal: SaveModalMessageBundle;
+    formMessages: BudgetRevenueFormMessageBundle;
     open: boolean;
     handleClose: () => void;
 }

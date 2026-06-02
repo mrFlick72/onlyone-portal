@@ -2,11 +2,12 @@ import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow
 import { ModeEdit } from "@mui/icons-material";
 import FormButton from "../../components/form/FormButton";
 import { FC } from "react";
+import { SearchTagsTableMessageBundle } from "../../messages/MessageBundles";
 
 interface SearchTagsTableProps {
     searchTagsRegistry: SearchTag[];
     handler: (searchTagKey: string, searchTagValue: string) => void;
-    messages: { description: string; operation: string };
+    messages: SearchTagsTableMessageBundle;
 }
 
 const SearchTagsTable: FC<SearchTagsTableProps> = ({ searchTagsRegistry, handler, messages }) => {

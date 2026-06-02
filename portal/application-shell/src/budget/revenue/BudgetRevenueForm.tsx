@@ -8,6 +8,7 @@ import FormDatePicker, { FormDateFormatPattern } from "../../components/form/For
 import FormMoneyFormat from "../../components/form/FormMoneyFormat";
 import FormTextArea from "../../components/form/FormTextArea";
 import BudgetRevenue from "./domain/BudgetRevenue";
+import { BudgetRevenueFormMessageBundle } from "../../messages/MessageBundles";
 
 interface BudgetRevenueFormProps {
     budgetRevenueData: BudgetRevenue;
@@ -16,7 +17,7 @@ interface BudgetRevenueFormProps {
         amount: (event: React.ChangeEvent<HTMLInputElement>) => void;
         note: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
     };
-    messages: { date: string; amount: string; note: string };
+    messages: BudgetRevenueFormMessageBundle;
 }
 const BudgetRevenueForm: React.FC<BudgetRevenueFormProps> = ({ budgetRevenueData, budgetRevenueHandlers, messages }) => {
     return <Box>

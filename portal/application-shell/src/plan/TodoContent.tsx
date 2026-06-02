@@ -1,20 +1,15 @@
 import React from "react";
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
-import { Todo, TodoStatus } from "./domain/Plan";
+import { Todo } from "./domain/Plan";
 import TodoRow from "./TodoRow";
-
-interface TodoContentMessages {
-    headers: { date: string; content: string; status: string; options: string };
-    actions: { changeStatus: string; edit: string; delete: string };
-    status: Record<TodoStatus, string>;
-}
+import { TodoContentMessageBundle } from "../messages/MessageBundles";
 
 interface TodoContentProps {
     todos: Todo[];
     openUpdate: (todo: Todo) => void;
     openDelete: (todo: Todo) => void;
     openChangeStatus: (todo: Todo) => void;
-    messages: TodoContentMessages;
+    messages: TodoContentMessageBundle;
 }
 
 const TodoContent: React.FC<TodoContentProps> = ({ todos, openUpdate, openDelete, openChangeStatus, messages }) => (

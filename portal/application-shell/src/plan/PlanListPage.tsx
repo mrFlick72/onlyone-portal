@@ -12,9 +12,10 @@ import { createPlan, deletePlan, getAllPlans } from "./domain/PlanRepository";
 import PlanListContent from "./PlanListContent";
 import SavePlanPopUp from "./SavePlanPopUp";
 import DeletePlanConfirmationPopUp from "./DeletePlanConfirmationPopUp";
+import { MessageBundle } from "../messages/MessageRepository";
 
 interface PlanListPageProps {
-    messageRegistry: any;
+    messageRegistry: MessageBundle;
 }
 
 const PlanListPage: React.FC<PlanListPageProps> = ({ messageRegistry }) => {

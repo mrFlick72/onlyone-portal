@@ -6,7 +6,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import Separator from "../components/form/Separator";
 import FormButton from "../components/form/FormButton";
 import { OnlyonePortalPagesConfigMap } from "../messages/OnlyonePortalPagesConfigMap";
-import { getAllMessageRegistry } from "../messages/MessageRepository";
+import { getAllMessageRegistry, MessageBundle } from "../messages/MessageRepository";
 import { isAuthenticated } from "../auth/Authenticator";
 import Menu from "../components/menu/Menu";
 import FormInputTextField from '../components/form/FormInputTextField';
@@ -25,7 +25,7 @@ const AccountDetailsPage = () => {
         }
     )
 
-    const [messageRegistry, setMessageRegistry] = useState({})
+    const [messageRegistry, setMessageRegistry] = useState<MessageBundle>({})
 
 
     useEffect(() => {

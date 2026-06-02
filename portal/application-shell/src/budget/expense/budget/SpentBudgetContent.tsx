@@ -3,19 +3,14 @@ import DailyBudgetExpenseHeader from "./DailyBudgetExpenseHeader";
 import DailyBudgetExpenseRow from "./DailyBudgetExpenseRow";
 import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import { BudgetExpense, SavedBudgetExpense, SpentBudget } from "../domain/BudgetExpense";
-
-type SpentBudgetContentMessages = {
-    headers: { date: string, amount: string, note: string, type: string, details: string },
-    totalLabel: string,
-    actions: { edit: string, attach: string, delete: string }
-}
+import { SpentBudgetContentMessageBundle } from "../../../messages/MessageBundles";
 
 type SpentBudgetContentProps = {
     spentBudget: SpentBudget
     openUpdateBudgetExpensePopUp: (budgetExpense: SavedBudgetExpense) => void,
     openDeleteBudgetExpensePopUp: (budgetExpense: BudgetExpense) => void,
     openUploadAttachmentPopUp: (budgetExpense: BudgetExpense) => void,
-    messages: SpentBudgetContentMessages
+    messages: SpentBudgetContentMessageBundle
 }
 
 const SpentBudgetContent: React.FC<SpentBudgetContentProps> = ({ spentBudget, openUpdateBudgetExpensePopUp, openDeleteBudgetExpensePopUp, openUploadAttachmentPopUp, messages }) => {

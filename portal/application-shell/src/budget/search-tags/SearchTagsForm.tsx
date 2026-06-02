@@ -1,11 +1,12 @@
 import { Save } from "@mui/icons-material";
 import FormInputTextField from "../../components/form/FormInputTextField";
 import FormButton from "../../components/form/FormButton";
+import { SearchTagFormMessageBundle } from "../../messages/MessageBundles";
 
 interface SearchTagFormProps {
     searchTag: SearchTag;
     handler: any;
-    messages: { valueLabel: string; saveLabel: string };
+    messages: SearchTagFormMessageBundle;
 }
 const SearchTagForm: React.FC<SearchTagFormProps> = ({
     searchTag,

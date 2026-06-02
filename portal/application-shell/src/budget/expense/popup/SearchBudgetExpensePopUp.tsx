@@ -9,15 +9,12 @@ import selectUiAdapterFor from "../../search-tags/SearchTagsUIAdapter";
 import YesAndNoButtonGroup from "../../../components/layout/YesAndNoButtonGroup";
 import FormSelect from "../../../components/form/FormSelect";
 import { Month } from "../../../time/months";
+import { SaveModalMessageBundle } from "../../../messages/MessageBundles";
 
 type SearchBudgetExpensePopUpProps = {
     open: boolean,
     handleClose: () => void,
-    modal: {
-        title: string,
-        saveButtonLabel: string,
-        closeButtonLabel: string
-    },
+    modal: SaveModalMessageBundle,
     month: string,
     year: string,
     searchTags: { value: string, label: string }[],

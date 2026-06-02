@@ -5,14 +5,15 @@ import moment from "moment";
 import { Todo, TodoStatus } from "./domain/Plan";
 import { ApiDateFormatPattern, FormDateFormatPattern } from "../components/form/FormDatePicker";
 import { colorFor, isTerminal } from "./domain/TodoStatus";
+import { TodoRowActionsMessageBundle, TodoStatusMessageBundle } from "../messages/MessageBundles";
 
 interface TodoRowProps {
     todo: Todo;
     openUpdate: () => void;
     openDelete: () => void;
     openChangeStatus: () => void;
-    actions: { changeStatus: string; edit: string; delete: string };
-    statusMessages: Record<TodoStatus, string>;
+    actions: TodoRowActionsMessageBundle;
+    statusMessages: TodoStatusMessageBundle;
 }
 
 const TodoRow: React.FC<TodoRowProps> = ({ todo, openUpdate, openDelete, openChangeStatus, actions, statusMessages }) => (

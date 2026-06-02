@@ -3,6 +3,7 @@ import { Box } from "@mui/material";
 import moment from "moment";
 import FormDatePicker, { FormDateFormatPattern } from "../components/form/FormDatePicker";
 import FormInputTextField from "../components/form/FormInputTextField";
+import { PlanFormMessageBundle } from "../messages/MessageBundles";
 
 export type PlanFormData = {
     title: string;
@@ -15,7 +16,7 @@ interface PlanFormProps {
         title: (event: React.ChangeEvent<HTMLInputElement>) => void;
         date: (date: moment.Moment) => void;
     };
-    messages: { title: string; date: string };
+    messages: PlanFormMessageBundle;
 }
 
 const PlanForm: React.FC<PlanFormProps> = ({ data, handlers, messages }) => (
