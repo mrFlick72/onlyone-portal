@@ -9,7 +9,6 @@ type ApplicationConfig = {
     accountApiBaseUrl: string,
     tagApiBaseUrl: string,
     planApiBaseUrl: string,
-    i18nApiBaseUrl: string
 
 }
 export const applicationConfigLoader = async () => {
@@ -24,7 +23,6 @@ export const applicationConfigLoader = async () => {
         accountApiBaseUrl: import.meta.env.ACCOUNT_API_BASE_URL,
         tagApiBaseUrl: import.meta.env.TAG_API_BASE_URL,
         planApiBaseUrl: import.meta.env.PLAN_API_BASE_URL,
-        i18nApiBaseUrl: import.meta.env.I18N_API_BASE_URL
 
     };
     return configData as ApplicationConfig
@@ -53,9 +51,4 @@ export async function getTagApiBaseUrl() {
 export async function getPlanApiBaseUrl() {
     const appConfig = await applicationConfigLoader()
     return appConfig.planApiBaseUrl;
-}
-
-export async function getI18nApiBaseUrl() {
-    const appConfig = await applicationConfigLoader()
-    return appConfig.i18nApiBaseUrl;
 }
