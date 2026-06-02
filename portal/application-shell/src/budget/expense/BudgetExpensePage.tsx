@@ -31,9 +31,10 @@ import { FormDateFormatPattern } from "../../components/form/FormDatePicker"
 import type { SelectOption } from "../../components/form/FormSelect"
 import type { Month } from "../../time/months"
 import type { BudgetExpense, SavedBudgetExpense, SpentBudget } from "./domain/BudgetExpense"
+import { MessageBundle } from "../../messages/MessageRepository";
 
 interface BudgetExpensePageProps {
-    messageRegistry: any
+    messageRegistry: MessageBundle
 }
 
 const emptySpentBudget: SpentBudget = {

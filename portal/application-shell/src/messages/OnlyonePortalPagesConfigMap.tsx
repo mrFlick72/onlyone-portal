@@ -8,6 +8,26 @@ export class OnlyonePortalPagesConfigMap {
                 title: getMessageFor(bundle, "menu.title"),
                 userProfileLabel: getMessageFor(bundle, "menu.userProfile.label"),
                 logOutLabel: getMessageFor(bundle, "menu.logOut.label")
+            },
+            homePage: {
+                homeMenuContent: {
+                    account: {
+                        titleText: getMessageFor(bundle, "homePage.homeMenuContent.account.titleText"),
+                        body: getMessageFor(bundle, "homePage.homeMenuContent.account.body"),
+                    },
+                    budget: {
+                        titleText: getMessageFor(bundle, "homePage.homeMenuContent.budget.titleText"),
+                        body: getMessageFor(bundle, "homePage.homeMenuContent.budget.body"),
+                    },
+                    revenue: {
+                        titleText: getMessageFor(bundle, "homePage.homeMenuContent.revenue.titleText"),
+                        body: getMessageFor(bundle, "homePage.homeMenuContent.revenue.body"),
+                    },
+                    plan: {
+                        titleText: getMessageFor(bundle, "homePage.homeMenuContent.plan.titleText"),
+                        body: getMessageFor(bundle, "homePage.homeMenuContent.plan.body"),
+                    }
+                }
             }
         }
     }

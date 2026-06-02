@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import yaml from '@modyfi/vite-plugin-yaml';
 import path from 'path';
 import fs from 'fs';
 
@@ -43,7 +44,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     root: __dirname,
-    plugins: [htmlTemplatePlugin(), react()],
+    plugins: [htmlTemplatePlugin(), react(), yaml()],
     define: {
       'import.meta.env.REDIRECT_URI':                  JSON.stringify(env.REDIRECT_URI),
       'import.meta.env.CLIENT_APPLICATION_ID':         JSON.stringify(env.CLIENT_APPLICATION_ID),
