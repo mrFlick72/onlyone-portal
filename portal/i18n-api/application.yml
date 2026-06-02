@@ -9,7 +9,7 @@ idp:
   jwks-endpoint: http://local.api.vauthenticator.com:9090/oauth2/jwks
 
 user:
-  required-role: i18n-api_READER
+  required-role: USER_ROLE
 
 i18n-api:
   default-language: en_en
