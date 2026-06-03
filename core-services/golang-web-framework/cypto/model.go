@@ -1,6 +1,7 @@
 package cypto
 
-type Key struct {
+type Key interface {
+	Content() []byte
 }
 
 type SymmetricKey struct {
