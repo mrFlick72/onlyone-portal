@@ -1,6 +1,7 @@
 package cypto
 
 import (
+	"context"
 	"encoding/base64"
 	"sync"
 	"testing"
@@ -10,7 +11,7 @@ import (
 
 func TestWhenAKeyIsInTheCache(t *testing.T) {
 	uut := newAwsKmsKayRepositoryWithCache()
-	actual, err := uut.GetKeyFor("A_KEY_ID")
+	actual, err := uut.GetKeyFor(context.TODO(), "A_KEY_ID")
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, []byte("AN_ENCRYTPED_KEY"), actual.content)
@@ -19,19 +20,19 @@ func TestWhenAKeyIsInTheCache(t *testing.T) {
 func TestWhenAKeyIsNotInTheCache(t *testing.T) {
 	masterKeyId, encryptedKey, plainTextKey := masterKeySetup()
 	uut := newAwsKmsKayRepository(map[string]string{masterKeyId: base64.StdEncoding.EncodeToString(encryptedKey)})
-	actual, _ := uut.GetKeyFor(masterKeyId)
+	actual, _ := uut.GetKeyFor(context.TODO(), masterKeyId)
 	assert.Equal(t, plainTextKey, actual.content)
 }
 
 func TestWhenKeyIdIsNotFoundInStorage(t *testing.T) {
 	uut := newAwsKmsKayRepository(map[string]string{})
-	_, err := uut.GetKeyFor("MISSING_KEY")
+	_, err := uut.GetKeyFor(context.TODO(), "MISSING_KEY")
 	assert.NotEqual(t, nil, err)
 }
 
 func TestWhenStoredCiphertextIsInvalidBase64(t *testing.T) {
 	uut := newAwsKmsKayRepository(map[string]string{"KEY": "not-base64!!!"})
-	_, err := uut.GetKeyFor("KEY")
+	_, err := uut.GetKeyFor(context.TODO(), "KEY")
 	assert.NotEqual(t, nil, err)
 }
 
@@ -39,8 +40,8 @@ func TestCacheIsPopulatedAfterFirstCacheMiss(t *testing.T) {
 	masterKeyId, encryptedKey, plainTextKey := masterKeySetup()
 	uut := newAwsKmsKayRepository(map[string]string{masterKeyId: base64.StdEncoding.EncodeToString(encryptedKey)})
 
-	first, err1 := uut.GetKeyFor(masterKeyId)
-	second, err2 := uut.GetKeyFor(masterKeyId)
+	first, err1 := uut.GetKeyFor(context.TODO(), masterKeyId)
+	second, err2 := uut.GetKeyFor(context.TODO(), masterKeyId)
 
 	assert.Equal(t, nil, err1)
 	assert.Equal(t, nil, err2)
@@ -58,7 +59,7 @@ func TestConcurrentAccessOnCachedKey(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			key, err := uut.GetKeyFor("A_KEY_ID")
+			key, err := uut.GetKeyFor(context.TODO(), "A_KEY_ID")
 			assert.Equal(t, nil, err)
 			assert.Equal(t, []byte("AN_ENCRYTPED_KEY"), key.content)
 		}()

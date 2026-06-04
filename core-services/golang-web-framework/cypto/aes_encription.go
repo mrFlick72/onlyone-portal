@@ -2,6 +2,7 @@ package cypto
 
 import (
 	"bytes"
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -16,7 +17,7 @@ type AesCbcCipher struct {
 }
 
 func (c *AesCbcCipher) Encrypt(plaintext string) (string, error) {
-	key, err := c.repository.GetKeyFor(c.kyeId)
+	key, err := c.repository.GetKeyFor(context.TODO(),c.kyeId)
 	if err != nil {
 		return "", err
 	}
@@ -43,7 +44,7 @@ func (c *AesCbcCipher) Encrypt(plaintext string) (string, error) {
 }
 
 func (c *AesCbcCipher) Decrypt(ciphertext string) (string, error) {
-	key, err := c.repository.GetKeyFor(c.kyeId)
+	key, err := c.repository.GetKeyFor(context.TODO(), c.kyeId)
 	if err != nil {
 		return "", err
 	}

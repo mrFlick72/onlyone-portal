@@ -1,7 +1,5 @@
 //go:build test
 
-// Package awsfixture provides LocalStack-targeted setup/teardown helpers
-// shared by attachment adapter tests (DynamoDB metadata table + S3 bucket).
 package cypto
 
 import (
