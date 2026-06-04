@@ -37,7 +37,7 @@ func NewAwsKmsKeyRepository(ctx context.Context) (KeyRepository, error) {
 	}, nil
 }
 
-func (r *AwsKmsKayRepository) GetKeyFor(keyId string) (SymmetricKey, error) {
+func (r *AwsKmsKayRepository) GetKeyFor(ctx context.Context, keyId string) (SymmetricKey, error) {
 	r.mu.RLock()
 	if plainTextKey, ok := r.cache[keyId]; ok {
 		r.mu.RUnlock()
@@ -54,7 +54,7 @@ func (r *AwsKmsKayRepository) GetKeyFor(keyId string) (SymmetricKey, error) {
 		return SymmetricKey{}, fmt.Errorf("decode kms ciphertext for key %q: %w", keyId, err)
 	}
 
-	result, err := r.kmsClient.Decrypt(context.Background(), &kms.DecryptInput{
+	result, err := r.kmsClient.Decrypt(ctx, &kms.DecryptInput{
 		KeyId:          &keyId,
 		CiphertextBlob: ciphertext,
 	})
@@ -69,5 +69,4 @@ func (r *AwsKmsKayRepository) GetKeyFor(keyId string) (SymmetricKey, error) {
 	r.mu.Unlock()
 
 	return SymmetricKey{content: plaintext}, nil
-
 }

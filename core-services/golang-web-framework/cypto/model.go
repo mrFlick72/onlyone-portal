@@ -1,5 +1,7 @@
 package cypto
 
+import "context"
+
 type Key interface {
 	Content() []byte
 }
@@ -9,7 +11,7 @@ type SymmetricKey struct {
 }
 
 type KeyRepository interface {
-	GetKeyFor(keyId string) (SymmetricKey, error)
+	GetKeyFor(ctx context.Context, keyId string) (SymmetricKey, error)
 }
 
 type Cipher interface {
