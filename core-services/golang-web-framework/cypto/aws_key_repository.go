@@ -68,6 +68,6 @@ func (r *AwsKmsKayRepository) GetKeyFor(keyId string) (SymmetricKey, error) {
 	r.cache[keyId] = plaintext
 	r.mu.Unlock()
 
-	return SymmetricKey{content: result.Plaintext}, nil
+	return SymmetricKey{content: plaintext}, nil
 
 }
