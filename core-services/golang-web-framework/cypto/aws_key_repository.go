@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"strings"
+	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/service/kms"
 
@@ -16,6 +16,7 @@ type AwsKmsKayRepository struct {
 	kmsClient *kms.Client
 	storage   map[string]string // keyId → base64-encoded KMS ciphertext blob
 	cache     map[string][]byte // keyId → decripted key in memory cache
+	mu        sync.RWMutex
 }
 
 func NewAwsKmsKeyRepository(ctx context.Context) (KeyRepository, error) {
@@ -32,33 +33,41 @@ func NewAwsKmsKeyRepository(ctx context.Context) (KeyRepository, error) {
 		kmsClient: kms.NewFromConfig(cfg),
 		storage:   map[string]string{keyId: encryptedKeyValue},
 		cache:     make(map[string][]byte, 0),
+		mu:        sync.RWMutex{},
 	}, nil
 }
 
 func (r *AwsKmsKayRepository) GetKeyFor(keyId string) (SymmetricKey, error) {
+	r.mu.RLock()
 	if plainTextKey, ok := r.cache[keyId]; ok {
+		r.mu.RUnlock()
 		return SymmetricKey{content: plainTextKey}, nil
-	} else {
-		encryptedValue, ok := r.storage[keyId]
-		if !ok {
-			return SymmetricKey{}, fmt.Errorf("key %q not found", keyId)
-		}
-
-		ciphertext, err := base64.StdEncoding.DecodeString(encryptedValue)
-		if err != nil {
-			return SymmetricKey{}, fmt.Errorf("decode kms ciphertext for key %q: %w", keyId, err)
-		}
-
-		result, err := r.kmsClient.Decrypt(context.Background(), &kms.DecryptInput{
-			KeyId:          &keyId,
-			CiphertextBlob: ciphertext,
-		})
-
-		if err != nil {
-			return SymmetricKey{}, fmt.Errorf("kms decrypt key %q: %w", keyId, err)
-		}
-		r.cache[keyId] = result.Plaintext
-		return SymmetricKey{content: result.Plaintext}, nil
 	}
+	r.mu.RUnlock()
+	encryptedValue, ok := r.storage[keyId]
+	if !ok {
+		return SymmetricKey{}, fmt.Errorf("key %q not found", keyId)
+	}
+
+	ciphertext, err := base64.StdEncoding.DecodeString(encryptedValue)
+	if err != nil {
+		return SymmetricKey{}, fmt.Errorf("decode kms ciphertext for key %q: %w", keyId, err)
+	}
+
+	result, err := r.kmsClient.Decrypt(context.Background(), &kms.DecryptInput{
+		KeyId:          &keyId,
+		CiphertextBlob: ciphertext,
+	})
+
+	if err != nil {
+		return SymmetricKey{}, fmt.Errorf("kms decrypt key %q: %w", keyId, err)
+	}
+	r.mu.Lock()
+	plaintext := make([]byte, len(result.Plaintext))
+	copy(plaintext, result.Plaintext)
+	r.cache[keyId] = plaintext
+	r.mu.Unlock()
+
+	return SymmetricKey{content: result.Plaintext}, nil
 
 }
