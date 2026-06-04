@@ -39,7 +39,7 @@ func TestAesCbcCipherEncryptDecryptWithInMemoryKeyRepository(t *testing.T) {
 	}
 	plaintext := "secret message"
 
-	encrypted, err := cipher.Encrypt(plaintext)
+	encrypted, err := cipher.Encrypt(context.TODO(), plaintext)
 
 	require.NoError(t, err)
 	assert.NotEmpty(t, encrypted)
@@ -50,7 +50,7 @@ func TestAesCbcCipherEncryptDecryptWithInMemoryKeyRepository(t *testing.T) {
 	assert.Zero(t, len(decoded)%aes.BlockSize)
 	assert.Greater(t, len(decoded), aes.BlockSize)
 
-	decrypted, err := cipher.Decrypt(encrypted)
+	decrypted, err := cipher.Decrypt(context.TODO(), encrypted)
 	require.NoError(t, err)
 	assert.Equal(t, plaintext, decrypted)
 }
