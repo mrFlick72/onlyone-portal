@@ -9,5 +9,6 @@ venv
 build
 src/*.egg-info
 logs/
+*.log
 
 localstack
