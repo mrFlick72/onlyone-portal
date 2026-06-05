@@ -8,16 +8,15 @@ jobs:
   build-golang-web-framework:
     runs-on: ubuntu-24.04
     defaults:
-      services:
-        localstack:
-          image: localstack/localstack:4.14
-          ports:
-            - "4566-4599:4566-4599"
-          env:
-            SERVICES: kms
       run:
         working-directory: core-services/golang-web-framework
-
+    services:
+      localstack:
+        image: localstack/localstack:4.14
+        ports:
+          - "4566-4599:4566-4599"
+        env:
+          SERVICES: kms
     steps:
       - name: checkout
         uses: actions/checkout@v6
