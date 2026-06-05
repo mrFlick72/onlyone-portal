@@ -26,7 +26,7 @@ key:
 
 	key, err := repository.GetKeyFor(context.TODO(), "configured-key")
 	require.NoError(t, err)
-	assert.Equal(t, []byte("0123456789abcdef0123456789abcdef"), key.content)
+	assert.Equal(t, []byte("0123456789abcdef0123456789abcdef"), key.Content())
 }
 
 func TestInMemoryKeyRepositoryGetKeyFor(t *testing.T) {
@@ -60,7 +60,7 @@ func TestInMemoryKeyRepositoryGetKeyFor(t *testing.T) {
 			key, err := repository.GetKeyFor(context.TODO(), tt.keyId)
 
 			tt.assertErr(t, err)
-			assert.Equal(t, tt.wantKey, key.content)
+			assert.Equal(t, tt.wantKey, key.Content())
 		})
 	}
 }

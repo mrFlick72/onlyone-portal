@@ -22,7 +22,7 @@ func (c *AesCbcCipher) Encrypt(ctx context.Context, plaintext string) (string, e
 		return "", err
 	}
 
-	block, err := aes.NewCipher(key.content)
+	block, err := aes.NewCipher(key.Content())
 	if err != nil {
 		return "", err
 	}
@@ -49,7 +49,7 @@ func (c *AesCbcCipher) Decrypt(ctx context.Context, ciphertext string) (string, 
 		return "", err
 	}
 
-	block, err := aes.NewCipher(key.content)
+	block, err := aes.NewCipher(key.Content())
 	if err != nil {
 		return "", err
 	}

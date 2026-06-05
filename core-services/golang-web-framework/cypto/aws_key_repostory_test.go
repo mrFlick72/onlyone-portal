@@ -14,14 +14,14 @@ func TestWhenAKeyIsInTheCache(t *testing.T) {
 	actual, err := uut.GetKeyFor(context.TODO(), "A_KEY_ID")
 
 	assert.Equal(t, nil, err)
-	assert.Equal(t, []byte("AN_ENCRYTPED_KEY"), actual.content)
+	assert.Equal(t, []byte("AN_ENCRYTPED_KEY"), actual.Content())
 }
 
 func TestWhenAKeyIsNotInTheCache(t *testing.T) {
 	masterKeyId, encryptedKey, plainTextKey := masterKeySetup()
 	uut := newAwsKmsKayRepository(map[string]string{masterKeyId: base64.StdEncoding.EncodeToString(encryptedKey)})
 	actual, _ := uut.GetKeyFor(context.TODO(), masterKeyId)
-	assert.Equal(t, plainTextKey, actual.content)
+	assert.Equal(t, plainTextKey, actual.Content())
 }
 
 func TestWhenKeyIdIsNotFoundInStorage(t *testing.T) {
@@ -45,8 +45,8 @@ func TestCacheIsPopulatedAfterFirstCacheMiss(t *testing.T) {
 
 	assert.Equal(t, nil, err1)
 	assert.Equal(t, nil, err2)
-	assert.Equal(t, plainTextKey, first.content)
-	assert.Equal(t, first.content, second.content)
+	assert.Equal(t, plainTextKey, first.Content())
+	assert.Equal(t, first.Content(), second.Content())
 
 	_, inCache := uut.cache[masterKeyId]
 	assert.Equal(t, true, inCache)
@@ -61,7 +61,7 @@ func TestConcurrentAccessOnCachedKey(t *testing.T) {
 			defer wg.Done()
 			key, err := uut.GetKeyFor(context.TODO(), "A_KEY_ID")
 			assert.Equal(t, nil, err)
-			assert.Equal(t, []byte("AN_ENCRYTPED_KEY"), key.content)
+			assert.Equal(t, []byte("AN_ENCRYTPED_KEY"), key.Content())
 		}()
 	}
 	wg.Wait()
