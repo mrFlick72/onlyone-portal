@@ -2605,3 +2605,75 @@
 {"level":"info","ts":"2026-06-02T21:58:31.130+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
 {"level":"info","ts":"2026-06-02T21:58:31.130+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
 {"level":"info","ts":"2026-06-02T21:58:31.130+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:22:57.563+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:22:57.564+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:22:57.564+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:22:57.564+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:22:57.701+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:22:57.701+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:22:57.701+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:22:57.701+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:22:57.947+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:22:57.947+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:22:57.947+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:22:57.948+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:23:02.701+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:23:02.701+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:23:02.701+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:23:02.701+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:38:18.199+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:38:18.199+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:38:18.199+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:38:18.199+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:38:18.500+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:38:18.500+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:38:18.501+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:38:18.501+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:40:08.814+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:40:08.815+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:40:08.815+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:40:08.815+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:40:09.134+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:40:09.134+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:40:09.134+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T07:40:09.134+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:16:50.807+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:16:50.808+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:16:50.808+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:16:50.808+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:16:50.958+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:16:50.958+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:16:50.958+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:16:50.958+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:16:51.189+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:16:51.189+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:16:51.189+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:16:51.189+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:16:55.515+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:16:55.515+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:16:55.515+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:16:55.515+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:18:16.622+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:18:16.622+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:18:16.622+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:18:16.622+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:18:16.849+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:18:16.849+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:18:16.849+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T19:18:16.849+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T22:45:13.117+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T22:45:13.117+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T22:45:13.117+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T22:45:13.117+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T22:45:13.256+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T22:45:13.256+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T22:45:13.256+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T22:45:13.256+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T22:45:13.485+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T22:45:13.485+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T22:45:13.485+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T22:45:13.485+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T22:45:26.392+0200","caller":"security/jwt.go:77","msg":"authenticating user: valerio.vaudi@gmail.com\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T22:45:26.392+0200","caller":"security/jwt.go:86","msg":"user valerio.vaudi@gmail.com has those authority [ROLE_BUDGET ROLE_USER FACTOR_PASSWORD]\n","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T22:45:26.392+0200","caller":"security/jwt.go:94","msg":"user valerio.vaudi@gmail.com has required authority: ROLE_USER","component":"Jwt"}
+{"level":"info","ts":"2026-06-04T22:45:26.392+0200","caller":"security/jwt.go:102","msg":"authenticated user: valerio.vaudi@gmail.com\n","component":"Jwt"}

@@ -37,7 +37,7 @@ func NewAwsKmsKeyRepository(ctx context.Context) (KeyRepository, error) {
 	}, nil
 }
 
-func (r *AwsKmsKayRepository) GetKeyFor(ctx context.Context, keyId string) (SymmetricKey, error) {
+func (r *AwsKmsKayRepository) GetKeyFor(ctx context.Context, keyId string) (Key, error) {
 	r.mu.RLock()
 	if plainTextKey, ok := r.cache[keyId]; ok {
 		r.mu.RUnlock()

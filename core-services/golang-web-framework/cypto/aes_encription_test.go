@@ -15,7 +15,7 @@ type inMemoryKeyRepository struct {
 	keys map[string]SymmetricKey
 }
 
-func (r inMemoryKeyRepository) GetKeyFor(ctx context.Context, keyId string) (SymmetricKey, error) {
+func (r inMemoryKeyRepository) GetKeyFor(ctx context.Context, keyId string) (Key, error) {
 	key, ok := r.keys[keyId]
 	if !ok {
 		return SymmetricKey{}, fmt.Errorf("key %q not found", keyId)

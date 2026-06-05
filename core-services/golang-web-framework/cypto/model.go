@@ -10,8 +10,12 @@ type SymmetricKey struct {
 	content []byte
 }
 
+func (k SymmetricKey) Content() []byte {
+	return k.content
+}
+
 type KeyRepository interface {
-	GetKeyFor(ctx context.Context, keyId string) (SymmetricKey, error)
+	GetKeyFor(ctx context.Context, keyId string) (Key, error)
 }
 
 type Cipher interface {

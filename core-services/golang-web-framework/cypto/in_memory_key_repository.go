@@ -19,7 +19,7 @@ func NewInMemoryKeyRepository() KeyRepository {
 }
 
 
-func (receiver *InMemoryKeyRepository) GetKeyFor(ctx context.Context, keyId string) (SymmetricKey, error) {
+func (receiver *InMemoryKeyRepository) GetKeyFor(ctx context.Context, keyId string) (Key, error) {
 	keyValue, ok := receiver.storage[keyId]
 	if !ok {
 		return SymmetricKey{}, fmt.Errorf("key %q not found", keyId)
