@@ -1,0 +1,15 @@
+.idea/
+*.iml
+
+**/__pycache__/
+venv
+.venv
+
+build
+src/*.egg-info
+logs/
+*.log
+
+.pytest_cache
+htmlcov
+.coverage

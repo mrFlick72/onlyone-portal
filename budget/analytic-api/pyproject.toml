@@ -1,0 +1,18 @@
+[project]
+authors = [
+  {name = "Valerio Vaudi", email = "valerio.vaudi@gmail.com"},
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+]
+description = "Analytics API for onlyone-portal.com budget"
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+name = "analytic-api_mrflick72"
+readme = "README.md"
+requires-python = ">=3.9"
+version = "0.0.1"
+
+[project.urls]
+Homepage = "https://github.com/mrFlick72/onlyone-portal/tree/main/budget/analytic-api"
+Issues = "https://github.com/mrFlick72/onlyone-portal/issues"
