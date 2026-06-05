@@ -1,6 +1,7 @@
 package cypto
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
@@ -17,7 +18,8 @@ func NewInMemoryKeyRepository() KeyRepository {
 	return &InMemoryKeyRepository{storage: map[string]string{keyId: keyValue}}
 }
 
-func (receiver *InMemoryKeyRepository) GetKeyFor(keyId string) (SymmetricKey, error) {
+
+func (receiver *InMemoryKeyRepository) GetKeyFor(ctx context.Context, keyId string) (Key, error) {
 	keyValue, ok := receiver.storage[keyId]
 	if !ok {
 		return SymmetricKey{}, fmt.Errorf("key %q not found", keyId)
