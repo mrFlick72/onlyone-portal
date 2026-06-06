@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv(dotenv_path=os.getenv("ANALYTIC_API_CONFIG_FILE_LOCATION"))
 
 logger = logging.getLogger(__name__)
-application_container = ApplicationContainer()  # type: ignore
+application_container = ApplicationContainer()
 application_container.wire(modules=["app.analytic.api.end_point"])
 
 app = FastAPI()
