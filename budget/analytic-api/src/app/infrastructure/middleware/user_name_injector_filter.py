@@ -1,13 +1,15 @@
 import json
 import logging
 import os
+from typing import Any
 
 import jwt
 import requests
 from app.user.domain.user import UserName
 from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response as StarletteResponse
+from starlette.types import ASGIApp
 from jwt import get_unverified_header, decode
 
 from app.user.domain.user_name_resolver import UserNameResolver
@@ -17,16 +19,16 @@ class UserNameInjectorFilter(BaseHTTPMiddleware):
 
     __logger = logging.getLogger(__name__)
 
-    def __init__(self, app, user_name_claim: str, user_name_resolver: UserNameResolver):
+    def __init__(self, app: ASGIApp, user_name_claim: str, user_name_resolver: UserNameResolver) -> None:
         super().__init__(app)
         self.user_name_resolver = user_name_resolver
         self.user_name_claim = user_name_claim
-        self.public_keys = {}
+        self.public_keys: dict[str, Any] = {}
         self.jwk_endpoint = f"{os.getenv('IDP_ISS')}/oauth2/jwks"
         self.load_jwks()
         self.__logger.debug(self.jwk_endpoint)
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> StarletteResponse:
         if request.url.path not in ["/health"] and not request.method == "OPTIONS":
             auth_header = request.headers.get("authorization")
             if not auth_header or not auth_header.startswith("Bearer "):
@@ -47,7 +49,7 @@ class UserNameInjectorFilter(BaseHTTPMiddleware):
         response = await call_next(request)
         return response
 
-    def load_jwks(self):
+    def load_jwks(self) -> None:
         response = requests.get(self.jwk_endpoint)
         jwks = response.json()
         for jwk in jwks["keys"]:

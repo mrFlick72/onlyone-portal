@@ -25,7 +25,7 @@ fh.setLevel(level)
 fh.setFormatter(fmt)
 root.addHandler(fh)
 
-def main():
+def main() -> None:
     root.info("Starting server with log level: %s", log_level_str)
     uvicorn.run("app.server:app", host="0.0.0.0", port=3035, reload=False)
 
