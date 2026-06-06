@@ -1,9 +1,11 @@
+from abc import ABC, abstractmethod
+
 from app.user.domain.user import UserName
 
 
-class UserNameResolver:
-    def get_user_name(self) -> UserName:
-        pass
+class UserNameResolver(ABC):
+    @abstractmethod
+    def get_user_name(self) -> UserName: ...
 
-    def set_user_name(self, user_name: UserName):
-        pass
+    @abstractmethod
+    def set_user_name(self, user_name: UserName) -> None: ...
