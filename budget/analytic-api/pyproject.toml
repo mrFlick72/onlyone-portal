@@ -1,18 +1,74 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/app"]
+
 [project]
+name = "analytic-api_mrflick72"
+version = "0.0.1"
+description = "Analytics API for onlyone-portal.com budget"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+requires-python = ">=3.12"
 authors = [
   {name = "Valerio Vaudi", email = "valerio.vaudi@gmail.com"},
 ]
 classifiers = [
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Framework :: FastAPI",
 ]
-description = "Analytics API for onlyone-portal.com budget"
-license = "MIT"
-license-files = ["LICEN[CS]E*"]
-name = "analytic-api_mrflick72"
-readme = "README.md"
-requires-python = ">=3.9"
-version = "0.0.1"
+dependencies = [
+  "fastapi==0.119.1",
+  "pydantic==2.12.3",
+  "uvicorn==0.38.0",
+  "httpx==0.28.1",
+  "dependency-injector==4.48.2",
+  "cryptography==46.0.1",
+  "PyJWT==2.10.1",
+  "requests==2.32.5",
+  "python-dotenv==1.1.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==8.4.2",
+  "pytest-env==1.2.0",
+  "pytest-cov==7.0.0",
+  "pytest-mock==3.15.1",
+  "pytest-asyncio==1.2.0",
+  "mypy==1.16.0",
+  "types-requests==2.32.0.20250515",
+]
+
+[project.scripts]
+analytic-api = "app.main:main"
 
 [project.urls]
 Homepage = "https://github.com/mrFlick72/onlyone-portal/tree/main/budget/analytic-api"
 Issues = "https://github.com/mrFlick72/onlyone-portal/issues"
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src"]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+no_implicit_reexport = true
+
+[[tool.mypy.overrides]]
+module = ["dependency_injector.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "-ra -q"
+testpaths = ["tests"]
+env = [
+  "WITH_MIDDLEWARE=false",
+  "CORS_ALLOWED_ORIGINS=http://localhost",
+]

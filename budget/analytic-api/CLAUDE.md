@@ -7,24 +7,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 All commands run from `budget/analytic-api/`.
 
 ```bash
-# Setup
+# Setup (dev — includes test dependencies)
 python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
+pip install -e ".[dev]"
+
+# Type-check
+mypy
 
 # Run all tests
-PYTHONPATH=src pytest
+pytest
 
 # Run a single test file
-PYTHONPATH=src pytest tests/analytic/api/test_end_point.py
+pytest tests/analytic/api/test_end_point.py
 
 # Run a single test by name
-PYTHONPATH=src pytest tests/analytic/api/test_end_point.py::test_hello_returns_200
+pytest tests/analytic/api/test_end_point.py::test_hello_returns_200
 
 # Start locally
-ANALYTIC_API_CONFIG_FILE_LOCATION=local/.env PYTHONPATH=src python src/app/main.py
+ANALYTIC_API_CONFIG_FILE_LOCATION=local/.env analytic-api
 ```
 
-`PYTHONPATH=src` is always required because the package root is `src/app`, not the project root.
+Dependencies are declared entirely in `pyproject.toml`. There is no `requirements.txt`. The `[dev]` extra installs test tools; the base install (`pip install .`) is production-only. `PYTHONPATH` is no longer needed — the package is installed in editable mode so `app.*` imports resolve correctly.
 
 ## Architecture
 
@@ -59,7 +62,7 @@ When adding a new service, declare it in `AnalyticConfigContainer`, add its `Pro
 
 Retrieve the current user in a handler via `user_config_container.user_name_resolver().get_user_name()`.
 
-Tests bypass the middleware entirely by setting `WITH_MIDDLEWARE=false` (configured in `pytest.ini`).
+Tests bypass the middleware entirely by setting `WITH_MIDDLEWARE=false` (configured in `[tool.pytest.ini_options]` in `pyproject.toml`).
 
 ### Adding a new feature
 
