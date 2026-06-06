@@ -6,7 +6,7 @@ analytic_end_point_router = APIRouter()
 
 
 @analytic_end_point_router.get("/api/analytic/hello", tags=["analytic"])
-async def hello():
+async def hello() -> Response:
     return Response(
         status_code=200,
         content=json.dumps({"message": "hello world"}),

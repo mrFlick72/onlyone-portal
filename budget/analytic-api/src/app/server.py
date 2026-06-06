@@ -29,7 +29,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.container = application_container
+app.state.container = application_container
 
 if os.getenv("WITH_MIDDLEWARE", "true").lower() == "true":
     app.add_middleware(
