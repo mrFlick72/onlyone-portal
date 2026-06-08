@@ -1,13 +1,13 @@
 import logging
 import os
 
+from app.container import ApplicationContainer
+from app.infrastructure.middleware.security_context_injector_filter import SecurityContextInjectorFilter
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.analytic.api.end_point import analytic_end_point_router
 from app.infrastructure.management.health_end_point import health_end_point_router
-from app.infrastructure.middleware.user_name_injector_filter import UserNameInjectorFilter
-from app.container import ApplicationContainer
 
 from dotenv import load_dotenv
 
@@ -33,14 +33,14 @@ app.state.container = application_container
 
 if os.getenv("WITH_MIDDLEWARE", "true").lower() == "true":
     app.add_middleware(
-        UserNameInjectorFilter,
-        "user_name",
-        application_container.user_config_container.user_name_resolver(),
+        SecurityContextInjectorFilter,
+        "security_context",
+        application_container.security_context_config_container.security_context_resolver(),
     )
 
 logger.info(
     "Middleware loaded: %s",
-    application_container.user_config_container.user_name_resolver(),
+    application_container.security_context_config_container.security_context_resolver(),
 )
 app.include_router(health_end_point_router)
 app.include_router(analytic_end_point_router)

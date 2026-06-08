@@ -3,32 +3,40 @@ import logging
 import os
 from typing import Any
 
+from app.infrastructure.security.security_context_resolver import (
+    SecurityContextResolver,
+)
+from app.infrastructure.security.model import SecurityContext
 import jwt
 import requests
-from app.user.domain.user import UserName
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response as StarletteResponse
 from starlette.types import ASGIApp
 from jwt import get_unverified_header, decode
 
-from app.user.domain.user_name_resolver import UserNameResolver
 
-
-class UserNameInjectorFilter(BaseHTTPMiddleware):
+class SecurityContextInjectorFilter(BaseHTTPMiddleware):
 
     __logger = logging.getLogger(__name__)
 
-    def __init__(self, app: ASGIApp, user_name_claim: str, user_name_resolver: UserNameResolver) -> None:
+    def __init__(
+        self,
+        app: ASGIApp,
+        user_name_claim: str,
+        security_context_resolver: SecurityContextResolver,
+    ) -> None:
         super().__init__(app)
-        self.user_name_resolver = user_name_resolver
+        self.user_name_resolver = security_context_resolver
         self.user_name_claim = user_name_claim
         self.public_keys: dict[str, Any] = {}
         self.jwk_endpoint = f"{os.getenv('IDP_ISS')}/oauth2/jwks"
         self.load_jwks()
         self.__logger.debug(self.jwk_endpoint)
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> StarletteResponse:
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> StarletteResponse:
         if request.url.path not in ["/health"] and not request.method == "OPTIONS":
             auth_header = request.headers.get("authorization")
             if not auth_header or not auth_header.startswith("Bearer "):
@@ -44,7 +52,11 @@ class UserNameInjectorFilter(BaseHTTPMiddleware):
                 issuer=os.getenv("IDP_ISS"),
                 options={"verify_aud": False},
             )
-            self.user_name_resolver.set_user_name(UserName(decoded_token[self.user_name_claim]))
+            self.user_name_resolver.set_security_context(
+                SecurityContext(
+                    token=token, user_name=decoded_token[self.user_name_claim]
+                )
+            )
 
         response = await call_next(request)
         return response
