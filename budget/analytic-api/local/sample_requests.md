@@ -1,0 +1,1 @@
+curl -v -X PUT -H "Content-Type: application/json" -d '{"year": 2026, "month" :2, "tags": ["tag1", "tag2"]}' http://local.budget-analytics-api.onlyone-portal.com:4045/api/analytic/budget/expense
