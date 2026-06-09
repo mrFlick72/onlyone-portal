@@ -1,8 +1,11 @@
 import json
+from typing import Annotated
 
+from app.analytic.adapter.service import RestExpenseLoader
 from app.analytic.api.representation import BudgetExpenseAnalysisRequestRepresentation
-from fastapi import APIRouter, Response
-from dependency_injector.wiring import inject
+from app.container import ApplicationContainer
+from fastapi import APIRouter, Depends, Response
+from dependency_injector.wiring import Provide, inject
 
 analytic_end_point_router = APIRouter()
 
@@ -20,7 +23,13 @@ async def hello() -> Response:
 @inject
 async def budget_analysis_for(
     representation: BudgetExpenseAnalysisRequestRepresentation,
-):
+    expense_loader: Annotated[
+        RestExpenseLoader,
+        Depends(
+            Provide[ApplicationContainer.analytic_config_container.expense_loader]
+        ),
+    ],):
+    print(expense_loader)
     return Response(
         status_code=200,
         content=representation.model_dump_json(),

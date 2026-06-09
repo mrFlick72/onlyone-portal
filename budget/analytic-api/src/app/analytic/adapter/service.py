@@ -1,7 +1,7 @@
 from typing import List
 
 from app.analytic.domain.expense import ExpenseRecord
-from app.analytic.domain.service import ExpenseLoader
+from app.analytic.domain.service import BudgetExpenseAnalysisRequest, ExpenseLoader
 from app.infrastructure.security.security_context_resolver import (
     SecurityContextResolver,
 )
@@ -19,10 +19,14 @@ class RestExpenseLoader(ExpenseLoader):
         self.budget_api_base_url = budget_api_base_url
         self.security_context_resolver = security_context_resolver
 
-    def expenseFor(self, year: int, month: int, tags: List[str]) -> List[ExpenseRecord]:
+    def expenseFor(self, request: BudgetExpenseAnalysisRequest) -> List[ExpenseRecord]:
         response = httpx.put(
             f"{self.budget_api_base_url}/api/budget/expense",
-            json={"month": str(month), "year": str(year), "searchTagList": tags},
+            json={
+                "month": str(request.month),
+                "year": str(request.year),
+                "searchTagList": request.tags,
+            },
             headers={
                 "Authorization": f"Bearer {self.security_context_resolver.get_security_context().token}"
             },
