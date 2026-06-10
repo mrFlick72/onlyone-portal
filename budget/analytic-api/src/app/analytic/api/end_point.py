@@ -21,16 +21,8 @@ from dependency_injector.wiring import Provide, inject
 analytic_end_point_router = APIRouter()
 
 
-@analytic_end_point_router.get("/api/analytic/hello", tags=["analytic"])
-async def hello() -> Response:
-    return Response(
-        status_code=200,
-        content=json.dumps({"message": "hello world"}),
-        media_type="application/json",
-    )
 
-
-@analytic_end_point_router.put("/api/analytic/budget/expense", tags=["analytic"])
+@analytic_end_point_router.put("/api/analytic/budget/expense")
 @inject
 async def budget_analysis_for(
     representation: BudgetExpenseAnalysisRequestRepresentation,
@@ -54,7 +46,7 @@ async def budget_analysis_for(
 
 
 @analytic_end_point_router.put(
-    "/api/analytic/budget/expense/total-by-tag", tags=["analytic"]
+    "/api/analytic/budget/expense/total-by-tag"
 )
 @inject
 async def budget_expense_total_by_tag(
@@ -79,7 +71,7 @@ async def budget_expense_total_by_tag(
 
 
 @analytic_end_point_router.put(
-    "/api/analytic/budget/expense/total-by-year", tags=["analytic"]
+    "/api/analytic/budget/expense/total-by-year"
 )
 @inject
 async def budget_expense_total_by_year(

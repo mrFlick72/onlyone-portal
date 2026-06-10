@@ -25,7 +25,7 @@ pytest tests/analytic/api/test_end_point.py
 # Run a single test by name
 pytest tests/analytic/api/test_end_point.py::test_hello_returns_200
 
-# Start locally (listens on 0.0.0.0:4046)
+# Start locally (listens on 0.0.0.0:8045)
 ANALYTIC_API_CONFIG_FILE_LOCATION=local/.env analytic-api
 ```
 
@@ -37,7 +37,7 @@ Tests run with auth middleware disabled and a dummy CORS origin via `[tool.pytes
 
 ### Request lifecycle
 
-`main.py` (logging setup + uvicorn, port 4046) → `server.py` (FastAPI app) → CORS middleware → `SecurityContextInjectorFilter` → router handler
+`main.py` (logging setup + uvicorn, port 8045) → `server.py` (FastAPI app) → CORS middleware → `SecurityContextInjectorFilter` → router handler
 
 `server.py` is the wiring point: it loads the `.env` file via `python-dotenv` (path from `ANALYTIC_API_CONFIG_FILE_LOCATION`), builds the DI container, registers middleware, and mounts the `health` and `analytic` routers. It refuses to start if `CORS_ALLOWED_ORIGINS` is empty — wildcard origins are deliberately not allowed because credentials are enabled.
 
