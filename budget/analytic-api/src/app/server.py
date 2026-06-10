@@ -34,7 +34,7 @@ app.state.container = application_container
 if os.getenv("WITH_MIDDLEWARE", "true").lower() == "true":
     app.add_middleware(
         SecurityContextInjectorFilter,
-        "security_context",
+        "user_name",
         application_container.security_context_config_container.security_context_resolver(),
     )
 

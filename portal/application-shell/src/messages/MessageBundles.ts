@@ -27,6 +27,7 @@ export type MenuMessageBundle = {
     revenuePageLabel: string;
     planPageLabel: string;
     accountPageLabel: string;
+    analyticsPageLabel: string;
     otherFeatureLabel: string;
 };
 
@@ -36,6 +37,7 @@ export type GlobalNavMessageBundle = {
     revenue: string;
     plans: string;
     account: string;
+    analytics: string;
 };
 
 /** Yes/No confirm buttons (`YesAndNoButtonGroup`). */
@@ -135,6 +137,7 @@ export type HomeMenuContentMessageBundle = {
     budget: HomeMenuTileMessageBundle;
     revenue: HomeMenuTileMessageBundle;
     plan: HomeMenuTileMessageBundle;
+    analytics: HomeMenuTileMessageBundle;
 };
 
 /* ── composite per-page bundles: returned by OnlyonePortalPagesConfigMap ──── */
@@ -212,6 +215,23 @@ export type PlanDetailPageMessageBundle = {
     updateTodoModal: WithId<SaveModalMessageBundle>;
     deleteTodoModal: WithId<DeleteModalMessageBundle>;
     changeStatusModal: WithId<ChangeTodoStatusModalMessageBundle>;
+};
+
+export type AnalyticsPageMessageBundle = {
+    menuMessages: MenuMessageBundle;
+    filters: {
+        year: string;
+        month: string;
+        allMonths: string;
+        tags: string;
+        fromYear: string;
+        toYear: string;
+        tag: string;
+        allTags: string;
+        invalidYearRange: string;
+    };
+    charts: { totalByTagTitle: string; totalByYearTitle: string };
+    states: { empty: string; error: string; retry: string };
 };
 
 export type AccountPageMessageBundle = {

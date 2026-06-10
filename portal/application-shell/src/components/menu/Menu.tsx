@@ -76,7 +76,8 @@ const Menu: React.FC<MenuProps> = ({messages, children, navBarItems, showGlobalN
                                     budget: messages.budgetPageLabel,
                                     revenue: messages.revenuePageLabel,
                                     plans: messages.planPageLabel,
-                                    account: messages.accountPageLabel
+                                    account: messages.accountPageLabel,
+                                    analytics: messages.analyticsPageLabel
                                 }}/>
                             </>}
                         </List>

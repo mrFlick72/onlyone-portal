@@ -19,3 +19,6 @@ homePage:
     plan:
         titleText: "Sezione Plan Management"
         body: "In questa sezione potrai gestire i tuoi piani e todo"
+    analytics:
+        titleText: "Sezione Budget Analytics"
+        body: "In questa sezione potrai analizzare le tue spese per tag e per anno"

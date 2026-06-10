@@ -1,0 +1,24 @@
+menu:
+  analyticsPage:
+    label: "Analytics"
+
+analyticsPage:
+  filters:
+    year: "Year"
+    month: "Month"
+    allMonths: "All months"
+    tags: "Tags"
+    fromYear: "From year"
+    toYear: "To year"
+    tag: "Tag"
+    allTags: "All tags"
+    invalidYearRange: "'From year' must not be greater than 'To year'"
+  charts:
+    totalByTag:
+      title: "Total amount by tag"
+    totalByYear:
+      title: "Total amount by year"
+  states:
+    empty: "No data for the selected filters"
+    error: "Something went wrong while loading the chart"
+    retry: "Retry"

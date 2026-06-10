@@ -1,6 +1,7 @@
 import { getMessageFor, MessageBundle } from "./MessageRepository";
 import {
     AccountPageMessageBundle,
+    AnalyticsPageMessageBundle,
     BudgetExpensePageMessageBundle,
     BudgetRevenuePageMessageBundle,
     CommonMessageBundle,
@@ -23,6 +24,7 @@ function globalNavLabels(bundle: MessageBundle) {
         revenuePageLabel: getMessageFor(bundle, "menu.revenuePage.label"),
         planPageLabel: getMessageFor(bundle, "menu.planPage.label"),
         accountPageLabel: getMessageFor(bundle, "menu.accountPage.label"),
+        analyticsPageLabel: getMessageFor(bundle, "menu.analyticsPage.label"),
         otherFeatureLabel: getMessageFor(bundle, "menu.otherFeature.label"),
     };
 }
@@ -110,6 +112,10 @@ export class OnlyonePortalPagesConfigMap {
                     plan: {
                         titleText: getMessageFor(bundle, "homePage.homeMenuContent.plan.titleText"),
                         body: getMessageFor(bundle, "homePage.homeMenuContent.plan.body"),
+                    },
+                    analytics: {
+                        titleText: getMessageFor(bundle, "homePage.homeMenuContent.analytics.titleText"),
+                        body: getMessageFor(bundle, "homePage.homeMenuContent.analytics.body"),
                     }
                 }
             }
@@ -283,6 +289,32 @@ export class OnlyonePortalPagesConfigMap {
                 moveToLabel: getMessageFor(bundle, "planDetailPage.changeStatus.popup.moveTo"),
                 noTransitionsLabel: getMessageFor(bundle, "planDetailPage.changeStatus.popup.noTransitions"),
                 closeButtonLabel: getMessageFor(bundle, "common.button.close.label")
+            }
+        }
+    }
+
+    analytics(bundle: MessageBundle): AnalyticsPageMessageBundle {
+        return {
+            menuMessages: baseMenuMessages(bundle),
+            filters: {
+                year: getMessageFor(bundle, "analyticsPage.filters.year"),
+                month: getMessageFor(bundle, "analyticsPage.filters.month"),
+                allMonths: getMessageFor(bundle, "analyticsPage.filters.allMonths"),
+                tags: getMessageFor(bundle, "analyticsPage.filters.tags"),
+                fromYear: getMessageFor(bundle, "analyticsPage.filters.fromYear"),
+                toYear: getMessageFor(bundle, "analyticsPage.filters.toYear"),
+                tag: getMessageFor(bundle, "analyticsPage.filters.tag"),
+                allTags: getMessageFor(bundle, "analyticsPage.filters.allTags"),
+                invalidYearRange: getMessageFor(bundle, "analyticsPage.filters.invalidYearRange"),
+            },
+            charts: {
+                totalByTagTitle: getMessageFor(bundle, "analyticsPage.charts.totalByTag.title"),
+                totalByYearTitle: getMessageFor(bundle, "analyticsPage.charts.totalByYear.title"),
+            },
+            states: {
+                empty: getMessageFor(bundle, "analyticsPage.states.empty"),
+                error: getMessageFor(bundle, "analyticsPage.states.error"),
+                retry: getMessageFor(bundle, "analyticsPage.states.retry"),
             }
         }
     }

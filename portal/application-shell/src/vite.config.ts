@@ -12,6 +12,7 @@ const pages: Record<string, { html: string; entry: string }> = {
   budgetRevenue: { html: 'budget/revenue/index.html',     entry: '/budget/index.tsx' },
   budgetTags:    { html: 'budget/search-tags/index.html', entry: '/budget/index.tsx' },
   account:       { html: 'account/index.html',            entry: '/account/index.tsx' },
+  analytics:     { html: 'analytics/index.html',          entry: '/analytics/index.tsx' },
   plan:          { html: 'plan/index.html',               entry: '/plan/index.tsx' },
   planDetail:    { html: 'plan/detail.html',              entry: '/plan/index.tsx' },
 };
@@ -55,6 +56,7 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.ACCOUNT_API_BASE_URL':          JSON.stringify(env.ACCOUNT_API_BASE_URL),
       'import.meta.env.TAG_API_BASE_URL':              JSON.stringify(env.TAG_API_BASE_URL),
       'import.meta.env.PLAN_API_BASE_URL':             JSON.stringify(env.PLAN_API_BASE_URL),
+      'import.meta.env.ANALYTIC_API_BASE_URL':         JSON.stringify(env.ANALYTIC_API_BASE_URL),
     },
     build: {
       outDir: path.resolve(__dirname, '../dist'),

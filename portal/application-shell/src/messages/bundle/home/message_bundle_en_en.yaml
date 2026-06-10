@@ -19,3 +19,6 @@ homePage:
     plan:
         titleText: "Plan Management Section"
         body: "In this section you can manage your plans and todos"
+    analytics:
+        titleText: "Budget Analytics Section"
+        body: "In this section you can analyze your budget expenses by tag and by year"

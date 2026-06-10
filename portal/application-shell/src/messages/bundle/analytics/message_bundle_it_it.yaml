@@ -1,0 +1,24 @@
+menu:
+  analyticsPage:
+    label: "Analytics"
+
+analyticsPage:
+  filters:
+    year: "Anno"
+    month: "Mese"
+    allMonths: "Tutti i mesi"
+    tags: "Tag"
+    fromYear: "Dall'anno"
+    toYear: "All'anno"
+    tag: "Tag"
+    allTags: "Tutti i tag"
+    invalidYearRange: "'Dall'anno' non può essere maggiore di 'All'anno'"
+  charts:
+    totalByTag:
+      title: "Totale per tag"
+    totalByYear:
+      title: "Totale per anno"
+  states:
+    empty: "Nessun dato per i filtri selezionati"
+    error: "Si è verificato un errore nel caricamento del grafico"
+    retry: "Riprova"

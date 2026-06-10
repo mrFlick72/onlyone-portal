@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { FormatListBulleted, Money, Person } from "@mui/icons-material";
+import { BarChart, FormatListBulleted, Money, Person } from "@mui/icons-material";
 import MenuCard from "../components/menu/MenuCard";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { OnlyonePortalPagesConfigMap } from '../messages/OnlyonePortalPagesConfigMap';
@@ -22,7 +22,8 @@ export type HomePageTranslationMap = {
     account: HomePageMenuItemProps,
     budget: HomePageMenuItemProps,
     revenue: HomePageMenuItemProps,
-    plan: HomePageMenuItemProps
+    plan: HomePageMenuItemProps,
+    analytics: HomePageMenuItemProps
 }
 
 const HomePageMenuItem: React.FC<HomePageMenuItemWrapperProps> = ({ content }) => {
@@ -68,6 +69,12 @@ export const homeMenuContentXXX = (messageRegistry: MessageBundle): HomePageTran
             titleIcon: <FormatListBulleted style={{ fontSize: FONT_SIZE }} />,
             body: configMap.home(messageRegistry).homePage.homeMenuContent.plan.body,
             link: "/plan/index"
+        },
+        analytics: {
+            titleText: configMap.home(messageRegistry).homePage.homeMenuContent.analytics.titleText,
+            titleIcon: <BarChart style={{ fontSize: FONT_SIZE }} />,
+            body: configMap.home(messageRegistry).homePage.homeMenuContent.analytics.body,
+            link: "/analytics/index"
         },
     }
 

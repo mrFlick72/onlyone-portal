@@ -1,6 +1,13 @@
+import os
+
 from app.infrastructure.security.security_container import SecurityConfigContainer
 from dependency_injector import containers, providers
 from app.analytic.container import AnalyticConfigContainer
+from dotenv import load_dotenv
+
+
+load_dotenv(dotenv_path=os.getenv("ANALYTIC_API_CONFIG_FILE_LOCATION"))
+
 
 
 class ApplicationContainer(containers.DeclarativeContainer):
