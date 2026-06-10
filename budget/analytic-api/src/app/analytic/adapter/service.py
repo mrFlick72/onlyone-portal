@@ -1,11 +1,12 @@
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
-from app.analytic.domain.expense import ExpenseRecord
-from app.analytic.domain.service import BudgetExpenseAnalysisRequest, ExpenseLoader
+from app.analytic.domain.expense import BudgetExpenseAnalysisRequest, ExpenseRecord
+from app.analytic.domain.service import ExpenseLoader
 from app.infrastructure.security.security_context_resolver import (
     SecurityContextResolver,
 )
+from app.money.domain.money import Money
 from app.time.domain.date import Date
 import httpx
 
@@ -65,7 +66,7 @@ class RestExpenseLoader(ExpenseLoader):
                     ExpenseRecord(
                         id=item["id"],
                         date=Date.date_for(item["date"]),
-                        amount=float(item["amount"]),
+                        amount=Money.money_for(item["amount"]),
                         note=item["note"],
                         tag_values=[t["tagValue"] for t in item.get("tags", [])],
                     )

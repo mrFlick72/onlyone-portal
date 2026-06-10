@@ -7,6 +7,7 @@ from app.analytic.domain.service import (
     BudgetExpenseAnalysisService,
     ExpenseLoader,
 )
+from app.money.domain.money import Money
 from app.time.domain.date import Date
 
 
@@ -29,18 +30,22 @@ class FakeExpenseLoader(ExpenseLoader):
         return self.records
 
 
-def expense_record(date: str, amount: float, tags: List[str]) -> ExpenseRecord:
+def expense_record(date: str, amount: str, tags: List[str]) -> ExpenseRecord:
     return ExpenseRecord(
-        id="an-id", date=Date.date_for(date), amount=amount, note="", tag_values=tags
+        id="an-id",
+        date=Date.date_for(date),
+        amount=Money.money_for(amount),
+        note="",
+        tag_values=tags,
     )
 
 
 def test_total_by_tag_groups_amounts_by_tag() -> None:
     loader = FakeExpenseLoader(
         [
-            expense_record("01/02/2026", 10.10, ["food"]),
-            expense_record("15/02/2026", 0.20, ["food"]),
-            expense_record("20/02/2026", 5.00, ["car"]),
+            expense_record("01/02/2026", "10.10", ["food"]),
+            expense_record("15/02/2026", "0.20", ["food"]),
+            expense_record("20/02/2026", "5.00", ["car"]),
         ]
     )
     service = BudgetExpenseAnalysisService(loader)
@@ -54,7 +59,7 @@ def test_total_by_tag_groups_amounts_by_tag() -> None:
 
 
 def test_total_by_tag_counts_multi_tag_record_in_every_bucket() -> None:
-    loader = FakeExpenseLoader([expense_record("01/02/2026", 7.50, ["food", "car"])])
+    loader = FakeExpenseLoader([expense_record("01/02/2026", "7.50", ["food", "car"])])
     service = BudgetExpenseAnalysisService(loader)
 
     totals = service.total_by_tag(2026, 2, [])
@@ -66,7 +71,7 @@ def test_total_by_tag_counts_multi_tag_record_in_every_bucket() -> None:
 
 
 def test_total_by_tag_skips_untagged_records() -> None:
-    loader = FakeExpenseLoader([expense_record("01/02/2026", 7.50, [])])
+    loader = FakeExpenseLoader([expense_record("01/02/2026", "7.50", [])])
     service = BudgetExpenseAnalysisService(loader)
 
     assert service.total_by_tag(2026, 2, []) == []
@@ -94,7 +99,7 @@ def test_total_by_tag_without_month_issues_a_request_per_month() -> None:
 
 def test_total_by_tag_sums_with_decimal_precision() -> None:
     loader = FakeExpenseLoader(
-        [expense_record("01/02/2026", 0.1, ["food"]) for _ in range(3)]
+        [expense_record("01/02/2026", "0.1", ["food"]) for _ in range(3)]
     )
     service = BudgetExpenseAnalysisService(loader)
 
@@ -106,9 +111,9 @@ def test_total_by_tag_sums_with_decimal_precision() -> None:
 def test_total_by_year_groups_amounts_by_year_and_zero_fills_empty_years() -> None:
     loader = FakeExpenseLoader(
         [
-            expense_record("01/02/2024", 10.00, ["food"]),
-            expense_record("01/03/2024", 2.50, ["car"]),
-            expense_record("01/02/2026", 1.00, ["food"]),
+            expense_record("01/02/2024", "10.00", ["food"]),
+            expense_record("01/03/2024", "2.50", ["car"]),
+            expense_record("01/02/2026", "1.00", ["food"]),
         ]
     )
     service = BudgetExpenseAnalysisService(loader)

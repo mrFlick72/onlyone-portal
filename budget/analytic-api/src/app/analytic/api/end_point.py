@@ -10,10 +10,8 @@ from app.analytic.api.representation import (
     TotalByYearAnalysisRequestRepresentation,
     YearTotalRepresentation,
 )
-from app.analytic.domain.service import (
-    BudgetExpenseAnalysisRequest,
-    BudgetExpenseAnalysisService,
-)
+from app.analytic.domain.expense import BudgetExpenseAnalysisRequest
+from app.analytic.domain.service import BudgetExpenseAnalysisService
 from app.container import ApplicationContainer
 from fastapi import APIRouter, Depends, Response
 from dependency_injector.wiring import Provide, inject
@@ -39,7 +37,9 @@ async def budget_analysis_for(
 
     return [
         BudgetExpenseAnalysisResponseRepresentation(
-            date=exp.date.formatted_date(), amount=str(exp.amount), tag_values=exp.tag_values
+            date=exp.date.formatted_date(),
+            amount=exp.amount.stringify_amount(),
+            tag_values=exp.tag_values,
         )
         for exp in expenses
     ]

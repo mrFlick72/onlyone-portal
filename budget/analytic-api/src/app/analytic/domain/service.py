@@ -1,30 +1,15 @@
-from dataclasses import dataclass
 from typing import Dict, List, Optional
-from app.analytic.domain.expense import ExpenseRecord
+from app.analytic.domain.expense import (
+    BudgetExpenseAnalysisRequest,
+    ExpenseRecord,
+    TagTotal,
+    YearTotal,
+)
 from app.money.domain.money import Money
 from app.time.domain.year import Year
 from abc import ABC, abstractmethod
 
 ALL_MONTHS = range(1, 13)
-
-
-@dataclass
-class BudgetExpenseAnalysisRequest:
-    year: int
-    month: int
-    tags: List[str]
-
-
-@dataclass
-class TagTotal:
-    tag: str
-    total: Money
-
-
-@dataclass
-class YearTotal:
-    year: Year
-    total: Money
 
 
 class ExpenseLoader(ABC):
@@ -33,7 +18,9 @@ class ExpenseLoader(ABC):
         super(self)
 
     @abstractmethod
-    def expenseFor(self, request: BudgetExpenseAnalysisRequest) -> List[ExpenseRecord]: ...
+    def expenseFor(
+        self, request: BudgetExpenseAnalysisRequest
+    ) -> List[ExpenseRecord]: ...
 
     @abstractmethod
     def expenses_for_all(
@@ -56,13 +43,12 @@ class BudgetExpenseAnalysisService:
 
         totals: Dict[str, Money] = {}
         for record in records:
-            amount = _scaled_money_for(record.amount)
             for tag in record.tag_values:
                 accumulated = totals.get(tag)
                 if accumulated is None:
-                    totals[tag] = amount
+                    totals[tag] = record.amount
                 else:
-                    totals[tag] = Money(accumulated.plus(amount))
+                    totals[tag] = Money(accumulated.plus(record.amount))
 
         return [TagTotal(tag=tag, total=totals[tag]) for tag in sorted(totals)]
 
@@ -81,10 +67,6 @@ class BudgetExpenseAnalysisService:
         totals: Dict[int, Money] = {y: Money.money_for("0.00") for y in years}
         for record in records:
             year = record.date.content.year
-            totals[year] = Money(totals[year].plus(_scaled_money_for(record.amount)))
+            totals[year] = Money(totals[year].plus(record.amount))
 
         return [YearTotal(year=Year(y), total=totals[y]) for y in years]
-
-
-def _scaled_money_for(amount: float) -> Money:
-    return Money.money_for(f"{amount:.2f}")
