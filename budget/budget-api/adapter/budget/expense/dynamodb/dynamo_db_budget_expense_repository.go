@@ -130,12 +130,14 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx context.C
 		":end_date":   &types.AttributeValueMemberS{Value: end.GetIsoFormattedDate()},
 	}
 	tagConditions := make([]string, 0, len(searchTags))
-	for index, searchTag := range searchTags {
-		placeholder := fmt.Sprintf(":tag_%d", index)
-		tagConditions = append(tagConditions, "contains(tag, "+placeholder+")")
-		expressionAttributeValues[placeholder] = &types.AttributeValueMemberS{Value: searchTag}
+	if len(searchTags) > 0 {
+		for index, searchTag := range searchTags {
+			placeholder := fmt.Sprintf(":tag_%d", index)
+			tagConditions = append(tagConditions, "contains(tag, "+placeholder+")")
+			expressionAttributeValues[placeholder] = &types.AttributeValueMemberS{Value: searchTag}
+		}
+		filterExpression += " AND (" + strings.Join(tagConditions, " OR ") + ")"
 	}
-	filterExpression += " AND (" + strings.Join(tagConditions, " OR ") + ")"
 
 	partitionKeys := repository.partitionKeysForDateRangeAndUser(idProvider, start, end, *user.UserName)
 	for _, pk := range partitionKeys {
