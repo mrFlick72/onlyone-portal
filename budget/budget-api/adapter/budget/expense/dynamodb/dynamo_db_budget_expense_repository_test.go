@@ -37,6 +37,18 @@ func TestFindBudgetExpenseByDateRange(t *testing.T) {
 	result, err := repo.FindByDateRange(ctxUser, testutils.SafeDateFor("01/02/2018"), testutils.SafeDateFor("28/02/2019"), []tags.SearchTagKey{})
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 11, len(result))
+
+	result, err = repo.FindByDateRange(ctxUser, testutils.SafeDateFor("01/02/2018"), testutils.SafeDateFor("28/02/2019"), []tags.SearchTagKey{"dinner"})
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 1, len(result))
+
+	result, err = repo.FindByDateRange(ctxUser, testutils.SafeDateFor("01/02/2018"), testutils.SafeDateFor("28/02/2019"), []tags.SearchTagKey{"dinner", "lunch"})
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 3, len(result))
+
+	result, err = repo.FindByDateRange(ctxUser, testutils.SafeDateFor("01/02/2018"), testutils.SafeDateFor("28/02/2019"), []tags.SearchTagKey{"unknown-tag"})
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 0, len(result))
 }
 
 func TestFindNonExistentBudgetExpenseReturnsNil(t *testing.T) {

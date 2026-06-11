@@ -3,6 +3,7 @@ package dynamodb
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -114,30 +115,38 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Contex
 }
 
 func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx context.Context, start date.Date, end date.Date, searchTags []tags.SearchTagKey) ([]expense.BudgetExpense, error) {
-	// Implementation to interact with DynamoDB and retrieve budget expenses by date range and search tags
 	budgetExpenses := make([]expense.BudgetExpense, 0)
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
 		repository.logger.LogErrorfFor("Error getting current user: %v", err)
 		return nil, err
 	}
-	// ensure provider implements DynamoDbBudgetExpenseIdProvider when needed
 	idProvider, _ := repository.BudgetExpenseIdProvider.(*DynamoDbBudgetExpenseIdProvider)
-	// generate partition key for the query
+
+	filterExpression := "user_name = :user_name AND transaction_date BETWEEN :start_date AND :end_date"
+	expressionAttributeValues := map[string]types.AttributeValue{
+		":user_name":  &types.AttributeValueMemberS{Value: *user.UserName},
+		":start_date": &types.AttributeValueMemberS{Value: start.GetIsoFormattedDate()},
+		":end_date":   &types.AttributeValueMemberS{Value: end.GetIsoFormattedDate()},
+	}
+	if len(searchTags) > 0 {
+		tagConditions := make([]string, 0, len(searchTags))
+		for index, searchTag := range searchTags {
+			placeholder := fmt.Sprintf(":tag_%d", index)
+			tagConditions = append(tagConditions, "contains(tag, "+placeholder+")")
+			expressionAttributeValues[placeholder] = &types.AttributeValueMemberS{Value: searchTag}
+		}
+		filterExpression += " AND (" + strings.Join(tagConditions, " OR ") + ")"
+	}
 
 	partitionKeys := repository.partitionKeysForDateRangeAndUser(idProvider, start, end, *user.UserName)
 	for _, pk := range partitionKeys {
-		// For simplicity, returning nil. Actual implementation would query DynamoDB.
+		expressionAttributeValues[":pk"] = &types.AttributeValueMemberS{Value: pk}
 		input := &dynamodb.QueryInput{
-			TableName: aws.String(repository.TableName),
-			ExpressionAttributeValues: map[string]types.AttributeValue{
-				":user_name":  &types.AttributeValueMemberS{Value: *user.UserName},
-				":start_date": &types.AttributeValueMemberS{Value: start.GetIsoFormattedDate()},
-				":end_date":   &types.AttributeValueMemberS{Value: end.GetIsoFormattedDate()},
-				":pk":         &types.AttributeValueMemberS{Value: pk},
-			},
-			FilterExpression:       aws.String("user_name = :user_name AND transaction_date BETWEEN :start_date AND :end_date"),
-			KeyConditionExpression: aws.String("pk = :pk"),
+			TableName:                 aws.String(repository.TableName),
+			ExpressionAttributeValues: expressionAttributeValues,
+			FilterExpression:          aws.String(filterExpression),
+			KeyConditionExpression:    aws.String("pk = :pk"),
 		}
 
 		items, err := repository.Client.Query(ctx, input)
@@ -154,7 +163,6 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx context.C
 		}
 	}
 
-	// Placeholder return
 	return budgetExpenses, nil
 }
 
