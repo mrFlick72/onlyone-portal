@@ -14,6 +14,8 @@ require (
 	github.com/mrflick72/onlyone-portal/core-services/golang-web-framework v0.0.0
 	github.com/shopspring/decimal v1.4.0
 	github.com/stretchr/testify v1.11.1
+	github.com/twmb/franz-go v1.21.3
+	github.com/twmb/franz-go/pkg/kadm v1.18.0
 )
 
 require (
@@ -45,7 +47,6 @@ require (
 	github.com/klauspost/compress v1.18.6 // indirect
 	github.com/pierrec/lz4/v4 v4.1.26 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/twmb/franz-go v1.21.3 // indirect
 	github.com/twmb/franz-go/pkg/kmsg v1.13.1 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect

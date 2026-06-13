@@ -10,7 +10,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
+)
+
+const (
+	testTopicPartitions        = 3
+	testTopicReplicationFactor = 1
 )
 
 // These tests publish through a real broker. Bring one up first:
@@ -43,6 +49,30 @@ func newKafkaClientOrSkip(t *testing.T, opts ...kgo.Opt) *kgo.Client {
 	return client
 }
 
+// createTestTopic provisions a unique topic up front so the tests do not depend
+// on the broker's auto-create setting (a real cluster commonly disables it). The
+// topic is removed on test cleanup.
+func createTestTopic(t *testing.T, client *kgo.Client) string {
+	t.Helper()
+
+	topic := "budget-api.expense.test." + uuid.NewString()
+	admin := kadm.NewClient(client)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	resp, err := admin.CreateTopic(ctx, testTopicPartitions, testTopicReplicationFactor, nil, topic)
+	require.NoError(t, err)
+	require.NoError(t, resp.Err)
+
+	t.Cleanup(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_, _ = admin.DeleteTopics(ctx, topic)
+	})
+	return topic
+}
+
 func consumeAll(t *testing.T, topic string, expected int) []BudgetExpenseEvent {
 	t.Helper()
 
@@ -72,10 +102,10 @@ func consumeAll(t *testing.T, topic string, expected int) []BudgetExpenseEvent {
 }
 
 func TestPublishBudgetExpenseEventsRoundTrip(t *testing.T) {
-	producer := newKafkaClientOrSkip(t, kgo.AllowAutoTopicCreation())
+	producer := newKafkaClientOrSkip(t)
 	defer producer.Close()
 
-	topic := "budget-api.expense.test." + uuid.NewString()
+	topic := createTestTopic(t, producer)
 	publisher := NewKafkaBudgetExpenseEventPublisher(topic, producer)
 	budgetExpense := aBudgetExpense()
 	ctx := context.Background()

@@ -17,6 +17,30 @@ jobs:
           - "4566-4599:4566-4599"
         env:
           SERVICES: dynamodb,s3
+      kafka:
+        image: apache/kafka:4.1.0
+        ports:
+          - "9092:9092"
+        env:
+          KAFKA_NODE_ID: 1
+          KAFKA_PROCESS_ROLES: broker,controller
+          KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+          KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+          KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+          KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+          KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+          # Tests create their topics explicitly via kadm, so auto-create is off
+          # to keep CI honest about that independence.
+          KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+        options: >-
+          --health-cmd "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 10
     steps:
       - name: checkout
         uses: actions/checkout@v6
@@ -35,5 +59,6 @@ jobs:
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test
           AWS_DEFAULT_REGION: us-east-1
+          KAFKA_BROKERS: localhost:9092
         run: |
           go test -tags test ./...
