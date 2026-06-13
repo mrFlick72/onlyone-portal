@@ -2,6 +2,9 @@ package config
 
 import (
 	"context"
+	"flag"
+	"fmt"
+	"strings"
 
 	aws_config "github.com/aws/aws-sdk-go-v2/config"
 	aws_dynamodb "github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -11,6 +14,7 @@ import (
 	attachmentdynamo "github.com/mrflick72/budget/budget-api/adapter/budget/attachment/dynamodb"
 	attachments3 "github.com/mrflick72/budget/budget-api/adapter/budget/attachment/s3"
 	"github.com/mrflick72/budget/budget-api/adapter/budget/expense/dynamodb"
+	"github.com/mrflick72/budget/budget-api/adapter/budget/expense/kafka"
 	revenuedynamo "github.com/mrflick72/budget/budget-api/adapter/budget/revenue/dynamodb"
 	"github.com/mrflick72/budget/budget-api/adapter/tags/rest"
 	"github.com/mrflick72/budget/budget-api/domain/budget/attachment"
@@ -21,6 +25,7 @@ import (
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/httpclient"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
+	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 var configurationManager = config.GetConfigurationManagerInstance()
@@ -55,6 +60,28 @@ func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
 		NewSearchTagRepository(),
 	)
 
+}
+
+func NewNewKafkaBudgetExpenseEventPublisher() expense.BudgetExpenseEventPublisher {
+	topic := configurationManager.GetConfigFor("budget-api.events.kafka.topic-name")
+	brokerList := configurationManager.GetConfigFor("budget-api.events.kafka.brokers")
+	batchMaxBytes := flag.Int("batch-max-bytes", 1000000, "the maximum batch size to allow per-partition (must be less than Kafka's max.message.bytes, producing)")
+	recordBytes := flag.Int("record-bytes", 100, "bytes per record value (producing)")
+
+	opts := []kgo.Opt{
+		kgo.SeedBrokers(strings.Split(brokerList, ",")...),
+		kgo.MaxBufferedRecords(250<<20 / *recordBytes + 1),
+		kgo.MaxConcurrentFetches(3),
+		// We have good compression, so we want to limit what we read
+		// back because snappy deflation will balloon our memory usage.
+		kgo.FetchMaxBytes(5 << 20),
+		kgo.ProducerBatchMaxBytes(int32(*batchMaxBytes)),
+	}
+	client, err := kgo.NewClient(opts...)
+	if err != nil {
+		panic(fmt.Sprintf("Error during Kafka client configuration: %v", err))
+	}
+	return kafka.NewKafkaBudgetExpenseEventPublisher(topic, client)
 }
 
 func NewBudgetExpenseActionsFacade() expense.BudgetExpenseActions {
