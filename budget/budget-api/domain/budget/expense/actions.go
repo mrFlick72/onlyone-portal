@@ -10,13 +10,18 @@ import (
 )
 
 type CreateBudgetExpense struct {
-	Repository BudgetExpenseRepository
+	Repository     BudgetExpenseRepository
+	EventPublisher BudgetExpenseEventPublisher
 }
 
 func (action *CreateBudgetExpense) Execute(ctx context.Context, budgetExpense *BudgetExpense) error {
 	user, _ := security.GetCurrentUser(ctx)
 	budgetExpense.UserName = *user.UserName
-	return action.Repository.Save(ctx, budgetExpense)
+	err := action.Repository.Save(ctx, budgetExpense)
+		if err == nil {
+		action.EventPublisher.CreateBudgetExpense(ctx, *budgetExpense)
+	}
+	return err
 }
 
 type FindSpentBudget struct {
@@ -63,7 +68,8 @@ func (action *FindSpentBudget) getAllSearchTagFor(ctx context.Context, budgetExp
 }
 
 type UpdateBudgetExpense struct {
-	Repository BudgetExpenseRepository
+	Repository     BudgetExpenseRepository
+	EventPublisher BudgetExpenseEventPublisher
 }
 
 func (action *UpdateBudgetExpense) Execute(ctx context.Context, budgetExpense *BudgetExpense) error {
@@ -77,13 +83,18 @@ func (action *UpdateBudgetExpense) Execute(ctx context.Context, budgetExpense *B
 		return err
 	}
 	if existingBudgetExpense != nil && existingBudgetExpense.UserName == *userName.UserName {
-		return action.Repository.Save(ctx, budgetExpense)
+		err := action.Repository.Save(ctx, budgetExpense)
+		if err == nil {
+			action.EventPublisher.UpdateBudgetExpense(ctx, *budgetExpense)
+		}
+		return err
 	}
 	return errors.New("budget expense not found or user not authorized to update it")
 }
 
 type DeleteBudgetExpense struct {
-	Repository BudgetExpenseRepository
+	Repository     BudgetExpenseRepository
+	EventPublisher BudgetExpenseEventPublisher
 }
 
 func (action *DeleteBudgetExpense) Execute(ctx context.Context, id BudgetExpenseId) error {
@@ -98,7 +109,11 @@ func (action *DeleteBudgetExpense) Execute(ctx context.Context, id BudgetExpense
 	}
 
 	if existingBudgetExpense != nil && existingBudgetExpense.UserName == *userName.UserName {
-		return action.Repository.Delete(ctx, id)
+		err := action.Repository.Delete(ctx, id)
+		if err == nil {
+			action.EventPublisher.DeleteBudgetExpense(ctx, *existingBudgetExpense)
+		}
+		return err
 	}
 	return errors.New("budget expense not found or user not authorized to delete it")
 }

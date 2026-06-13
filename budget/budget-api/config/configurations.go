@@ -87,18 +87,22 @@ func NewNewKafkaBudgetExpenseEventPublisher() expense.BudgetExpenseEventPublishe
 func NewBudgetExpenseActionsFacade() expense.BudgetExpenseActions {
 	budgetExpenseRepository := NewBudgetExpenseRepository()
 	searchTagRepository := NewSearchTagRepository()
+	eventPublisher := NewNewKafkaBudgetExpenseEventPublisher()
 	createBudgetExpense := &expense.CreateBudgetExpense{
-		Repository: budgetExpenseRepository,
+		Repository:     budgetExpenseRepository,
+		EventPublisher: eventPublisher,
 	}
 	updateBudgetExpense := &expense.UpdateBudgetExpense{
-		Repository: budgetExpenseRepository,
+		Repository:     budgetExpenseRepository,
+		EventPublisher: eventPublisher,
 	}
 	findSpentBudget := &expense.FindSpentBudget{
 		BudgetExpenseRepository: budgetExpenseRepository,
 		SearchTagRepository:     searchTagRepository,
 	}
 	deleteBudgetExpense := &expense.DeleteBudgetExpense{
-		Repository: budgetExpenseRepository,
+		Repository:     budgetExpenseRepository,
+		EventPublisher: eventPublisher,
 	}
 
 	return &expense.BudgetExpenseActionsFacade{
