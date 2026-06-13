@@ -78,7 +78,7 @@ func NewNewKafkaBudgetExpenseEventPublisher() expense.BudgetExpenseEventPublishe
 		kgo.ProducerBatchMaxBytes(int32(*batchMaxBytes)),
 	}
 	client, err := kgo.NewClient(opts...)
-	if err != nil {
+	if err != nil || topic == "" || brokerList == "" {
 		panic(fmt.Sprintf("Error during Kafka client configuration: %v", err))
 	}
 	return kafka.NewKafkaBudgetExpenseEventPublisher(topic, client)
@@ -115,7 +115,7 @@ func NewBudgetExpenseActionsFacade() expense.BudgetExpenseActions {
 
 func NewRevenueRepository() revenue.RevenueRepository {
 	cfg, err := awsclient.LoadDefaultConfig(
-		context.TODO(),
+		context.Background(),
 		aws_config.WithRegion("eu-central-1"),
 	)
 
@@ -145,7 +145,7 @@ func NewRevenueActionsFacade() revenue.RevenueActions {
 
 func NewAttachmentRepository() attachment.AttachmentRepository {
 	cfg, err := awsclient.LoadDefaultConfig(
-		context.TODO(),
+		context.Background(),
 		aws_config.WithRegion("eu-central-1"),
 	)
 	if err != nil {

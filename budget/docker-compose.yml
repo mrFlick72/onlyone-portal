@@ -25,6 +25,24 @@ services:
       timeout: 10s
       retries: 10
 
+  init-kafka:
+    image: apache/kafka:4.1.0
+    container_name: budget-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        /opt/kafka/bin/kafka-topics.sh \
+          --bootstrap-server kafka:29092 \
+          --create \
+          --if-not-exists \
+          --topic budget-api.expense \
+          --partitions 3 \
+          --replication-factor 1
+    restart: "no"
+
   schema-registry:
     image: confluentinc/cp-schema-registry:8.0.0
     container_name: budget-schema-registry
