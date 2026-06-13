@@ -34,7 +34,7 @@ func kafkaBrokers() []string {
 	return []string{"localhost:9092"}
 }
 
-func newKafkaClientOrSkip(t *testing.T, opts ...kgo.Opt) *kgo.Client {
+func newKafkaClient(t *testing.T, opts ...kgo.Opt) *kgo.Client {
 	t.Helper()
 
 	client, err := kgo.NewClient(append([]kgo.Opt{kgo.SeedBrokers(kafkaBrokers()...)}, opts...)...)
@@ -44,7 +44,6 @@ func newKafkaClientOrSkip(t *testing.T, opts ...kgo.Opt) *kgo.Client {
 	defer cancel()
 	if err := client.Ping(ctx); err != nil {
 		client.Close()
-		t.Skipf("no reachable Kafka broker at %v: %v", kafkaBrokers(), err)
 	}
 	return client
 }
@@ -76,7 +75,7 @@ func createTestTopic(t *testing.T, client *kgo.Client) string {
 func consumeAll(t *testing.T, topic string, expected int) []BudgetExpenseEvent {
 	t.Helper()
 
-	consumer := newKafkaClientOrSkip(t,
+	consumer := newKafkaClient(t,
 		kgo.ConsumeTopics(topic),
 		kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
 	)
@@ -102,7 +101,7 @@ func consumeAll(t *testing.T, topic string, expected int) []BudgetExpenseEvent {
 }
 
 func TestPublishBudgetExpenseEventsRoundTrip(t *testing.T) {
-	producer := newKafkaClientOrSkip(t)
+	producer := newKafkaClient(t)
 	defer producer.Close()
 
 	topic := createTestTopic(t, producer)
@@ -127,7 +126,7 @@ func TestPublishBudgetExpenseEventsRoundTrip(t *testing.T) {
 }
 
 func TestPublishBudgetExpenseEventToClosedClientReturnsError(t *testing.T) {
-	producer := newKafkaClientOrSkip(t)
+	producer := newKafkaClient(t)
 	producer.Close()
 
 	publisher := NewKafkaBudgetExpenseEventPublisher("budget-api.expense.test."+uuid.NewString(), producer)

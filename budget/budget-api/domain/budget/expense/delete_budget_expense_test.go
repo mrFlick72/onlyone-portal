@@ -11,8 +11,10 @@ import (
 func TestWhenABudgetExpenseDeletionSucceed(t *testing.T) {
 
 	mockedRepository := new(BudgetExpenseRepositoryMock)
+	mockedPublisher := new(BudgetExpenseEventPublisherMock)
 	uut := DeleteBudgetExpense{
-		Repository: mockedRepository,
+		Repository:     mockedRepository,
+		EventPublisher: mockedPublisher,
 	}
 
 	ctx := testutils.NewUserContext()
@@ -22,6 +24,7 @@ func TestWhenABudgetExpenseDeletionSucceed(t *testing.T) {
 	}
 	mockedRepository.On("FindFor", ctx, "A_BUDGET_ID").Return(foundBudgetExpense, nil)
 	mockedRepository.On("Delete", ctx, "A_BUDGET_ID").Return(nil)
+	mockedPublisher.On("DeleteBudgetExpense", ctx, *foundBudgetExpense).Return(nil)
 
 	err := uut.Execute(ctx, "A_BUDGET_ID")
 
@@ -29,6 +32,7 @@ func TestWhenABudgetExpenseDeletionSucceed(t *testing.T) {
 
 	mockedRepository.AssertCalled(t, "FindFor", ctx, "A_BUDGET_ID")
 	mockedRepository.AssertCalled(t, "Delete", ctx, "A_BUDGET_ID")
+	mockedPublisher.AssertCalled(t, "DeleteBudgetExpense", ctx, *foundBudgetExpense)
 }
 
 func TestWhenABudgetExpenseDeletionFails(t *testing.T) {

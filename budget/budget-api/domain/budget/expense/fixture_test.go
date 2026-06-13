@@ -40,3 +40,22 @@ func (mock *BudgetExpenseRepositoryMock) Delete(ctx context.Context, idBudgetExp
 type SearchTagRepositoryMock struct {
 	mock.Mock
 }
+
+type BudgetExpenseEventPublisherMock struct {
+	mock.Mock
+}
+
+func (mock *BudgetExpenseEventPublisherMock) CreateBudgetExpense(ctx context.Context, expense BudgetExpense) error {
+	args := mock.Called(ctx, expense)
+	return args.Error(0)
+}
+
+func (mock *BudgetExpenseEventPublisherMock) UpdateBudgetExpense(ctx context.Context, expense BudgetExpense) error {
+	args := mock.Called(ctx, expense)
+	return args.Error(0)
+}
+
+func (mock *BudgetExpenseEventPublisherMock) DeleteBudgetExpense(ctx context.Context, expense BudgetExpense) error {
+	args := mock.Called(ctx, expense)
+	return args.Error(0)
+}

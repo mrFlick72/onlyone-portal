@@ -9,13 +9,16 @@ import (
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/budget/budget-api/internal/testutils"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestWhenANewBudgetExpenseISCreated(t *testing.T) {
 
 	mockedRepository := new(BudgetExpenseRepositoryMock)
+	mockedPublisher := new(BudgetExpenseEventPublisherMock)
 	uut := CreateBudgetExpense{
-		Repository: mockedRepository,
+		Repository:     mockedRepository,
+		EventPublisher: mockedPublisher,
 	}
 
 	aDate, _ := date.IsoDateFor("2018-01-01")
@@ -30,6 +33,7 @@ func TestWhenANewBudgetExpenseISCreated(t *testing.T) {
 	ctx := testutils.NewUserContext()
 
 	mockedRepository.On("Save", ctx, &aBudgetExpense).Return(nil)
+	mockedPublisher.On("CreateBudgetExpense", ctx, mock.Anything).Return(nil)
 
 	err := uut.Execute(ctx, &aBudgetExpense)
 
@@ -37,6 +41,7 @@ func TestWhenANewBudgetExpenseISCreated(t *testing.T) {
 	assert.Equal(t, "A_USER_NAME", aBudgetExpense.UserName)
 	assert.Equal(t, "A_BUDGET_ID", aBudgetExpense.Id)
 	mockedRepository.AssertCalled(t, "Save", ctx, &aBudgetExpense)
+	mockedPublisher.AssertCalled(t, "CreateBudgetExpense", ctx, aBudgetExpense)
 }
 
 func TestWhenANewBudgetExpenseCreationFails(t *testing.T) {

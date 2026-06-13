@@ -9,13 +9,16 @@ import (
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/budget/budget-api/internal/testutils"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestWhenABudgetExpenseUpdateSucceed(t *testing.T) {
 
 	mockedRepository := new(BudgetExpenseRepositoryMock)
+	mockedPublisher := new(BudgetExpenseEventPublisherMock)
 	uut := UpdateBudgetExpense{
-		Repository: mockedRepository,
+		Repository:     mockedRepository,
+		EventPublisher: mockedPublisher,
 	}
 
 	aDate, _ := date.IsoDateFor("2018-01-01")
@@ -37,6 +40,7 @@ func TestWhenABudgetExpenseUpdateSucceed(t *testing.T) {
 	}
 	mockedRepository.On("FindFor", ctx, "A_BUDGET_ID").Return(foundBudgetExpense, nil)
 	mockedRepository.On("Save", ctx, &aBudgetExpense).Return(nil)
+	mockedPublisher.On("UpdateBudgetExpense", ctx, mock.Anything).Return(nil)
 
 	err := uut.Execute(ctx, &aBudgetExpense)
 
@@ -44,6 +48,7 @@ func TestWhenABudgetExpenseUpdateSucceed(t *testing.T) {
 
 	mockedRepository.AssertCalled(t, "FindFor", ctx, "A_BUDGET_ID")
 	mockedRepository.AssertCalled(t, "Save", ctx, &aBudgetExpense)
+	mockedPublisher.AssertCalled(t, "UpdateBudgetExpense", ctx, aBudgetExpense)
 }
 func TestWhenABudgetExpenseUpdateDoesDoneNothingBecauseTheBudgetExpenseDoesNotExist(t *testing.T) {
 
