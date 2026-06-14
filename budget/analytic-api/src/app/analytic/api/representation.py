@@ -5,17 +5,6 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 MAX_YEAR_RANGE_SIZE = 20
 
 
-class BudgetExpenseAnalysisRequestRepresentation(BaseModel):
-    year: int
-    month: int
-    tags: List[str]
-
-class BudgetExpenseAnalysisResponseRepresentation(BaseModel):
-    date: str
-    amount: str
-    tag_values: List[str] = Field(default_factory=list)
-
-
 class TotalByTagAnalysisRequestRepresentation(BaseModel):
     year: int
     month: Optional[int] = Field(default=None, ge=1, le=12)

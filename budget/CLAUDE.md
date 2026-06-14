@@ -6,7 +6,8 @@ The parent `../CLAUDE.md` covers the monorepo as a whole (auth, framework, deplo
 
 ## Services in this directory
 
-- `budget-api/` — Go (Gin). CRUD for budget expenses and revenue, plus attachment upload/download/delete for both. Persists structured data to DynamoDB; attachment file bytes go to S3. Calls `tag-api` over REST for tag lookup.
+- `budget-api/` — Go (Gin). CRUD for budget expenses and revenue, plus attachment upload/download/delete for both. Persists structured data to DynamoDB; attachment file bytes go to S3. Calls `tag-api` over REST for tag lookup. Publishes expense `CREATE`/`UPDATE`/`DELETE` events to the Kafka topic `budget-api.expense` (see `adapter/budget/expense/kafka`).
+- `analytic-api/` — Python FastAPI. Serves expense analytics for the frontend's analytics page. Owns a Postgres **projection** of expenses kept current by consuming the `budget-api.expense` Kafka topic; never calls `budget-api` at request time. See `analytic-api/AGENTS.md`.
 - `revenue-api/` — Python FastAPI. Legacy revenue service; kept in place pending decommissioning once Go version is verified.
 - `budget-exporter/` — Python. Data export job.
 - `analytic/` — Python. Plot/visualization scripts plus a small `server.py`.
@@ -106,6 +107,7 @@ export BUDGET_API_CONFIG_FILE_LOCATION=<path-to-config>   # required at runtime
 - `budget-api` → `tag-api` (REST, base URL from config key `tag-api.base-url`)
 - `budget-api`, `revenue-api` → DynamoDB
 - `budget-api` → S3 (attachment content)
+- `budget-api` → Kafka (publishes `budget-api.expense` events); `analytic-api` consumes them into its own Postgres projection
 - All services → vauthenticator JWTs (validation via shared Go framework / Python equivalent)
 
-When changing the expense or tag contract, check `tag-api` and `portal/application-shell` budget bundle for downstream impact.
+When changing the expense or tag contract, check `tag-api` and `portal/application-shell` budget bundle for downstream impact. When changing the **expense event** wire shape (the `BudgetExpenseEvent` published from `budget-api/adapter/budget/expense/kafka`), update `analytic-api`'s `BudgetExpenseEventHandler` decoder in lockstep.

@@ -60,3 +60,22 @@ services:
       interval: 10s
       timeout: 10s
       retries: 10
+
+  # Projection store for analytic-api (host port 5433 to avoid clashing with plan-api's 5432).
+  analytic-postgres:
+    image: postgres:16-alpine
+    container_name: analytic-postgres
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: analytic
+      POSTGRES_USER: analytic
+      POSTGRES_PASSWORD: analytic
+    volumes:
+      # applied once on first init, creating the projection schema
+      - ./analytic-api/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U analytic -d analytic"]
+      interval: 10s
+      timeout: 5s
+      retries: 10

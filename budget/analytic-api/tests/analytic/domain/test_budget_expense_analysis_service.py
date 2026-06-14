@@ -1,149 +1,80 @@
-from decimal import Decimal
-from typing import List
+from typing import List, Optional, Tuple
 
-from app.analytic.domain.expense import ExpenseRecord
-from app.analytic.domain.service import (
-    BudgetExpenseAnalysisRequest,
-    BudgetExpenseAnalysisService,
-    ExpenseLoader,
+from app.analytic.domain.expense import ProjectedExpense, TagTotal, YearTotal
+from app.analytic.domain.repository import ExpenseProjectionRepository
+from app.analytic.domain.service import BudgetExpenseAnalysisService
+from app.infrastructure.security.model import SecurityContext, UserName
+from app.infrastructure.security.security_context_resolver import (
+    SecurityContextResolver,
 )
 from app.money.domain.money import Money
-from app.time.domain.date import Date
+from app.time.domain.year import Year
 
 
-class FakeExpenseLoader(ExpenseLoader):
+class FakeProjectionRepository(ExpenseProjectionRepository):
+    def __init__(self) -> None:
+        self.tag_calls: List[Tuple[str, int, Optional[int], List[str]]] = []
+        self.year_calls: List[Tuple[str, int, int, Optional[str]]] = []
+        self.tag_totals = [TagTotal(tag="food", total=Money.money_for("10.30"))]
+        self.year_totals = [YearTotal(year=Year(2026), total=Money.money_for("1.00"))]
 
-    def __init__(self, records: List[ExpenseRecord]) -> None:
-        self.records = records
-        self.received_requests: List[BudgetExpenseAnalysisRequest] = []
+    def save(self, expense: ProjectedExpense) -> None: ...
 
-    def expenseFor(
-        self, request: BudgetExpenseAnalysisRequest
-    ) -> List[ExpenseRecord]:
-        self.received_requests.append(request)
-        return self.records
+    def delete(self, expense_id: str) -> None: ...
 
-    def expenses_for_all(
-        self, requests: List[BudgetExpenseAnalysisRequest]
-    ) -> List[ExpenseRecord]:
-        self.received_requests.extend(requests)
-        return self.records
+    def total_by_tag(
+        self, user_name: str, year: int, month: Optional[int], tag_keys: List[str]
+    ) -> List[TagTotal]:
+        self.tag_calls.append((user_name, year, month, tag_keys))
+        return self.tag_totals
 
-
-def expense_record(date: str, amount: str, tags: List[str]) -> ExpenseRecord:
-    return ExpenseRecord(
-        id="an-id",
-        date=Date.date_for(date),
-        amount=Money.money_for(amount),
-        note="",
-        tag_values=tags,
-    )
+    def total_by_year(
+        self, user_name: str, from_year: int, to_year: int, tag_key: Optional[str]
+    ) -> List[YearTotal]:
+        self.year_calls.append((user_name, from_year, to_year, tag_key))
+        return self.year_totals
 
 
-def test_total_by_tag_groups_amounts_by_tag() -> None:
-    loader = FakeExpenseLoader(
-        [
-            expense_record("01/02/2026", "10.10", ["food"]),
-            expense_record("15/02/2026", "0.20", ["food"]),
-            expense_record("20/02/2026", "5.00", ["car"]),
-        ]
-    )
-    service = BudgetExpenseAnalysisService(loader)
+class FakeSecurityContextResolver(SecurityContextResolver):
+    def __init__(self, user_name: str) -> None:
+        self.context = SecurityContext(token="a-token", user_name=UserName(user_name))
 
-    totals = service.total_by_tag(2026, 2, [])
+    def get_security_context(self) -> SecurityContext:
+        return self.context
 
-    assert [(t.tag, t.total.stringify_amount()) for t in totals] == [
-        ("car", "5.00"),
-        ("food", "10.30"),
-    ]
+    def set_security_context(self, ctx: SecurityContext) -> None:
+        self.context = ctx
 
 
-def test_total_by_tag_counts_multi_tag_record_in_every_bucket() -> None:
-    loader = FakeExpenseLoader([expense_record("01/02/2026", "7.50", ["food", "car"])])
-    service = BudgetExpenseAnalysisService(loader)
-
-    totals = service.total_by_tag(2026, 2, [])
-
-    assert [(t.tag, t.total.stringify_amount()) for t in totals] == [
-        ("car", "7.50"),
-        ("food", "7.50"),
-    ]
+def service_for(
+    user: str = "jane",
+) -> Tuple[BudgetExpenseAnalysisService, FakeProjectionRepository]:
+    repository = FakeProjectionRepository()
+    service = BudgetExpenseAnalysisService(repository, FakeSecurityContextResolver(user))
+    return service, repository
 
 
-def test_total_by_tag_skips_untagged_records() -> None:
-    loader = FakeExpenseLoader([expense_record("01/02/2026", "7.50", [])])
-    service = BudgetExpenseAnalysisService(loader)
+def test_total_by_tag_scopes_to_current_user_and_delegates() -> None:
+    service, repository = service_for("jane")
 
-    assert service.total_by_tag(2026, 2, []) == []
+    result = service.total_by_tag(2026, 2, ["food", "car"])
 
-
-def test_total_by_tag_with_month_issues_a_single_request() -> None:
-    loader = FakeExpenseLoader([])
-    service = BudgetExpenseAnalysisService(loader)
-
-    service.total_by_tag(2026, 2, ["food"])
-
-    assert loader.received_requests == [BudgetExpenseAnalysisRequest(2026, 2, ["food"])]
+    assert result == repository.tag_totals
+    assert repository.tag_calls == [("jane", 2026, 2, ["food", "car"])]
 
 
-def test_total_by_tag_without_month_issues_a_request_per_month() -> None:
-    loader = FakeExpenseLoader([])
-    service = BudgetExpenseAnalysisService(loader)
+def test_total_by_tag_passes_optional_month_through() -> None:
+    service, repository = service_for("jane")
 
-    service.total_by_tag(2026, None, ["food"])
+    service.total_by_tag(2026, None, [])
 
-    assert loader.received_requests == [
-        BudgetExpenseAnalysisRequest(2026, month, ["food"]) for month in range(1, 13)
-    ]
+    assert repository.tag_calls == [("jane", 2026, None, [])]
 
 
-def test_total_by_tag_sums_with_decimal_precision() -> None:
-    loader = FakeExpenseLoader(
-        [expense_record("01/02/2026", "0.1", ["food"]) for _ in range(3)]
-    )
-    service = BudgetExpenseAnalysisService(loader)
+def test_total_by_year_scopes_to_current_user_and_delegates() -> None:
+    service, repository = service_for("bob")
 
-    totals = service.total_by_tag(2026, 2, [])
+    result = service.total_by_year(2024, 2026, "food")
 
-    assert totals[0].total.amount == Decimal("0.30")
-
-
-def test_total_by_year_groups_amounts_by_year_and_zero_fills_empty_years() -> None:
-    loader = FakeExpenseLoader(
-        [
-            expense_record("01/02/2024", "10.00", ["food"]),
-            expense_record("01/03/2024", "2.50", ["car"]),
-            expense_record("01/02/2026", "1.00", ["food"]),
-        ]
-    )
-    service = BudgetExpenseAnalysisService(loader)
-
-    totals = service.total_by_year(2024, 2026, None)
-
-    assert [(t.year.content, t.total.stringify_amount()) for t in totals] == [
-        (2024, "12.50"),
-        (2025, "0.00"),
-        (2026, "1.00"),
-    ]
-
-
-def test_total_by_year_issues_a_request_per_month_per_year_with_tag_filter() -> None:
-    loader = FakeExpenseLoader([])
-    service = BudgetExpenseAnalysisService(loader)
-
-    service.total_by_year(2025, 2026, "food")
-
-    assert loader.received_requests == [
-        BudgetExpenseAnalysisRequest(year, month, ["food"])
-        for year in (2025, 2026)
-        for month in range(1, 13)
-    ]
-
-
-def test_total_by_year_without_tag_requests_all_tags() -> None:
-    loader = FakeExpenseLoader([])
-    service = BudgetExpenseAnalysisService(loader)
-
-    service.total_by_year(2026, 2026, None)
-
-    assert all(request.tags == [] for request in loader.received_requests)
+    assert result == repository.year_totals
+    assert repository.year_calls == [("bob", 2024, 2026, "food")]

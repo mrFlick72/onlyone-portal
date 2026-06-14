@@ -31,6 +31,8 @@ dependencies = [
   "PyJWT==2.10.1",
   "requests==2.32.5",
   "python-dotenv==1.1.1",
+  "psycopg[binary,pool]==3.2.3",
+  "confluent-kafka==2.6.0",
 ]
 
 [project.optional-dependencies]
@@ -42,6 +44,7 @@ dev = [
   "pytest-asyncio==1.2.0",
   "mypy==1.16.0",
   "types-requests==2.32.0.20250515",
+  "testcontainers[postgres]==4.8.2",
 ]
 
 [project.scripts]
@@ -62,13 +65,17 @@ warn_unused_ignores = true
 no_implicit_reexport = true
 
 [[tool.mypy.overrides]]
-module = ["dependency_injector.*"]
+module = ["dependency_injector.*", "confluent_kafka.*", "testcontainers.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 addopts = "-ra -q"
 testpaths = ["tests"]
+markers = [
+  "integration: tests requiring external infrastructure (Postgres); deselect with -m 'not integration'",
+]
 env = [
   "WITH_MIDDLEWARE=false",
   "CORS_ALLOWED_ORIGINS=http://localhost",
+  "KAFKA_CONSUMER_ENABLED=false",
 ]

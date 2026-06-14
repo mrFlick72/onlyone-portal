@@ -7,19 +7,19 @@ from app.time.domain.year import Year
 
 
 @dataclass
-class ExpenseRecord:
-    id: str
-    date: Date
-    amount: Money
-    note: str
-    tag_values: List[str] = field(default_factory=list)
+class ExpenseTag:
+    key: str
+    value: str
 
 
 @dataclass
-class BudgetExpenseAnalysisRequest:
-    year: int
-    month: int
-    tags: List[str]
+class ProjectedExpense:
+    id: str
+    user_name: str
+    date: Date
+    amount: Money
+    note: str
+    tags: List[ExpenseTag] = field(default_factory=list)
 
 
 @dataclass

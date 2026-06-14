@@ -12,7 +12,8 @@ OnlyOne Portal is a cloud-native microservices application. All services share a
 portal/application-shell/   # React 19 + TypeScript multi-page SPA (Vite 8, MUI 9) — see portal/application-shell/CLAUDE.md
 portal/e2e/ai/              # Playwright-MCP-driven AI end-to-end tests (LOGIN, PLAN scenarios)
 account/account-api/        # Go (Gin) — user account management via vauthenticator REST
-budget/budget-api/          # Go (Gin) — budget expense + revenue + attachments (DynamoDB + S3) — see budget/CLAUDE.md
+budget/budget-api/          # Go (Gin) — budget expense + revenue + attachments (DynamoDB + S3); publishes expense events to Kafka — see budget/CLAUDE.md
+budget/analytic-api/        # Python FastAPI — expense analytics; Kafka consumer projects into Postgres, served read-only — see budget/analytic-api/AGENTS.md
 budget/revenue-api/         # Python FastAPI — legacy revenue service, pending decommission
 budget/budget-exporter/     # Python — data export job
 budget/analytic/            # Python — analytics/visualization scripts
@@ -22,7 +23,7 @@ core-services/golang-web-framework/  # Shared Go library (Gin, JWT, CORS, loggin
 idp/                        # OAuth2 token helper scripts for local dev
 ```
 
-**Sub-CLAUDE.md files** contain deeper per-subtree guidance: `budget/CLAUDE.md`, `budget/budget-api/CLAUDE.md`, `portal/application-shell/CLAUDE.md`, `plan/plan-api/CLAUDE.md`.
+**Sub-CLAUDE.md files** contain deeper per-subtree guidance: `budget/CLAUDE.md`, `budget/budget-api/CLAUDE.md`, `budget/analytic-api/AGENTS.md`, `portal/application-shell/CLAUDE.md`, `plan/plan-api/CLAUDE.md`.
 
 ## Build & Run Commands
 
@@ -167,8 +168,10 @@ github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../
 | plan-api     | PUT        | `/api/plan/:id/todo/:todoId`                     | Updates todo content/date without changing status                                  |
 | plan-api     | PUT        | `/api/plan/:id/todo/:todoId/status`              | Validates todo status transitions                                                  |
 | plan-api     | DELETE     | `/api/plan/:id/todo/:todoId`                     | Deletes a todo                                                                     |
+| analytic-api | PUT        | `/api/analytic/budget/expense/total-by-tag`      | Totals grouped by tag value for a year (optional month + tag-key filter)           |
+| analytic-api | PUT        | `/api/analytic/budget/expense/total-by-year`     | Totals grouped by year over a range (optional tag-key filter); years zero-filled   |
 
-Expense, revenue, and full attachment route details: see `budget/CLAUDE.md` and `budget/budget-api/CLAUDE.md`.
+Expense, revenue, and full attachment route details: see `budget/CLAUDE.md` and `budget/budget-api/CLAUDE.md`. Analytics route details: see `budget/analytic-api/AGENTS.md`.
 
 ## Key Cross-Service Dependencies
 
@@ -176,6 +179,8 @@ Expense, revenue, and full attachment route details: see `budget/CLAUDE.md` and 
 - `account-api` → vauthenticator IDP (REST, config key `idp.base-url`)
 - `budget-api`, `tag-api` → DynamoDB (region hardcoded to `eu-central-1`)
 - `budget-api` → S3 (attachment content; bucket from config key `budget-api.s3.attachment.bucket-name`)
+- `budget-api` → Kafka (publishes expense `CREATE`/`UPDATE`/`DELETE` events to topic `budget-api.expense`)
+- `analytic-api` → Kafka (consumes `budget-api.expense`) → its own Postgres projection (read-only at request time; no REST call to `budget-api`)
 - `plan-api` → Postgres
 - All Gin services, including `plan-api` → vauthenticator JWKS for JWT validation
 

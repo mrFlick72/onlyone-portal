@@ -1,48 +1,17 @@
-import json
 from typing import Annotated
 
-from app.analytic.adapter.service import RestExpenseLoader
 from app.analytic.api.representation import (
-    BudgetExpenseAnalysisRequestRepresentation,
-    BudgetExpenseAnalysisResponseRepresentation,
     TagTotalRepresentation,
     TotalByTagAnalysisRequestRepresentation,
     TotalByYearAnalysisRequestRepresentation,
     YearTotalRepresentation,
 )
-from app.analytic.domain.expense import BudgetExpenseAnalysisRequest
 from app.analytic.domain.service import BudgetExpenseAnalysisService
 from app.container import ApplicationContainer
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends
 from dependency_injector.wiring import Provide, inject
 
 analytic_end_point_router = APIRouter()
-
-
-
-@analytic_end_point_router.put("/api/analytic/budget/expense")
-@inject
-async def budget_analysis_for(
-    representation: BudgetExpenseAnalysisRequestRepresentation,
-    expense_loader: Annotated[
-        RestExpenseLoader,
-        Depends(Provide[ApplicationContainer.analytic_config_container.expense_loader]),
-    ],
-) -> list[BudgetExpenseAnalysisResponseRepresentation]:
-    expenses = expense_loader.expenseFor(
-        BudgetExpenseAnalysisRequest(
-            representation.year, representation.month, representation.tags
-        )
-    )
-
-    return [
-        BudgetExpenseAnalysisResponseRepresentation(
-            date=exp.date.formatted_date(),
-            amount=exp.amount.stringify_amount(),
-            tag_values=exp.tag_values,
-        )
-        for exp in expenses
-    ]
 
 
 @analytic_end_point_router.put(
