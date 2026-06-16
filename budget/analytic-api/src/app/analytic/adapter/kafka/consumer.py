@@ -19,26 +19,50 @@ DELETE_ACTION = "DELETE"
 POLL_TIMEOUT_SECONDS = 1.0
 
 
+class MalformedEventError(Exception):
+    """A budget-expense event that can never be applied (bad structure, unknown
+    action, unparseable payload). Such a message is skipped, not retried."""
+
+
 class BudgetExpenseEventHandler:
     """Applies a decoded `budget-api.expense` event to the projection. Kept free
-    of any Kafka type so it can be unit-tested with a plain dict."""
+    of any Kafka type so it can be unit-tested with a plain dict.
+
+    Raises `MalformedEventError` for permanently-bad input (the caller skips it);
+    repository failures propagate unchanged so the caller can retry them."""
 
     def __init__(self, repository: ExpenseProjectionRepository) -> None:
         self.repository = repository
 
     def handle(self, event: Dict[str, Any]) -> None:
-        action = event["action"]
-        payload = event["payload"]
+        if not isinstance(event, dict):
+            raise MalformedEventError(f"event is not an object: {type(event).__name__}")
+
+        action = event.get("action")
+        payload = event.get("payload")
+        if not isinstance(payload, dict):
+            raise MalformedEventError(f"missing or invalid payload (action={action!r})")
 
         if action in (CREATE_ACTION, UPDATE_ACTION):
             self.repository.save(self._to_expense(payload))
         elif action == DELETE_ACTION:
-            self.repository.delete(payload["id"])
+            expense_id = payload.get("id")
+            if not expense_id:
+                raise MalformedEventError("DELETE event without id")
+            self.repository.delete(expense_id)
         else:
-            logger.warning("Ignoring budget-expense event with unknown action: %s", action)
+            raise MalformedEventError(f"unknown action: {action!r}")
+
+    def _to_expense(self, payload: Dict[str, Any]) -> ProjectedExpense:
+        # the payload is a pure data transformation: any failure here is a bad
+        # message, not a transient fault, so surface it as MalformedEventError
+        try:
+            return self._build_expense(payload)
+        except Exception as error:
+            raise MalformedEventError(f"invalid CREATE/UPDATE payload: {error}") from error
 
     @staticmethod
-    def _to_expense(payload: Dict[str, Any]) -> ProjectedExpense:
+    def _build_expense(payload: Dict[str, Any]) -> ProjectedExpense:
         return ProjectedExpense(
             id=payload["id"],
             user_name=payload["userName"],
@@ -96,9 +120,19 @@ class BudgetExpenseConsumer:
             if message.error() is not None:
                 logger.error("Kafka consume error: %s", message.error())
                 continue
-            try:
-                self.handler.handle(json.loads(message.value()))
-                self._consumer.commit(message=message, asynchronous=False)
-            except Exception:
-                # leave the offset uncommitted so the message is redelivered
-                logger.exception("Failed to apply budget-expense event; will retry")
+            self._consume(message)
+
+    def _consume(self, message: Any) -> None:
+        try:
+            event = json.loads(message.value())
+            self.handler.handle(event)
+        except (MalformedEventError, json.JSONDecodeError) as error:
+            # permanently unprocessable: commit so the poison message cannot block
+            # the partition, but never apply it
+            logger.warning("Skipping unprocessable budget-expense event: %s", error)
+            self._consumer.commit(message=message, asynchronous=False)
+        except Exception:
+            # transient failure (e.g. database): leave uncommitted to redeliver
+            logger.exception("Failed to apply budget-expense event; will retry")
+        else:
+            self._consumer.commit(message=message, asynchronous=False)

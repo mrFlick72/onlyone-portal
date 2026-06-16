@@ -6,7 +6,7 @@ from typing import Any
 from app.infrastructure.security.security_context_resolver import (
     SecurityContextResolver,
 )
-from app.infrastructure.security.model import SecurityContext
+from app.infrastructure.security.model import SecurityContext, UserName
 import jwt
 import requests
 from fastapi import Request
@@ -54,7 +54,7 @@ class SecurityContextInjectorFilter(BaseHTTPMiddleware):
             )
             self.user_name_resolver.set_security_context(
                 SecurityContext(
-                    token=token, user_name=decoded_token[self.user_name_claim]
+                    token=token, user_name=UserName(decoded_token[self.user_name_claim])
                 )
             )
 

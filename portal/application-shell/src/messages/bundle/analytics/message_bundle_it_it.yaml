@@ -22,3 +22,10 @@ analyticsPage:
     empty: "Nessun dato per i filtri selezionati"
     error: "Si è verificato un errore nel caricamento del grafico"
     retry: "Riprova"
+  reindex:
+    title: "Reindicizza i dati"
+    description: "Ricostruisce i dati analitici dal servizio budget per l'intervallo di anni selezionato. Usalo se alcuni dati sembrano mancanti o non aggiornati."
+    button: "Reindicizza"
+    running: "Reindicizzazione…"
+    success: "Reindicizzazione completata"
+    error: "Reindicizzazione non riuscita. Riprova."

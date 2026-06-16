@@ -115,6 +115,7 @@ work below replaces that path.
 |---|---|---|---|
 | PUT | `/api/analytic/budget/expense/total-by-tag` | `{ year, month?, tags? }` (`tags` = tag keys) | `[{ tag, total }]` (`tag` = tag value) |
 | PUT | `/api/analytic/budget/expense/total-by-year` | `{ fromYear, toYear, tag? }` (`tag` = tag key) | `[{ year, total }]`, every year in range present (zero-filled) |
+| POST | `/api/analytic/budget/expense/reindex` | `{ fromYear, toYear }` | `{ imported }` — rebuilds the caller's projection from budget-api (recovery/reimport) |
 
 All queries are scoped to the authenticated `user_name` from the JWT.
 
@@ -156,9 +157,18 @@ All queries are scoped to the authenticated `user_name` from the JWT.
      projection, new env vars, consumer lifecycle, tag key-vs-value note).
    - Add `analytic-api` and its `→ Kafka, Postgres` dependency to the root `CLAUDE.md`.
 
-### Out of scope (follow-up)
+### Reindex / reimport (recovery)
 
-**Historical backfill.** The projection only reflects expenses created/updated/deleted
-after the consumer goes live; pre-existing expenses appear once touched. A one-off
-replay/REST sweep to seed history is a separate task.
+`POST /api/analytic/budget/expense/reindex` `{fromYear, toYear}` rebuilds the **calling
+user's** projection when events are missed or a reimport is wanted. Decisions:
+
+- **Per-user, self-service** — scoped to the JWT user. budget-api has no cross-user
+  query, so an all-users reindex would need new budget-api work (separate task).
+- **Pulls from budget-api over REST** — `RestBudgetExpenseSource` queries
+  `PUT /api/budget/expense` per (year, month), propagating the caller's token; the REST
+  response carries full tag key+value so the projection is fully repopulated. This is
+  the only place analytic-api calls budget-api, and it is off the read path.
+- **Upsert-only** — fills gaps from missed `CREATE`/`UPDATE` events; does **not** remove
+  rows whose `DELETE` was missed (they linger until re-touched). Re-adds the
+  `BUDGET_API_BASE_URL` env var (reindex-only).
 

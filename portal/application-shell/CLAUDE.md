@@ -66,6 +66,7 @@ Vite builds **separate bundles** per page, each with its own HTML file. Entries 
 | `account`       | `account/index.tsx`       | `account/index.html`           | User profile management        |
 | `plan`          | `plan/index.tsx`          | `plan/index.html`              | Plan list                      |
 | `planDetail`    | `plan/index.tsx`          | `plan/detail.html`             | Plan todo detail               |
+| `analytics`     | `analytics/index.tsx`     | `analytics/index.html`         | Budget expense analytics       |
 
 Each entry point independently calls `authenticationChecker()` for token auto-refresh and mounts its own React tree into `<div id="app">`. Navigation between pages is full page navigation (HTML links), not client-side routing.
 
@@ -86,6 +87,7 @@ src/
     search-tags/    # Tag management sub-feature
     attachment/     # File attachments shared by expense + revenue
   plan/             # Plan and todo management, including todo status transitions
+  analytics/        # Budget expense analytics dashboard (charts + reindex)
   components/       # Shared UI: Menu, form inputs, layout helpers
   messages/         # YAML message bundles (en_en + it_it) loaded at build time; no runtime i18n library
     bundle/         # Per-feature message_bundle_<lang>.yaml files
@@ -118,6 +120,15 @@ The plan feature lives in `src/plan/` and calls the plan API through `plan/domai
 - `ChangeTodoStatusPopUp` only renders transitions allowed by `TodoStatus.ts`; the backend still enforces the same rule and returns `409` for invalid transitions.
 - The Plan area is reachable from every other page through `components/menu/PlanPageMenuItem.tsx` (linked via the `Plans` entry in `GlobalPageNavigation`) and from the home page tile.
 
+### Analytics
+
+The analytics feature lives in `src/analytics/` and calls `analytic-api` through `analytics/domain/AnalyticRepository.ts` using `ANALYTIC_API_BASE_URL`.
+
+- `analytics/index.tsx` is the Vite entry; it calls `authenticationChecker()` and mounts `AnalyticsApp` → `AnalyticsDashboardPage`. Reachable via `components/menu/AnalyticsPageMenuItem.tsx` (the `Analytics` nav item) and the home page tile.
+- `AnalyticsDashboardPage` renders two `AnalyticBarChart`s (`@mui/x-charts`): **total by tag** (`findTotalByTag` → `PUT …/total-by-tag`, filtered by year + optional month + tags) and **total by year** (`findTotalByYear` → `PUT …/total-by-year`, over a year range + optional tag). Tag filters send tag **keys** (`SearchTag.key`); bars are labelled by tag **value**. Each chart owns loading/error/empty state and a retry token.
+- **Reindex/recovery**: a "Reindex data" section calls `reindexBudgetExpense` → `POST …/reindex` `{fromYear, toYear}` to rebuild the user's projection from budget-api when events were missed. It reuses the year-range validation (max 20 years), shows a spinner + disabled button while running, reports the result via a `Snackbar`, and on success bumps both charts' retry tokens to reload. This is the only mutating call on the page.
+- Label strings come from `messages/bundle/analytics/message_bundle_{en_en,it_it}.yaml`, mapped in `OnlyonePortalPagesConfigMap.analytics()`; the `AnalyticsPageMessageBundle` type in `MessageBundles.ts` keeps producer and consumer in sync (includes the `reindex` group).
+
 ### Authentication Pattern
 
 All authentication is in `auth/Authenticator.ts`. Key details:
@@ -132,7 +143,7 @@ All authentication is in `auth/Authenticator.ts`. Key details:
 All repository files (`*Repository.ts`) use the browser `fetch` API with:
 - `Authorization: Bearer ${window.sessionStorage.getItem("ACCESS_TOKEN")}`
 - `credentials: 'include'`
-- Base URLs resolved from `config/ConfigLoader.ts`, which reads `import.meta.env.*` values inlined by Vite at build time. `applicationConfigLoader()` returns the full `ApplicationConfig`; per-API helpers (`getBudgetApiBaseUrl`, `getAccountApiBaseUrl`, `getTagApiBaseUrl`, `getPlanApiBaseUrl`, …) wrap it.
+- Base URLs resolved from `config/ConfigLoader.ts`, which reads `import.meta.env.*` values inlined by Vite at build time. `applicationConfigLoader()` returns the full `ApplicationConfig`; per-API helpers (`getBudgetApiBaseUrl`, `getAccountApiBaseUrl`, `getTagApiBaseUrl`, `getPlanApiBaseUrl`, `getAnalyticApiBaseUrl`, …) wrap it.
 
 ### Messages and Page Configs
 
@@ -154,4 +165,4 @@ Adding a new dialog or menu item normally means: add the key to the relevant `bu
 
 `environments/.env.development` (and `.env.production`, when present) supply all backend URLs and OAuth2 settings. `vite.config.ts` calls `loadEnv(mode, '../environments', '')` and forwards each value into `define` so it's accessible as `import.meta.env.<NAME>` in source. The build mode (`development` / `production`) is selected by the `--mode` flag in the `build` / `production-build` scripts.
 
-Key config values: `IDP_BASE_URL`, `CLIENT_APPLICATION_ID`, `REDIRECT_URI`, `BUDGET_API_BASE_URL`, `REVENUE_API_BASE_URL`, `ACCOUNT_API_BASE_URL`, `TAG_API_BASE_URL`, `PLAN_API_BASE_URL`, `AUTHENTICATION_CHECK_INTERVAL`.
+Key config values: `IDP_BASE_URL`, `CLIENT_APPLICATION_ID`, `REDIRECT_URI`, `BUDGET_API_BASE_URL`, `REVENUE_API_BASE_URL`, `ACCOUNT_API_BASE_URL`, `TAG_API_BASE_URL`, `PLAN_API_BASE_URL`, `ANALYTIC_API_BASE_URL`, `AUTHENTICATION_CHECK_INTERVAL`.

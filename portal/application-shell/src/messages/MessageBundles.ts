@@ -232,6 +232,14 @@ export type AnalyticsPageMessageBundle = {
     };
     charts: { totalByTagTitle: string; totalByYearTitle: string };
     states: { empty: string; error: string; retry: string };
+    reindex: {
+        title: string;
+        description: string;
+        button: string;
+        running: string;
+        success: string;
+        error: string;
+    };
 };
 
 export type AccountPageMessageBundle = {

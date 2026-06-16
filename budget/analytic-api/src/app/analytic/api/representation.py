@@ -27,6 +27,21 @@ class TotalByYearAnalysisRequestRepresentation(BaseModel):
         return self
 
 
+class ReindexRequestRepresentation(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    from_year: int = Field(alias="fromYear")
+    to_year: int = Field(alias="toYear")
+
+    @model_validator(mode="after")
+    def validate_year_range(self) -> "ReindexRequestRepresentation":
+        if self.from_year > self.to_year:
+            raise ValueError("fromYear must not be greater than toYear")
+        if self.to_year - self.from_year + 1 > MAX_YEAR_RANGE_SIZE:
+            raise ValueError(f"year range must not exceed {MAX_YEAR_RANGE_SIZE} years")
+        return self
+
+
 class TagTotalRepresentation(BaseModel):
     tag: str
     total: str
@@ -35,3 +50,7 @@ class TagTotalRepresentation(BaseModel):
 class YearTotalRepresentation(BaseModel):
     year: int
     total: str
+
+
+class ReindexResponseRepresentation(BaseModel):
+    imported: int

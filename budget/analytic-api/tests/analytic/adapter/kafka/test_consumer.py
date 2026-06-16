@@ -1,6 +1,14 @@
+import json
 from typing import List, Optional
+from unittest.mock import MagicMock, patch
 
-from app.analytic.adapter.kafka.consumer import BudgetExpenseEventHandler
+import pytest
+
+from app.analytic.adapter.kafka.consumer import (
+    BudgetExpenseConsumer,
+    BudgetExpenseEventHandler,
+    MalformedEventError,
+)
 from app.analytic.domain.expense import ProjectedExpense, TagTotal, YearTotal
 from app.analytic.domain.repository import ExpenseProjectionRepository
 
@@ -78,14 +86,6 @@ def test_delete_event_removes_by_id() -> None:
     assert repository.deleted == ["exp-1"]
 
 
-def test_unknown_action_is_ignored() -> None:
-    repository = RecordingRepository()
-    BudgetExpenseEventHandler(repository).handle(event("ARCHIVE"))
-
-    assert repository.saved == []
-    assert repository.deleted == []
-
-
 def test_missing_tags_yields_no_tags() -> None:
     repository = RecordingRepository()
     payload = event("CREATE")
@@ -94,3 +94,81 @@ def test_missing_tags_yields_no_tags() -> None:
     BudgetExpenseEventHandler(repository).handle(payload)
 
     assert repository.saved[0].tags == []
+
+
+@pytest.mark.parametrize(
+    "bad_event",
+    [
+        {"action": "ARCHIVE", "payload": {"id": "exp-1"}},  # unknown action
+        {"payload": {"id": "exp-1"}},                        # missing action
+        {"action": "CREATE"},                                # missing payload
+        {"action": "DELETE", "payload": {}},                 # delete without id
+        {"action": "CREATE", "payload": {"id": "exp-1"}},    # incomplete payload (no date/amount)
+    ],
+)
+def test_malformed_events_raise_and_touch_nothing(bad_event: dict) -> None:
+    repository = RecordingRepository()
+
+    with pytest.raises(MalformedEventError):
+        BudgetExpenseEventHandler(repository).handle(bad_event)
+
+    assert repository.saved == []
+    assert repository.deleted == []
+
+
+class _Message:
+    def __init__(self, value: bytes) -> None:
+        self._value = value
+
+    def value(self) -> bytes:
+        return self._value
+
+
+def _consumer_with(repository: ExpenseProjectionRepository) -> tuple[BudgetExpenseConsumer, MagicMock]:
+    with patch("app.analytic.adapter.kafka.consumer.Consumer") as mock_consumer_cls:
+        consumer = BudgetExpenseConsumer(
+            BudgetExpenseEventHandler(repository), "broker:9092", "topic", "group"
+        )
+    return consumer, mock_consumer_cls.return_value
+
+
+def test_consume_applies_and_commits_valid_event() -> None:
+    repository = RecordingRepository()
+    consumer, kafka = _consumer_with(repository)
+
+    consumer._consume(_Message(json.dumps(event("CREATE")).encode()))
+
+    assert len(repository.saved) == 1
+    kafka.commit.assert_called_once()
+
+
+def test_consume_skips_and_commits_invalid_json() -> None:
+    repository = RecordingRepository()
+    consumer, kafka = _consumer_with(repository)
+
+    consumer._consume(_Message(b"not-json"))
+
+    assert repository.saved == []
+    kafka.commit.assert_called_once()
+
+
+def test_consume_skips_and_commits_malformed_event() -> None:
+    repository = RecordingRepository()
+    consumer, kafka = _consumer_with(repository)
+
+    consumer._consume(_Message(json.dumps({"action": "CREATE"}).encode()))
+
+    assert repository.saved == []
+    kafka.commit.assert_called_once()
+
+
+def test_consume_does_not_commit_on_transient_repository_failure() -> None:
+    class FailingRepository(RecordingRepository):
+        def save(self, expense: ProjectedExpense) -> None:
+            raise RuntimeError("database is down")
+
+    consumer, kafka = _consumer_with(FailingRepository())
+
+    consumer._consume(_Message(json.dumps(event("CREATE")).encode()))
+
+    kafka.commit.assert_not_called()

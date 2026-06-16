@@ -2,7 +2,7 @@
 
 Guidance for AI coding agents (Claude Code, Codex, etc.) working in `budget/analytic-api`.
 
-This is a Python 3.12+ FastAPI microservice that serves budget-expense analytics for the OnlyOne Portal. It keeps a **read-optimised projection** of the user's expenses in its own Postgres database, kept up to date by consuming `CREATE`/`UPDATE`/`DELETE` events that `budget-api` (the data owner) publishes to the Kafka topic `budget-api.expense`. Read requests are answered purely from the projection — `analytic-api` never calls `budget-api` at request time, and is eventually consistent with it. The parent `../CLAUDE.md` and `../../CLAUDE.md` cover the budget subtree and the monorepo (auth model, deployment, sibling services).
+This is a Python 3.12+ FastAPI microservice that serves budget-expense analytics for the OnlyOne Portal. It keeps a **read-optimised projection** of the user's expenses in its own Postgres database, kept up to date by consuming `CREATE`/`UPDATE`/`DELETE` events that `budget-api` (the data owner) publishes to the Kafka topic `budget-api.expense`. Read requests are answered purely from the projection — `analytic-api` is eventually consistent with `budget-api` and does not call it on the read path. The one exception is the explicit reindex/recovery action (see "Reindex"), which pulls from `budget-api` over REST to rebuild the projection. The parent `../CLAUDE.md` and `../../CLAUDE.md` cover the budget subtree and the monorepo (auth model, deployment, sibling services).
 
 ## Commands
 
@@ -53,6 +53,7 @@ All analytics endpoints are scoped to the authenticated `user_name` from the JWT
 | GET    | `/health`                                     | no   | Liveness probe, empty 200                                                                        |
 | PUT    | `/api/analytic/budget/expense/total-by-tag`   | yes  | Body `{year, month?, tags?}` (`tags` = tag **keys**) → `[{tag, total}]` (`tag` = tag **value**)  |
 | PUT    | `/api/analytic/budget/expense/total-by-year`  | yes  | Body `{fromYear, toYear, tag?}` (`tag` = tag **key**) → `[{year, total}]`, every year zero-filled |
+| POST   | `/api/analytic/budget/expense/reindex`        | yes  | Body `{fromYear, toYear}` → `{imported}`; rebuilds the caller's projection from budget-api (see "Reindex") |
 
 **Tag key-vs-value contract:** the frontend filters by `SearchTag.key` but labels/groups by `SearchTag.value`. The projection stores both; `total-by-tag` filters expenses by key (keeping all sibling tags of a matched expense) and aggregates/labels by value, while `total-by-year` counts each expense once.
 
@@ -95,9 +96,16 @@ Retrieve the current context in downstream code via an injected `SecurityContext
   "payload": { "id", "userName", "date": "dd/MM/yyyy", "amount": "<decimal, scale 2>", "note", "tags": [{ "key", "value" }] } }
 ```
 
-- **`BudgetExpenseConsumer`** (`src/app/analytic/adapter/kafka/consumer.py`) — an in-process `confluent-kafka` consumer that polls on a daemon thread. Offsets are committed only **after** the event is applied (at-least-once delivery; the projection ops are idempotent so redelivery is safe). It is started/stopped by the `server.py` lifespan.
-- **`BudgetExpenseEventHandler`** (same module) — decodes a single event dict and applies it: `CREATE`/`UPDATE` → `repository.save`, `DELETE` → `repository.delete`. Kept free of any Kafka type so it is unit-testable with a plain dict.
+- **`BudgetExpenseConsumer`** (`src/app/analytic/adapter/kafka/consumer.py`) — an in-process `confluent-kafka` consumer that polls on a daemon thread. Offsets are committed only **after** the event is applied (at-least-once delivery; the projection ops are idempotent so redelivery is safe). It is started/stopped by the `server.py` lifespan. Poison-message handling (`_consume`): a permanently-unprocessable message (invalid JSON or `MalformedEventError`) is logged and **committed/skipped** so it can't wedge the partition; a transient failure (e.g. database down) is left **uncommitted** to be redelivered.
+- **`BudgetExpenseEventHandler`** (same module) — decodes a single event dict and applies it: `CREATE`/`UPDATE` → `repository.save`, `DELETE` → `repository.delete`. Kept free of any Kafka type so it is unit-testable with a plain dict. Raises `MalformedEventError` for structurally-bad input, unknown actions, a `DELETE` without an id, or an unparseable payload; repository failures propagate unchanged so the consumer can distinguish skip from retry.
 - **`PostgresExpenseProjectionRepository`** (`src/app/analytic/adapter/db/repository.py`) — owns its `psycopg` connection pool (opened lazily from the lifespan). `save` upserts the expense row (`ON CONFLICT (id) DO UPDATE`) and **replaces** its tag rows (so re-tagging on `UPDATE` is handled); `delete` removes by id (tags cascade). `total_by_tag` / `total_by_year` are SQL `GROUP BY` aggregations over `budget_expense_projection` + `budget_expense_tag`. When the `budget-api.expense` event contract changes, `BudgetExpenseEventHandler._to_expense` is the impact point.
+
+### Reindex (recovery / reimport)
+
+When events are missed (e.g. a consumer/broker outage) or you simply want to reimport, `POST /api/analytic/budget/expense/reindex` rebuilds the **calling user's** projection over a year range. This is the one place `analytic-api` calls `budget-api` — it is not on the read path.
+
+- **`RestBudgetExpenseSource`** (`src/app/analytic/adapter/rest/source.py`) — pulls the user's expenses from `budget-api`'s `PUT /api/budget/expense` per (year, month), propagating the caller's bearer token. The token and user name are captured once on the request thread before fanning out to a small `ThreadPoolExecutor` (the security context is a thread-local). The REST response carries full tag `key`+`value`, so the projection is fully repopulated.
+- **`ExpenseReindexService`** (`src/app/analytic/domain/reindex.py`) — fetches and `repository.save`s each expense, returning the count. It is **upsert-only**: it fills gaps from missed `CREATE`/`UPDATE` events but does **not** remove rows whose `DELETE` was missed (those linger until re-touched). Scope is per-user — `budget-api` has no cross-user query, so an all-users reindex would need new `budget-api` work.
 
 ### Database schema
 
@@ -129,6 +137,7 @@ Loaded from the file pointed to by `ANALYTIC_API_CONFIG_FILE_LOCATION` (see `loc
 | `ANALYTIC_API_CONFIG_FILE_LOCATION` | yes | Path to `.env` file loaded by `python-dotenv` at startup |
 | `IDP_ISS` | yes | Issuer URL for JWKS fetch and JWT `iss` validation (e.g. `http://local.api.vauthenticator.com:9090`) |
 | `CORS_ALLOWED_ORIGINS` | yes | Comma-separated explicit origin list — server refuses to start if empty or unset |
+| `BUDGET_API_BASE_URL` | yes | Base URL of budget-api, used **only** by the reindex endpoint (e.g. `http://local.budget-api.onlyone-portal.com:3035`) |
 | `DATABASE_URL` | yes | Postgres connection string for the projection store (e.g. `postgresql://analytic:analytic@localhost:5433/analytic`) |
 | `KAFKA_BOOTSTRAP_SERVERS` | yes | Kafka bootstrap servers for the consumer (e.g. `localhost:9092`) |
 | `KAFKA_EXPENSE_TOPIC` | no | Topic to consume, default `budget-api.expense` |

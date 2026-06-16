@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { Alert, Box, Container, Paper, ThemeProvider, Typography } from "@mui/material"
+import { Alert, Box, Button, CircularProgress, Container, Paper, Snackbar, ThemeProvider, Typography } from "@mui/material"
 import themeProvider from "../theme/ThemeProvider"
 import Menu from "../components/menu/Menu"
 import { OnlyonePortalPagesConfigMap } from "../messages/OnlyonePortalPagesConfigMap"
@@ -9,7 +9,7 @@ import { getSearchTagRegistry } from "../budget/search-tags/domain/SearchTagRepo
 import FormSelect, { SelectOption } from "../components/form/FormSelect"
 import FormInputTextField from "../components/form/FormInputTextField"
 import type { Month } from "../time/months"
-import { findTotalByTag, findTotalByYear, TagTotal, YearTotal } from "./domain/AnalyticRepository"
+import { findTotalByTag, findTotalByYear, reindexBudgetExpense, TagTotal, YearTotal } from "./domain/AnalyticRepository"
 import AnalyticBarChart from "./charts/AnalyticBarChart"
 
 const MAX_YEAR_RANGE_SIZE = 20
@@ -45,6 +45,11 @@ const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ message
     const [yearTotalsLoading, setYearTotalsLoading] = useState(true)
     const [yearTotalsError, setYearTotalsError] = useState(false)
     const [yearTotalsRetryToken, setYearTotalsRetryToken] = useState(0)
+
+    const [reindexFromYear, setReindexFromYear] = useState(String(currentYear))
+    const [reindexToYear, setReindexToYear] = useState(String(currentYear))
+    const [reindexing, setReindexing] = useState(false)
+    const [reindexFeedback, setReindexFeedback] = useState<{ severity: 'success' | 'error'; message: string } | null>(null)
 
     useEffect(() => {
         getMonthRegistry().then((data) => setMonthRegistry(data))
@@ -121,6 +126,27 @@ const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ message
         empty: messages.states.empty,
         error: messages.states.error,
         retry: messages.states.retry,
+    }
+
+    const reindexInvalidYearRange = isValidYear(reindexFromYear) && isValidYear(reindexToYear) &&
+        (Number(reindexFromYear) > Number(reindexToYear) || Number(reindexToYear) - Number(reindexFromYear) + 1 > MAX_YEAR_RANGE_SIZE)
+    const reindexDisabled = reindexing || !isValidYear(reindexFromYear) || !isValidYear(reindexToYear) || reindexInvalidYearRange
+
+    const handleReindex = () => {
+        setReindexing(true)
+        reindexBudgetExpense({
+            fromYear: Number(reindexFromYear),
+            toYear: Number(reindexToYear),
+        }).then((result) => {
+            setReindexFeedback({ severity: 'success', message: `${messages.reindex.success} (${result.imported})` })
+            // refresh both charts against the freshly rebuilt projection
+            setTagTotalsRetryToken((token) => token + 1)
+            setYearTotalsRetryToken((token) => token + 1)
+        }).catch(() => {
+            setReindexFeedback({ severity: 'error', message: messages.reindex.error })
+        }).finally(() => {
+            setReindexing(false)
+        })
     }
 
     return (
@@ -210,7 +236,48 @@ const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ message
                             messages={chartStateMessages}
                             retryHandler={() => setYearTotalsRetryToken((token) => token + 1)} />
                     </Paper>
+
+                    <Paper sx={{ p: 3, mt: 4 }}>
+                        <Typography variant="h6" gutterBottom>{messages.reindex.title}</Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{messages.reindex.description}</Typography>
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+                            <Box sx={{ width: { xs: '100%', md: 150 } }}>
+                                <FormInputTextField
+                                    id="reindexFromYear"
+                                    label={messages.filters.fromYear}
+                                    type="number"
+                                    value={reindexFromYear}
+                                    handler={(event: React.ChangeEvent<HTMLInputElement>) => setReindexFromYear(event.target.value)} />
+                            </Box>
+                            <Box sx={{ width: { xs: '100%', md: 150 } }}>
+                                <FormInputTextField
+                                    id="reindexToYear"
+                                    label={messages.filters.toYear}
+                                    type="number"
+                                    value={reindexToYear}
+                                    handler={(event: React.ChangeEvent<HTMLInputElement>) => setReindexToYear(event.target.value)} />
+                            </Box>
+                            <Button
+                                variant="contained"
+                                onClick={handleReindex}
+                                disabled={reindexDisabled}
+                                startIcon={reindexing ? <CircularProgress size={16} color="inherit" /> : undefined}>
+                                {reindexing ? messages.reindex.running : messages.reindex.button}
+                            </Button>
+                        </Box>
+                        {reindexInvalidYearRange && <Alert severity="warning" sx={{ mt: 2 }}>{messages.filters.invalidYearRange}</Alert>}
+                    </Paper>
                 </Container>
+
+                <Snackbar
+                    open={reindexFeedback !== null}
+                    autoHideDuration={6000}
+                    onClose={() => setReindexFeedback(null)}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+                    {reindexFeedback
+                        ? <Alert severity={reindexFeedback.severity} onClose={() => setReindexFeedback(null)} sx={{ width: '100%' }}>{reindexFeedback.message}</Alert>
+                        : undefined}
+                </Snackbar>
             </Paper>
         </ThemeProvider>
     )

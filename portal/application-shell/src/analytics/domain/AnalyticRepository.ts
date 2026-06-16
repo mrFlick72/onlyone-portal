@@ -22,6 +22,15 @@ export type TotalByYearSearchCriteria = {
     tag?: string
 }
 
+export type ReindexCriteria = {
+    fromYear: number
+    toYear: number
+}
+
+export type ReindexResult = {
+    imported: number
+}
+
 export async function findTotalByTag(searchCriteria: TotalByTagSearchCriteria): Promise<TagTotal[]> {
     const baseUrl = await getAnalyticApiBaseUrl();
     const response = await fetch(`${baseUrl}/api/analytic/budget/expense/total-by-tag`, {
@@ -54,6 +63,24 @@ export async function findTotalByYear(searchCriteria: TotalByYearSearchCriteria)
     })
     if (!response.ok) {
         throw new Error(`total-by-year request failed with status ${response.status}`)
+    }
+    return await response.json()
+}
+
+export async function reindexBudgetExpense(criteria: ReindexCriteria): Promise<ReindexResult> {
+    const baseUrl = await getAnalyticApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/analytic/budget/expense/reindex`, {
+        method: "POST",
+        credentials: 'include',
+        headers: {
+            'Authorization': `Bearer ${window.sessionStorage.getItem("ACCESS_TOKEN")}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(criteria)
+    })
+    if (!response.ok) {
+        throw new Error(`reindex request failed with status ${response.status}`)
     }
     return await response.json()
 }

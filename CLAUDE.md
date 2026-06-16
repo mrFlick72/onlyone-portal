@@ -170,6 +170,7 @@ github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../
 | plan-api     | DELETE     | `/api/plan/:id/todo/:todoId`                     | Deletes a todo                                                                     |
 | analytic-api | PUT        | `/api/analytic/budget/expense/total-by-tag`      | Totals grouped by tag value for a year (optional month + tag-key filter)           |
 | analytic-api | PUT        | `/api/analytic/budget/expense/total-by-year`     | Totals grouped by year over a range (optional tag-key filter); years zero-filled   |
+| analytic-api | POST       | `/api/analytic/budget/expense/reindex`           | Rebuilds the caller's projection from budget-api over `{fromYear,toYear}` (recovery) |
 
 Expense, revenue, and full attachment route details: see `budget/CLAUDE.md` and `budget/budget-api/CLAUDE.md`. Analytics route details: see `budget/analytic-api/AGENTS.md`.
 
@@ -180,7 +181,8 @@ Expense, revenue, and full attachment route details: see `budget/CLAUDE.md` and 
 - `budget-api`, `tag-api` → DynamoDB (region hardcoded to `eu-central-1`)
 - `budget-api` → S3 (attachment content; bucket from config key `budget-api.s3.attachment.bucket-name`)
 - `budget-api` → Kafka (publishes expense `CREATE`/`UPDATE`/`DELETE` events to topic `budget-api.expense`)
-- `analytic-api` → Kafka (consumes `budget-api.expense`) → its own Postgres projection (read-only at request time; no REST call to `budget-api`)
+- `analytic-api` → Kafka (consumes `budget-api.expense`) → its own Postgres projection (the read path; no REST call to `budget-api`)
+- `analytic-api` → `budget-api` (REST, config key `budget-api.base-url` via `BUDGET_API_BASE_URL`) — **only** for the per-user reindex/recovery endpoint, never on the read path
 - `plan-api` → Postgres
 - All Gin services, including `plan-api` → vauthenticator JWKS for JWT validation
 

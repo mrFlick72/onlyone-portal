@@ -22,3 +22,10 @@ analyticsPage:
     empty: "No data for the selected filters"
     error: "Something went wrong while loading the chart"
     retry: "Retry"
+reinde  reindex:
+    title: "Reindex data"
+    description: "Rebuild your analytics data from the budget service over the selected year range. Use this if some data looks missing or out of date."
+    button: "Reindex"
+    running: "Reindexing…"
+    success: "Reindex complete"
+    error: "Reindex failed. Please try again."

@@ -315,6 +315,14 @@ export class OnlyonePortalPagesConfigMap {
                 empty: getMessageFor(bundle, "analyticsPage.states.empty"),
                 error: getMessageFor(bundle, "analyticsPage.states.error"),
                 retry: getMessageFor(bundle, "analyticsPage.states.retry"),
+            },
+            reindex: {
+                title: getMessageFor(bundle, "analyticsPage.reindex.title"),
+                description: getMessageFor(bundle, "analyticsPage.reindex.description"),
+                button: getMessageFor(bundle, "analyticsPage.reindex.button"),
+                running: getMessageFor(bundle, "analyticsPage.reindex.running"),
+                success: getMessageFor(bundle, "analyticsPage.reindex.success"),
+                error: getMessageFor(bundle, "analyticsPage.reindex.error"),
             }
         }
     }

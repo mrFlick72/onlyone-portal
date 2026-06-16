@@ -5,6 +5,8 @@ from app.analytic.adapter.kafka.consumer import (
     BudgetExpenseConsumer,
     BudgetExpenseEventHandler,
 )
+from app.analytic.adapter.rest.source import RestBudgetExpenseSource
+from app.analytic.domain.reindex import ExpenseReindexService
 from app.analytic.domain.service import BudgetExpenseAnalysisService
 from dependency_injector import containers, providers
 from dotenv import load_dotenv
@@ -26,6 +28,18 @@ class AnalyticConfigContainer(containers.DeclarativeContainer):
         BudgetExpenseAnalysisService,
         repository=expense_projection_repository,
         security_context_resolver=security_context_config_container.security_context_resolver,
+    )
+
+    budget_expense_source = providers.Singleton(
+        RestBudgetExpenseSource,
+        budget_api_base_url=os.getenv("BUDGET_API_BASE_URL"),
+        security_context_resolver=security_context_config_container.security_context_resolver,
+    )
+
+    expense_reindex_service = providers.Singleton(
+        ExpenseReindexService,
+        source=budget_expense_source,
+        repository=expense_projection_repository,
     )
 
     budget_expense_event_handler = providers.Singleton(
