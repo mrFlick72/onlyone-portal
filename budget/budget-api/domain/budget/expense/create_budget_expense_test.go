@@ -44,6 +44,35 @@ func TestWhenANewBudgetExpenseISCreated(t *testing.T) {
 	mockedPublisher.AssertCalled(t, "CreateBudgetExpense", ctx, aBudgetExpense)
 }
 
+func TestWhenANewBudgetExpenseWithNoTagsDefaultsToUnknown(t *testing.T) {
+
+	mockedRepository := new(BudgetExpenseRepositoryMock)
+	mockedPublisher := new(BudgetExpenseEventPublisherMock)
+	uut := CreateBudgetExpense{
+		Repository:     mockedRepository,
+		EventPublisher: mockedPublisher,
+	}
+
+	aDate, _ := date.IsoDateFor("2018-01-01")
+	anAmount, _ := money.MoneyFor("1.00")
+	aBudgetExpense := BudgetExpense{
+		Date:   *aDate,
+		Amount: anAmount,
+		Note:   "A_NOTE",
+		Tags:   []tags.SearchTag{},
+	}
+
+	ctx := testutils.NewUserContext()
+
+	mockedRepository.On("Save", ctx, &aBudgetExpense).Return(nil)
+	mockedPublisher.On("CreateBudgetExpense", ctx, mock.Anything).Return(nil)
+
+	err := uut.Execute(ctx, &aBudgetExpense)
+
+	assert.Equal(t, nil, err)
+	assert.Equal(t, []tags.SearchTag{{Key: "UNKNOWN", Value: "UNKNOWN"}}, aBudgetExpense.Tags)
+}
+
 func TestWhenANewBudgetExpenseCreationFails(t *testing.T) {
 
 	mockedRepository := new(BudgetExpenseRepositoryMock)
