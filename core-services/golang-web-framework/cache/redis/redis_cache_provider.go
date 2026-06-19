@@ -41,18 +41,6 @@ func (provider *RedisCacheProvider) key(key string) string {
 	return provider.namespace + ":" + key
 }
 
-func (provider *RedisCacheProvider) Get(key string) (string, bool) {
-	return provider.GetContext(context.TODO(), key)
-}
-
-func (provider *RedisCacheProvider) Set(key string, value string) error {
-	return provider.SetContext(context.TODO(), key, value)
-}
-
-func (provider *RedisCacheProvider) Evict(key string) error {
-	return provider.EvictContext(context.TODO(), key)
-}
-
 // GetContext fails open: any Redis error, including a real miss (redis.Nil)
 // or a connection/timeout failure, degrades to a cache miss rather than
 // surfacing an error to the caller.

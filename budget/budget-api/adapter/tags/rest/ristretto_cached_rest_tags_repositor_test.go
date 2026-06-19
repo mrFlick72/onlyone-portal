@@ -18,21 +18,6 @@ type CacheProviderMock struct {
 	mock.Mock
 }
 
-func (m *CacheProviderMock) Get(key string) (string, bool) {
-	args := m.Called(key)
-	return args.String(0), args.Bool(1)
-}
-
-func (m *CacheProviderMock) Set(key string, value string) error {
-	args := m.Called(key, value)
-	return args.Error(0)
-}
-
-func (m *CacheProviderMock) Evict(key string) error {
-	args := m.Called(key)
-	return args.Error(0)
-}
-
 func (m *CacheProviderMock) GetContext(ctx context.Context, key string) (string, bool) {
 	args := m.Called(ctx, key)
 	return args.String(0), args.Bool(1)

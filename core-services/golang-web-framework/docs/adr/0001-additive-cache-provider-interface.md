@@ -1,10 +1,12 @@
 ---
-status: accepted
+status: superseded by ADR-0004 (non-context methods removed once the audit showed they had no real callers)
 ---
 
 # Widen CacheProvider additively instead of a breaking change
 
 `budget-api`, `tag-api`, `account-api`, and `plan-api` all consume `golang-web-framework` through a local path `replace` directive with no version pinning, so any signature change to an existing `CacheProvider` method breaks their build the moment this module changes — even when the change is scoped to framework-only work. To add Redis/context support we widened the interface by adding three new methods (`GetContext`, `SetContext`, `EvictContext`) alongside the original `Get`/`Set`/`Evict`, rather than changing the originals to take a `context.Context`. The non-context methods are permanent one-line shims to the `*Context` versions via `context.TODO()` — they are not deprecated cruft pending removal, they are load-bearing backward compatibility for as long as those services use the `replace` directive.
+
+> **Update (ADR-0004):** the "permanent, not pending removal" framing for the non-context methods turned out to be overly cautious — an audit found `budget-api` was the only real caller, and it has since migrated to the `*Context` methods exclusively. The non-context methods were removed. The additive-widening principle below still applies to any *future* signature change.
 
 ## Considered Options
 

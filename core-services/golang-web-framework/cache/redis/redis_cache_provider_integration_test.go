@@ -34,37 +34,41 @@ func newRealRedisProvider(t *testing.T, namespace string, ttl time.Duration) *Re
 }
 
 func TestIntegration_SetThenGet_RoundTrips(t *testing.T) {
+	ctx := context.Background()
 	provider := newRealRedisProvider(t, "ns", time.Minute)
 
-	require.NoError(t, provider.Set("key", "value"))
+	require.NoError(t, provider.SetContext(ctx, "key", "value"))
 
-	value, found := provider.Get("key")
+	value, found := provider.GetContext(ctx, "key")
 	assert.True(t, found)
 	assert.Equal(t, "value", value)
 }
 
 func TestIntegration_Evict_RemovesKey(t *testing.T) {
+	ctx := context.Background()
 	provider := newRealRedisProvider(t, "ns", time.Minute)
-	require.NoError(t, provider.Set("key", "value"))
+	require.NoError(t, provider.SetContext(ctx, "key", "value"))
 
-	require.NoError(t, provider.Evict("key"))
+	require.NoError(t, provider.EvictContext(ctx, "key"))
 
-	_, found := provider.Get("key")
+	_, found := provider.GetContext(ctx, "key")
 	assert.False(t, found)
 }
 
 func TestIntegration_Namespace_PrefixesKeys(t *testing.T) {
+	ctx := context.Background()
 	provider := newRealRedisProvider(t, "myservice", time.Minute)
-	require.NoError(t, provider.Set("key", "value"))
+	require.NoError(t, provider.SetContext(ctx, "key", "value"))
 
-	value, found := provider.Get("key")
+	value, found := provider.GetContext(ctx, "key")
 	assert.True(t, found)
 	assert.Equal(t, "value", value)
 }
 
 func TestIntegration_Get_MissReturnsFalse(t *testing.T) {
+	ctx := context.Background()
 	provider := newRealRedisProvider(t, "ns", time.Minute)
 
-	_, found := provider.Get("missing")
+	_, found := provider.GetContext(ctx, "missing")
 	assert.False(t, found)
 }

@@ -19,7 +19,7 @@ Populating L1 with a value just read from L2 after an L1 miss, so the next read 
 _Avoid_: cache warming, promotion.
 
 **Fail-open**:
-The contract that a `CacheProvider` never surfaces an internal failure (a broken connection, a rejected write) as an error to its caller. `Get`/`GetContext` degrade to a miss; `Set`/`Evict`/their `*Context` variants log the failure and always return `nil`. Only the real delegate behind a cache-aside call (the DB/HTTP call made on a cache miss) is allowed to return an error to the application.
+The contract that a `CacheProvider` never surfaces an internal failure (a broken connection, a rejected write) as an error to its caller. `GetContext` degrades to a miss; `SetContext`/`EvictContext` log the failure and always return `nil`. Only the real delegate behind a cache-aside call (the DB/HTTP call made on a cache miss) is allowed to return an error to the application.
 _Avoid_: graceful degradation, soft failure.
 
 **Namespace**:
