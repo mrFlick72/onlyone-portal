@@ -23,14 +23,14 @@ func TestFindAllTagsGiveEmptyTags(t *testing.T) {
 	// simple in-memory mock implementing domain.TagRepository
 	mock := &MockRepo{tags: []domain.Tag{}}
 	var repo domain.TagRepository = mock
-	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo)
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/tags", nil)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "[]", w.Body.String())
+	assert.Equal(t, "[{\"key\":\"UNKNOWN\",\"value\":\"UNKNOWN\"}]", w.Body.String())
 }
 
 func TestFindAllTagsGiveNotEmptyTags(t *testing.T) {
@@ -49,14 +49,14 @@ func TestFindAllTagsGiveNotEmptyTags(t *testing.T) {
 	}}
 
 	var repo domain.TagRepository = mock
-	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo)
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/tags", nil)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "[{\"key\":\"tag1\",\"value\":\"value1\"},{\"key\":\"tag2\",\"value\":\"value2\"}]", w.Body.String())
+	assert.Equal(t, "[{\"key\":\"tag1\",\"value\":\"value1\"},{\"key\":\"tag2\",\"value\":\"value2\"},{\"key\":\"UNKNOWN\",\"value\":\"UNKNOWN\"}]", w.Body.String())
 }
 
 

@@ -15,6 +15,7 @@ type CreateBudgetExpense struct {
 }
 
 func (action *CreateBudgetExpense) Execute(ctx context.Context, budgetExpense *BudgetExpense) error {
+	applyDefaultTagIfMissing(budgetExpense)
 	user, _ := security.GetCurrentUser(ctx)
 	budgetExpense.UserName = *user.UserName
 	err := action.Repository.Save(ctx, budgetExpense)
@@ -22,6 +23,15 @@ func (action *CreateBudgetExpense) Execute(ctx context.Context, budgetExpense *B
 		action.EventPublisher.CreateBudgetExpense(ctx, *budgetExpense)
 	}
 	return err
+}
+
+// applyDefaultTagIfMissing defaults an expense with no tags to the UNKNOWN sentinel tag,
+// which tag-api always includes in its catalog without requiring per-user onboarding
+// (see tagging/tag-api/docs/adr/0001-unknown-sentinel-tag-not-persisted.md).
+func applyDefaultTagIfMissing(budgetExpense *BudgetExpense) {
+	if len(budgetExpense.Tags) == 0 {
+		budgetExpense.Tags = []tags.SearchTag{{Key: "UNKNOWN", Value: "UNKNOWN"}}
+	}
 }
 
 type FindSpentBudget struct {
@@ -73,6 +83,7 @@ type UpdateBudgetExpense struct {
 }
 
 func (action *UpdateBudgetExpense) Execute(ctx context.Context, budgetExpense *BudgetExpense) error {
+	applyDefaultTagIfMissing(budgetExpense)
 	userName, err := security.GetCurrentUser(ctx)
 	if err != nil {
 		return err

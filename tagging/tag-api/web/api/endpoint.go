@@ -11,21 +11,16 @@ import (
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/domain"
 )
 
-func RegisterEndpoints(r *gin.Engine, contextFactoryConverter server.ContextFactoryConverter, repository domain.TagRepository) *gin.Engine {
+func RegisterEndpoints(r *gin.Engine, contextFactoryConverter server.ContextFactoryConverter, repository domain.TagRepository, findAllTagsAction *domain.FindAllTags) *gin.Engine {
 
 	var logger = logging.GetLoggerInstanceForComponentByTypeName("api.RegisterEndpoints")
 
-	// GET /api/tags — return all tags as JSON
+	// GET /api/tags — return all tags as JSON, including the UNKNOWN sentinel tag
 	r.GET("/api/tags", func(c *gin.Context) {
-		tags, err := repository.FindAllTags(contextFactoryConverter.CreateContextFromGin(c))
+		tags, err := findAllTagsAction.Execute(contextFactoryConverter.CreateContextFromGin(c))
 		if err != nil {
 			logger.LogErrorfFor("error occurred: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		// Return a bare JSON array (not wrapped) — empty array when there are no tags
-		if tags == nil {
-			c.JSON(http.StatusOK, []domain.Tag{})
 			return
 		}
 		c.JSON(http.StatusOK, tags)

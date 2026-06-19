@@ -50,6 +50,42 @@ func TestWhenABudgetExpenseUpdateSucceed(t *testing.T) {
 	mockedRepository.AssertCalled(t, "Save", ctx, &aBudgetExpense)
 	mockedPublisher.AssertCalled(t, "UpdateBudgetExpense", ctx, aBudgetExpense)
 }
+func TestWhenABudgetExpenseUpdateWithNoTagsDefaultsToUnknown(t *testing.T) {
+
+	mockedRepository := new(BudgetExpenseRepositoryMock)
+	mockedPublisher := new(BudgetExpenseEventPublisherMock)
+	uut := UpdateBudgetExpense{
+		Repository:     mockedRepository,
+		EventPublisher: mockedPublisher,
+	}
+
+	aDate, _ := date.IsoDateFor("2018-01-01")
+	anAmount, _ := money.MoneyFor("1.00")
+	aBudgetExpense := BudgetExpense{
+		Id:       "A_BUDGET_ID",
+		UserName: "A_USER_NAME",
+		Date:     *aDate,
+		Amount:   anAmount,
+		Note:     "A_NOTE",
+		Tags:     []tags.SearchTag{},
+	}
+
+	ctx := testutils.NewUserContext()
+
+	foundBudgetExpense := &BudgetExpense{
+		Id:       "A_BUDGET_ID",
+		UserName: "A_USER_NAME",
+	}
+	mockedRepository.On("FindFor", ctx, "A_BUDGET_ID").Return(foundBudgetExpense, nil)
+	mockedRepository.On("Save", ctx, &aBudgetExpense).Return(nil)
+	mockedPublisher.On("UpdateBudgetExpense", ctx, mock.Anything).Return(nil)
+
+	err := uut.Execute(ctx, &aBudgetExpense)
+
+	assert.Equal(t, nil, err)
+	assert.Equal(t, []tags.SearchTag{{Key: "UNKNOWN", Value: "UNKNOWN"}}, aBudgetExpense.Tags)
+}
+
 func TestWhenABudgetExpenseUpdateDoesDoneNothingBecauseTheBudgetExpenseDoesNotExist(t *testing.T) {
 
 	mockedRepository := new(BudgetExpenseRepositoryMock)
