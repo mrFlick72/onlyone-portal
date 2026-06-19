@@ -33,3 +33,7 @@ jobs:
       - name: Run tests
         run: |
           go test -tags test ./...
+
+      - name: Run integration tests (Docker-backed, e.g. testcontainers redis)
+        run: |
+          go test -tags "test integration" ./cache/redis/...
