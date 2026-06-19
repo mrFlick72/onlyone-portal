@@ -62,7 +62,7 @@ func (repository *RistrettoCachedSearchTagRepository) GetAllTags(ctx context.Con
 
 	cacheKey := fmt.Sprintf("search_tags_user_%s", *user.UserName)
 
-	cachedSearchTags, found := repository.getFromTheCache(cacheKey, *user.UserName)
+	cachedSearchTags, found := repository.getFromTheCache(ctx, cacheKey)
 	if found {
 		return cachedSearchTags, nil
 	}
@@ -70,8 +70,8 @@ func (repository *RistrettoCachedSearchTagRepository) GetAllTags(ctx context.Con
 	return repository.fetchFromDelegate(ctx, cacheKey, *user.UserName)
 }
 
-func (repository *RistrettoCachedSearchTagRepository) getFromTheCache(cacheKey string, userName string) ([]tags.SearchTag, bool) {
-	if cachedValue, found := repository.CacheProvider.Get(cacheKey); found {
+func (repository *RistrettoCachedSearchTagRepository) getFromTheCache(ctx context.Context, cacheKey string) ([]tags.SearchTag, bool) {
+	if cachedValue, found := repository.CacheProvider.GetContext(ctx, cacheKey); found {
 		repository.logger.LogDebugfFor("Cache hit for key: %s", cacheKey)
 		var searchTags []tags.SearchTag
 		err := json.Unmarshal([]byte(cachedValue), &searchTags)
@@ -94,25 +94,17 @@ func (repository *RistrettoCachedSearchTagRepository) fetchFromDelegate(ctx cont
 		repository.logger.LogErrorfFor("Error fetching search tags from delegate: %s", err)
 		return nil, err
 	}
-	err = repository.setToTheCache(cacheKey, searchTags, userName)
-	if err != nil {
-		repository.logger.LogErrorfFor("Error setting search tags to cache: %s", err)
-	}
+	repository.setToTheCache(ctx, cacheKey, searchTags)
 	return searchTags, nil
 }
 
-func (repository *RistrettoCachedSearchTagRepository) setToTheCache(cacheKey string, searchTags []tags.SearchTag, userName string) error {
+func (repository *RistrettoCachedSearchTagRepository) setToTheCache(ctx context.Context, cacheKey string, searchTags []tags.SearchTag) {
 	jsonData, err := json.Marshal(searchTags)
 	if err != nil {
 		repository.logger.LogErrorfFor("Error marshalling search tags for key: %s, error: %s", cacheKey, err)
-		return err
+		return
 	}
 
-	err = repository.CacheProvider.Set(cacheKey, string(jsonData))
-	if err != nil {
-		repository.logger.LogErrorfFor("Error setting cache for key: %s, error: %s", cacheKey, err)
-	} else {
-		repository.logger.LogDebugfFor("Cache set for key: %s", cacheKey)
-	}
-	return err
+	repository.CacheProvider.SetContext(ctx, cacheKey, string(jsonData))
+	repository.logger.LogDebugfFor("Cache set for key: %s", cacheKey)
 }
