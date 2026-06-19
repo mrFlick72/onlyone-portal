@@ -21,18 +21,6 @@ func NewLayeredCacheProvider(l1, l2 CacheProvider) CacheProvider {
 	return &layeredCacheProvider{l1: l1, l2: l2}
 }
 
-func (provider *layeredCacheProvider) Get(key string) (string, bool) {
-	return provider.GetContext(context.TODO(), key)
-}
-
-func (provider *layeredCacheProvider) Set(key string, value string) error {
-	return provider.SetContext(context.TODO(), key, value)
-}
-
-func (provider *layeredCacheProvider) Evict(key string) error {
-	return provider.EvictContext(context.TODO(), key)
-}
-
 func (provider *layeredCacheProvider) GetContext(ctx context.Context, key string) (string, bool) {
 	if value, found := provider.l1.GetContext(ctx, key); found {
 		return value, true

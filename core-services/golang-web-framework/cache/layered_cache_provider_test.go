@@ -23,12 +23,6 @@ func newStub(name string, seq *[]string) *stubCacheProvider {
 	return &stubCacheProvider{store: map[string]string{}, name: name, callSequence: seq}
 }
 
-func (s *stubCacheProvider) Get(key string) (string, bool) { return s.GetContext(context.TODO(), key) }
-func (s *stubCacheProvider) Set(key, value string) error {
-	return s.SetContext(context.TODO(), key, value)
-}
-func (s *stubCacheProvider) Evict(key string) error { return s.EvictContext(context.TODO(), key) }
-
 func (s *stubCacheProvider) GetContext(ctx context.Context, key string) (string, bool) {
 	s.getCalls++
 	*s.callSequence = append(*s.callSequence, s.name+":Get")
@@ -51,24 +45,26 @@ func (s *stubCacheProvider) EvictContext(ctx context.Context, key string) error 
 }
 
 func TestGet_L1Hit_DoesNotTouchL2(t *testing.T) {
+	ctx := context.Background()
 	var seq []string
 	l1, l2 := newStub("L1", &seq), newStub("L2", &seq)
 	l1.store["key"] = "value"
 	provider := NewLayeredCacheProvider(l1, l2)
 
-	value, found := provider.Get("key")
+	value, found := provider.GetContext(ctx, "key")
 	assert.True(t, found)
 	assert.Equal(t, "value", value)
 	assert.Equal(t, 0, l2.getCalls)
 }
 
 func TestGet_L1Miss_L2Hit_BackfillsL1(t *testing.T) {
+	ctx := context.Background()
 	var seq []string
 	l1, l2 := newStub("L1", &seq), newStub("L2", &seq)
 	l2.store["key"] = "value"
 	provider := NewLayeredCacheProvider(l1, l2)
 
-	value, found := provider.Get("key")
+	value, found := provider.GetContext(ctx, "key")
 	assert.True(t, found)
 	assert.Equal(t, "value", value)
 	assert.Equal(t, "value", l1.store["key"])
@@ -76,60 +72,50 @@ func TestGet_L1Miss_L2Hit_BackfillsL1(t *testing.T) {
 }
 
 func TestGet_BothMiss_ReturnsFalse(t *testing.T) {
+	ctx := context.Background()
 	var seq []string
 	l1, l2 := newStub("L1", &seq), newStub("L2", &seq)
 	provider := NewLayeredCacheProvider(l1, l2)
 
-	value, found := provider.Get("missing")
+	value, found := provider.GetContext(ctx, "missing")
 	assert.False(t, found)
 	assert.Equal(t, "", value)
 }
 
 func TestSet_WriteOrderIsL2ThenL1(t *testing.T) {
+	ctx := context.Background()
 	var seq []string
 	l1, l2 := newStub("L1", &seq), newStub("L2", &seq)
 	provider := NewLayeredCacheProvider(l1, l2)
 
-	require.NoError(t, provider.Set("key", "value"))
+	require.NoError(t, provider.SetContext(ctx, "key", "value"))
 	assert.Equal(t, []string{"L2:Set", "L1:Set"}, seq)
 	assert.Equal(t, "value", l1.store["key"])
 	assert.Equal(t, "value", l2.store["key"])
 }
 
 func TestEvict_OrderIsL1ThenL2(t *testing.T) {
+	ctx := context.Background()
 	var seq []string
 	l1, l2 := newStub("L1", &seq), newStub("L2", &seq)
 	l1.store["key"] = "value"
 	l2.store["key"] = "value"
 	provider := NewLayeredCacheProvider(l1, l2)
 
-	require.NoError(t, provider.Evict("key"))
+	require.NoError(t, provider.EvictContext(ctx, "key"))
 	assert.Equal(t, []string{"L1:Evict", "L2:Evict"}, seq)
 }
 
 func TestSet_AlwaysReturnsNil(t *testing.T) {
+	ctx := context.Background()
 	var seq []string
 	provider := NewLayeredCacheProvider(newStub("L1", &seq), newStub("L2", &seq))
-	assert.NoError(t, provider.Set("key", "value"))
+	assert.NoError(t, provider.SetContext(ctx, "key", "value"))
 }
 
 func TestEvict_AlwaysReturnsNil(t *testing.T) {
+	ctx := context.Background()
 	var seq []string
 	provider := NewLayeredCacheProvider(newStub("L1", &seq), newStub("L2", &seq))
-	assert.NoError(t, provider.Evict("key"))
-}
-
-func TestNonContextMethods_DelegateToContextMethods(t *testing.T) {
-	var seq []string
-	l1, l2 := newStub("L1", &seq), newStub("L2", &seq)
-	provider := NewLayeredCacheProvider(l1, l2)
-
-	require.NoError(t, provider.Set("key", "value"))
-	value, found := provider.Get("key")
-	assert.True(t, found)
-	assert.Equal(t, "value", value)
-
-	require.NoError(t, provider.Evict("key"))
-	_, found = provider.Get("key")
-	assert.False(t, found)
+	assert.NoError(t, provider.EvictContext(ctx, "key"))
 }

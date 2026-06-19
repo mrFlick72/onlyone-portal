@@ -21,18 +21,6 @@ var loggerOnce = sync.OnceValue(func() *logging.Logger {
 	return logging.GetLoggerInstanceForComponentByType(&RistrettoCacheProvider{})
 })
 
-func (provider *RistrettoCacheProvider) Get(key string) (string, bool) {
-	return provider.GetContext(context.TODO(), key)
-}
-
-func (provider *RistrettoCacheProvider) Set(key string, value string) error {
-	return provider.SetContext(context.TODO(), key, value)
-}
-
-func (provider *RistrettoCacheProvider) Evict(key string) error {
-	return provider.EvictContext(context.TODO(), key)
-}
-
 func (provider *RistrettoCacheProvider) GetContext(ctx context.Context, key string) (string, bool) {
 	val, found := provider.Cache.Get(key)
 	if !found {
