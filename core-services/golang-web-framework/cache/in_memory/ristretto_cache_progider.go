@@ -1,19 +1,39 @@
 package inmemory
 
 import (
-	"errors"
+	"context"
+	"sync"
 	"time"
 
 	"github.com/dgraph-io/ristretto"
+
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 )
-	// Get(key string) (string, error)
-	// Set(key string, value string) error
-	// Evict(key string) error
+
+const defaultTTL = 1 * time.Minute
+
 type RistrettoCacheProvider struct {
 	Cache *ristretto.Cache
+	TTL   time.Duration
 }
 
+var loggerOnce = sync.OnceValue(func() *logging.Logger {
+	return logging.GetLoggerInstanceForComponentByType(&RistrettoCacheProvider{})
+})
+
 func (provider *RistrettoCacheProvider) Get(key string) (string, bool) {
+	return provider.GetContext(context.TODO(), key)
+}
+
+func (provider *RistrettoCacheProvider) Set(key string, value string) error {
+	return provider.SetContext(context.TODO(), key, value)
+}
+
+func (provider *RistrettoCacheProvider) Evict(key string) error {
+	return provider.EvictContext(context.TODO(), key)
+}
+
+func (provider *RistrettoCacheProvider) GetContext(ctx context.Context, key string) (string, bool) {
 	val, found := provider.Cache.Get(key)
 	if !found {
 		return "", false
@@ -21,16 +41,25 @@ func (provider *RistrettoCacheProvider) Get(key string) (string, bool) {
 	return val.(string), true
 }
 
-func (provider *RistrettoCacheProvider) Set(key string, value string) error {
-	result := provider.Cache.SetWithTTL(key, value, 1, 1*time.Minute)
-	if !result {
-		return errors.New("The key value " + key + ":" + value + " was not stored in the cache")
+// SetContext never returns an error to the caller: a CacheProvider must never
+// be the source of a caller-facing error, only the real delegate behind a
+// cache-aside call should ever surface one. Internal failures are logged and
+// swallowed.
+func (provider *RistrettoCacheProvider) SetContext(ctx context.Context, key string, value string) error {
+	ttl := provider.TTL
+	if ttl <= 0 {
+		ttl = defaultTTL
+	}
+
+	if !provider.Cache.SetWithTTL(key, value, 1, ttl) {
+		loggerOnce().LogErrorfFor("Ristretto cache rejected SetWithTTL for key: %s", key)
+		return nil
 	}
 	provider.Cache.Wait()
 	return nil
 }
 
-func (provider *RistrettoCacheProvider) Evict(key string) error {
+func (provider *RistrettoCacheProvider) EvictContext(ctx context.Context, key string) error {
 	provider.Cache.Del(key)
 	provider.Cache.Wait()
 	return nil

@@ -147,6 +147,13 @@ github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../
 - When `otel.enabled: false`: returns a plain `aws.Config` with no overhead
 - **Requirement**: pass the request `ctx` to every AWS API call (e.g. `client.PutItem(ctx, input)`, not `context.TODO()`) so the middleware can read the active span
 
+**Cache providers (`cache` package):**
+- `cache.CacheProvider` has 6 methods: the original `Get(key) (string, bool)` / `Set(key, value) error` / `Evict(key) error`, plus additive `GetContext(ctx, key) (string, bool)` / `SetContext(ctx, key, value) error` / `EvictContext(ctx, key) error`. The non-ctx methods are permanent shims to the ctx versions via `context.TODO()` — kept for backward compatibility with services consuming this module via a local `replace` directive; new code should call the `*Context` variants.
+- **Universal error contract**: a `CacheProvider` must never be the source of a caller-facing error. `Get`/`GetContext` log internal failures and return `("", false)` — a miss, never an error. `Set`/`SetContext`/`Evict`/`EvictContext` log internal failures and always return `nil`. Only the real delegate behind a cached call (e.g. a repository's DB/HTTP call on a cache miss) should ever surface an error to the application.
+- `inmemory.RistrettoCacheProvider` (package `cache/in_memory`) wraps a `*ristretto.Cache` and carries its own `TTL time.Duration` field; `TTL <= 0` (the zero value) falls back to a 1-minute default, preserving the original hardcoded behavior for callers constructing it via a bare struct literal.
+- `redis.RedisCacheProvider` (package `cache/redis`) wraps a `*redis.Client` ([go-redis v9](https://github.com/redis/go-redis)). Construct via `redis.NewClient(redis.ClientConfig{...})` (single-node only, no cluster/sentinel; conditionally OTel-instrumented via `redisotel.InstrumentTracing`/`InstrumentMetrics` under the same `otel.enabled` gate as `httpclient`/`awsclient`) then `redis.NewCacheProvider(client, namespace, ttl)`. `namespace` is a required key-prefix (`namespace + ":" + key`) with no default — services sharing one Redis instance must pick distinct namespaces. Fails open: any Redis error (including connection failure or `redis.Nil` "not found") degrades `Get`/`GetContext` to a miss. `Close() error` is a plain method, not part of `CacheProvider` — lifecycle is the consuming service's responsibility.
+- `cache.NewLayeredCacheProvider(l1, l2 cache.CacheProvider) cache.CacheProvider` composes two providers into one (e.g. Ristretto as L1, Redis as L2). It depends only on the `CacheProvider` interface, not on any concrete provider package. Read: L1 first; on L1 miss + L2 hit, backfills L1 then returns the value; on both miss, returns a miss. Write: L2 then L1 (write-through). Evict: L1 then L2. TTLs are not a concern of this type — each leaf provider owns its own TTL, and **cross-replica L1 cache sync is not implemented**: if a value changes via one replica, other replicas' L1 entries are only bounded by their own L1 TTL, not invalidated proactively.
+
 **Config**: all Gin services load a YAML config file via Viper; path set in `CONFIG_FILE_LOCATION` env var. Access string values via `config.GetConfigurationManagerInstance().GetConfigFor("key")`, booleans via `GetConfigBoolFor("key")`, durations via `GetConfigDurationFor("key", default)` (returns `default` when missing or unparseable).
 
 ## Service Routes Summary
@@ -194,11 +201,11 @@ Expense, revenue, and full attachment route details: see `budget/CLAUDE.md` and 
 - CI/CD via GitHub Actions (`.github/workflows/`)
 - Local frontend dev: nginx on port 8070 via `portal/application-shell/local/docker compose up`; app served at `http://local.onlyone-portal.com:8070`
 
-git a## Agent skills
+## Agent skills
 
 ### Issue tracker
 
-Issues and PRDs live as local markdown files under `.scratch/<feature-slug>/`. See `docs/agents/issue-tracker.md`.
+Issues and PRDs live as GitHub issues (no PR-as-request-surface). See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
