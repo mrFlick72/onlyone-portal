@@ -193,3 +193,17 @@ Expense, revenue, and full attachment route details: see `budget/CLAUDE.md` and 
 - Kubernetes Helm charts: `account/helm/`, `budget/helm-charts/`
 - CI/CD via GitHub Actions (`.github/workflows/`)
 - Local frontend dev: nginx on port 8070 via `portal/application-shell/local/docker compose up`; app served at `http://local.onlyone-portal.com:8070`
+
+git a## Agent skills
+
+### Issue tracker
+
+Issues and PRDs live as local markdown files under `.scratch/<feature-slug>/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Five canonical triage roles, using the default strings (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Multi-context layout: `CONTEXT-MAP.md` at the root points to per-service `CONTEXT.md` files. See `docs/agents/domain.md`.
