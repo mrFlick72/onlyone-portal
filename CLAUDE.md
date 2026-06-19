@@ -201,11 +201,11 @@ Expense, revenue, and full attachment route details: see `budget/CLAUDE.md` and 
 - CI/CD via GitHub Actions (`.github/workflows/`)
 - Local frontend dev: nginx on port 8070 via `portal/application-shell/local/docker compose up`; app served at `http://local.onlyone-portal.com:8070`
 
-git a## Agent skills
+## Agent skills
 
 ### Issue tracker
 
-Issues and PRDs live as local markdown files under `.scratch/<feature-slug>/`. See `docs/agents/issue-tracker.md`.
+Issues and PRDs live as GitHub issues (no PR-as-request-surface). See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
