@@ -104,6 +104,15 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func findTagByKey(tags []domain.Tag, key string) *domain.Tag {
+	for _, tag := range tags {
+		if tag.Key == key {
+			return &tag
+		}
+	}
+	return nil
+}
+
 func saveATag(t *testing.T) {
 	repo := newTagDynamoDBRepository()
 	tag := domain.Tag{Key: "exampleKey", Value: "exampleValue"}
@@ -111,20 +120,6 @@ func saveATag(t *testing.T) {
 	err := repo.SaveTag(newStubbedContext(), &tag)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
-	}
-}
-
-func TestSaveTag(t *testing.T) {
-	saveATag(t)
-	repo := newTagDynamoDBRepository()
-	key := "exampleKey"
-
-	tag, err := repo.GetTagBy(newStubbedContext(), key)
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
-	if tag.Key != key {
-		t.Errorf("Expected key %v, got %v", key, tag.Key)
 	}
 }
 
@@ -150,9 +145,13 @@ func TestSaveTagPersistsNormalizedScope(t *testing.T) {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	got, err := repo.GetTagBy(newStubbedContext(), "scopedKey")
+	tags, err := repo.FindAllTags(newStubbedContext(), "")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
+	}
+	got := findTagByKey(tags, "scopedKey")
+	if got == nil {
+		t.Fatalf("Expected to find tag with key %q, got %+v", "scopedKey", tags)
 	}
 	if got.Scope != "expense" {
 		t.Errorf("Expected normalized scope %q, got %q", "expense", got.Scope)
@@ -167,9 +166,13 @@ func TestSaveTagWithoutScopePersistsEmptyStringScopeAttribute(t *testing.T) {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	got, err := repo.GetTagBy(newStubbedContext(), "unscopedKey")
+	tags, err := repo.FindAllTags(newStubbedContext(), "")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
+	}
+	got := findTagByKey(tags, "unscopedKey")
+	if got == nil {
+		t.Fatalf("Expected to find tag with key %q, got %+v", "unscopedKey", tags)
 	}
 	if got.Scope != "" {
 		t.Errorf("Expected empty scope for unscoped tag, got %q", got.Scope)
