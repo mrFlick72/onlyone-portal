@@ -107,15 +107,6 @@ func (m *MockRepo) SaveTag(ctx context.Context, tag *domain.Tag) error {
 	return nil
 }
 
-func (m *MockRepo) GetTagBy(ctx context.Context, key string) (*domain.Tag, error) {
-	for _, t := range m.tags {
-		if t.Key == key {
-			return &t, nil
-		}
-	}
-	return nil, nil
-}
-
 func (m *MockRepo) FindAllTags(ctx context.Context, scope string) ([]domain.Tag, error) {
 	if scope == "" {
 		return m.tags, nil

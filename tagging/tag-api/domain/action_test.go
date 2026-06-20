@@ -16,8 +16,6 @@ type findAllTagsMockRepo struct {
 
 func (m *findAllTagsMockRepo) SaveTag(ctx context.Context, tag *Tag) error { return nil }
 
-func (m *findAllTagsMockRepo) GetTagBy(ctx context.Context, key string) (*Tag, error) { return nil, nil }
-
 func (m *findAllTagsMockRepo) FindAllTags(ctx context.Context, scope string) ([]Tag, error) {
 	m.receivedScope = scope
 	return m.tags, m.err

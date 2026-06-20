@@ -2,7 +2,6 @@ package dynamodb
 
 import (
 	"context"
-	"errors"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_config "github.com/aws/aws-sdk-go-v2/config"
@@ -80,38 +79,6 @@ func scopeFrom(item map[string]types.AttributeValue) string {
 		return attr.Value
 	}
 	return ""
-}
-
-func (r *TagDynamoDBRepository) GetTagBy(ctx context.Context, key string) (*domain.Tag, error) {
-	// Implementation for retrieving a tag by key from DynamoDB
-	user, err := security.GetCurrentUser(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	input := &dynamodb.QueryInput{
-		TableName: aws.String(r.TableName),
-		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":user_name":      &types.AttributeValueMemberS{Value: *user.UserName},
-			":search_tag_key": &types.AttributeValueMemberS{Value: key},
-		},
-		KeyConditionExpression: aws.String("user_name =:user_name AND search_tag_key =:search_tag_key"),
-	}
-	result, err := r.Client.Query(ctx, input)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(result.Items) == 0 {
-		return nil, errors.New("tag not found") // Tag not found
-	}
-
-	item := result.Items[0]
-	return &domain.Tag{
-		Key:   item["search_tag_key"].(*types.AttributeValueMemberS).Value,
-		Value: item["search_tag_value"].(*types.AttributeValueMemberS).Value,
-		Scope: scopeFrom(item),
-	}, nil
 }
 
 // FindAllTags queries by user_name. An empty scope means "no filter, return
