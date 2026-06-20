@@ -133,7 +133,7 @@ func TestFindAllTags(t *testing.T) {
 
 	repo := newTagDynamoDBRepository()
 
-	tags, err := repo.FindAllTags(newStubbedContext())
+	tags, err := repo.FindAllTags(newStubbedContext(), "")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -196,7 +196,7 @@ func TestSaveTagWithoutScopePersistsEmptyStringScopeAttribute(t *testing.T) {
 	}
 }
 
-func TestFindTagsByScopeWithEmptyScopeReturnsEverythingUnfiltered(t *testing.T) {
+func TestFindAllTagsWithEmptyScopeReturnsEverythingUnfiltered(t *testing.T) {
 	repo := newTagDynamoDBRepository()
 
 	scoped := domain.Tag{Key: "emptyScopeQueryScopedKey", Value: "scopedValue", Scope: "expense"}
@@ -208,7 +208,7 @@ func TestFindTagsByScopeWithEmptyScopeReturnsEverythingUnfiltered(t *testing.T) 
 		}
 	}
 
-	tags, err := repo.FindTagsByScope(newStubbedContext(), "")
+	tags, err := repo.FindAllTags(newStubbedContext(), "")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -225,7 +225,7 @@ func TestFindTagsByScopeWithEmptyScopeReturnsEverythingUnfiltered(t *testing.T) 
 	}
 }
 
-func TestFindTagsByScopeReturnsOnlyMatchingScopeAndExcludesScopeless(t *testing.T) {
+func TestFindAllTagsWithScopeReturnsOnlyMatchingAndExcludesScopeless(t *testing.T) {
 	repo := newTagDynamoDBRepository()
 
 	matching := domain.Tag{Key: "matchKey", Value: "matchValue", Scope: "Revenue"}
@@ -238,7 +238,7 @@ func TestFindTagsByScopeReturnsOnlyMatchingScopeAndExcludesScopeless(t *testing.
 		}
 	}
 
-	tags, err := repo.FindTagsByScope(newStubbedContext(), "revenue")
+	tags, err := repo.FindAllTags(newStubbedContext(), "revenue")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}

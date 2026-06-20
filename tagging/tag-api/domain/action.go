@@ -6,20 +6,11 @@ type FindAllTags struct {
 	Repository TagRepository
 }
 
-func (action *FindAllTags) Execute(ctx context.Context) ([]Tag, error) {
-	tags, err := action.Repository.FindAllTags(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return append(tags, Tag{Key: "UNKNOWN", Value: "UNKNOWN"}), nil
-}
-
-type FindTagsByScope struct {
-	Repository TagRepository
-}
-
-func (action *FindTagsByScope) Execute(ctx context.Context, scope string) ([]Tag, error) {
-	tags, err := action.Repository.FindTagsByScope(ctx, NormalizeScope(scope))
+// Execute returns the user's tags plus the UNKNOWN sentinel. An empty scope
+// returns every tag unfiltered; a non-empty scope returns only tags whose
+// normalized Scope matches it.
+func (action *FindAllTags) Execute(ctx context.Context, scope string) ([]Tag, error) {
+	tags, err := action.Repository.FindAllTags(ctx, NormalizeScope(scope))
 	if err != nil {
 		return nil, err
 	}

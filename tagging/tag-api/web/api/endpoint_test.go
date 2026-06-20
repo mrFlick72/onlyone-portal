@@ -23,7 +23,7 @@ func TestFindAllTagsGiveEmptyTags(t *testing.T) {
 	// simple in-memory mock implementing domain.TagRepository
 	mock := &MockRepo{tags: []domain.Tag{}}
 	var repo domain.TagRepository = mock
-	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo}, &domain.FindTagsByScope{Repository: repo})
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/tags", nil)
@@ -49,7 +49,7 @@ func TestFindAllTagsGiveNotEmptyTags(t *testing.T) {
 	}}
 
 	var repo domain.TagRepository = mock
-	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo}, &domain.FindTagsByScope{Repository: repo})
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/tags", nil)
@@ -59,8 +59,7 @@ func TestFindAllTagsGiveNotEmptyTags(t *testing.T) {
 	assert.Equal(t, "[{\"key\":\"tag1\",\"value\":\"value1\"},{\"key\":\"tag2\",\"value\":\"value2\"},{\"key\":\"UNKNOWN\",\"value\":\"UNKNOWN\"}]", w.Body.String())
 }
 
-
-func TestFindTagsByScopeFiltersOutNonMatchingAndScopelessTags(t *testing.T) {
+func TestFindAllTagsByScopeFiltersOutNonMatchingAndScopelessTags(t *testing.T) {
 	router := setupRouter()
 
 	mock := &MockRepo{tags: []domain.Tag{
@@ -70,7 +69,7 @@ func TestFindTagsByScopeFiltersOutNonMatchingAndScopelessTags(t *testing.T) {
 	}}
 
 	var repo domain.TagRepository = mock
-	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo}, &domain.FindTagsByScope{Repository: repo})
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/tags/scope/EXPENSE", nil)
@@ -80,7 +79,7 @@ func TestFindTagsByScopeFiltersOutNonMatchingAndScopelessTags(t *testing.T) {
 	assert.Equal(t, "[{\"key\":\"tag1\",\"value\":\"Groceries\",\"scope\":\"Expense\"},{\"key\":\"UNKNOWN\",\"value\":\"UNKNOWN\"}]", w.Body.String())
 }
 
-func TestFindTagsByScopeAlwaysIncludesUnknownSentinel(t *testing.T) {
+func TestFindAllTagsByScopeAlwaysIncludesUnknownSentinel(t *testing.T) {
 	router := setupRouter()
 
 	mock := &MockRepo{tags: []domain.Tag{
@@ -88,7 +87,7 @@ func TestFindTagsByScopeAlwaysIncludesUnknownSentinel(t *testing.T) {
 	}}
 
 	var repo domain.TagRepository = mock
-	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo}, &domain.FindTagsByScope{Repository: repo})
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/tags/scope/revenue", nil)
@@ -117,11 +116,7 @@ func (m *MockRepo) GetTagBy(ctx context.Context, key string) (*domain.Tag, error
 	return nil, nil
 }
 
-func (m *MockRepo) FindAllTags(ctx context.Context) ([]domain.Tag, error) {
-	return m.tags, nil
-}
-
-func (m *MockRepo) FindTagsByScope(ctx context.Context, scope string) ([]domain.Tag, error) {
+func (m *MockRepo) FindAllTags(ctx context.Context, scope string) ([]domain.Tag, error) {
 	if scope == "" {
 		return m.tags, nil
 	}

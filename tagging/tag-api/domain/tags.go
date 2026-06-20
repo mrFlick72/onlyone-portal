@@ -20,6 +20,8 @@ func NormalizeScope(scope string) string {
 type TagRepository interface {
 	SaveTag(ctx context.Context, tag *Tag) error
 	GetTagBy(ctx context.Context, key string) (*Tag, error)
-	FindAllTags(ctx context.Context) ([]Tag, error)
-	FindTagsByScope(ctx context.Context, scope string) ([]Tag, error)
+	// FindAllTags returns the user's tags. An empty scope returns every tag
+	// unfiltered; a non-empty scope returns only tags whose normalized Scope
+	// matches it.
+	FindAllTags(ctx context.Context, scope string) ([]Tag, error)
 }

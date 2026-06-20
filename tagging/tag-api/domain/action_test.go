@@ -18,9 +18,7 @@ func (m *findAllTagsMockRepo) SaveTag(ctx context.Context, tag *Tag) error { ret
 
 func (m *findAllTagsMockRepo) GetTagBy(ctx context.Context, key string) (*Tag, error) { return nil, nil }
 
-func (m *findAllTagsMockRepo) FindAllTags(ctx context.Context) ([]Tag, error) { return m.tags, m.err }
-
-func (m *findAllTagsMockRepo) FindTagsByScope(ctx context.Context, scope string) ([]Tag, error) {
+func (m *findAllTagsMockRepo) FindAllTags(ctx context.Context, scope string) ([]Tag, error) {
 	m.receivedScope = scope
 	return m.tags, m.err
 }
@@ -28,7 +26,7 @@ func (m *findAllTagsMockRepo) FindTagsByScope(ctx context.Context, scope string)
 func TestFindAllTagsAppendsUnknownSentinel(t *testing.T) {
 	action := &FindAllTags{Repository: &findAllTagsMockRepo{tags: []Tag{{Key: "tag1", Value: "value1"}}}}
 
-	result, err := action.Execute(context.Background())
+	result, err := action.Execute(context.Background(), "")
 
 	assert.NoError(t, err)
 	assert.Equal(t, []Tag{{Key: "tag1", Value: "value1"}, {Key: "UNKNOWN", Value: "UNKNOWN"}}, result)
@@ -37,7 +35,7 @@ func TestFindAllTagsAppendsUnknownSentinel(t *testing.T) {
 func TestFindAllTagsAppendsUnknownSentinelWhenEmpty(t *testing.T) {
 	action := &FindAllTags{Repository: &findAllTagsMockRepo{tags: []Tag{}}}
 
-	result, err := action.Execute(context.Background())
+	result, err := action.Execute(context.Background(), "")
 
 	assert.NoError(t, err)
 	assert.Equal(t, []Tag{{Key: "UNKNOWN", Value: "UNKNOWN"}}, result)
@@ -46,14 +44,14 @@ func TestFindAllTagsAppendsUnknownSentinelWhenEmpty(t *testing.T) {
 func TestFindAllTagsPropagatesRepositoryError(t *testing.T) {
 	action := &FindAllTags{Repository: &findAllTagsMockRepo{err: errors.New("boom")}}
 
-	result, err := action.Execute(context.Background())
+	result, err := action.Execute(context.Background(), "")
 
 	assert.Error(t, err)
 	assert.Nil(t, result)
 }
 
-func TestFindTagsByScopeAppendsUnknownSentinel(t *testing.T) {
-	action := &FindTagsByScope{Repository: &findAllTagsMockRepo{tags: []Tag{{Key: "tag1", Value: "value1", Scope: "expense"}}}}
+func TestFindAllTagsWithScopeAppendsUnknownSentinel(t *testing.T) {
+	action := &FindAllTags{Repository: &findAllTagsMockRepo{tags: []Tag{{Key: "tag1", Value: "value1", Scope: "expense"}}}}
 
 	result, err := action.Execute(context.Background(), "expense")
 
@@ -61,9 +59,9 @@ func TestFindTagsByScopeAppendsUnknownSentinel(t *testing.T) {
 	assert.Equal(t, []Tag{{Key: "tag1", Value: "value1", Scope: "expense"}, {Key: "UNKNOWN", Value: "UNKNOWN"}}, result)
 }
 
-func TestFindTagsByScopeNormalizesScopeBeforeQuerying(t *testing.T) {
+func TestFindAllTagsNormalizesScopeBeforeQuerying(t *testing.T) {
 	repo := &findAllTagsMockRepo{}
-	action := &FindTagsByScope{Repository: repo}
+	action := &FindAllTags{Repository: repo}
 
 	_, err := action.Execute(context.Background(), "  Expense  ")
 
@@ -71,8 +69,8 @@ func TestFindTagsByScopeNormalizesScopeBeforeQuerying(t *testing.T) {
 	assert.Equal(t, "expense", repo.receivedScope)
 }
 
-func TestFindTagsByScopePropagatesRepositoryError(t *testing.T) {
-	action := &FindTagsByScope{Repository: &findAllTagsMockRepo{err: errors.New("boom")}}
+func TestFindAllTagsWithScopePropagatesRepositoryError(t *testing.T) {
+	action := &FindAllTags{Repository: &findAllTagsMockRepo{err: errors.New("boom")}}
 
 	result, err := action.Execute(context.Background(), "expense")
 
