@@ -228,14 +228,14 @@ func TestFindAllTagsWithEmptyScopeReturnsEverythingUnfiltered(t *testing.T) {
 	}
 }
 
-func TestFindAllTagsWithScopeReturnsOnlyMatchingAndExcludesScopeless(t *testing.T) {
+func TestFindAllTagsWithScopeReturnsMatchingAndUnscopedButExcludesOtherScopes(t *testing.T) {
 	repo := newTagDynamoDBRepository()
 
 	matching := domain.Tag{Key: "matchKey", Value: "matchValue", Scope: "Revenue"}
 	other := domain.Tag{Key: "otherKey", Value: "otherValue", Scope: "expense"}
-	legacy := domain.Tag{Key: "legacyScopeKey", Value: "legacyScopeValue"}
+	unscoped := domain.Tag{Key: "legacyScopeKey", Value: "legacyScopeValue"}
 
-	for _, tag := range []domain.Tag{matching, other, legacy} {
+	for _, tag := range []domain.Tag{matching, other, unscoped} {
 		if err := repo.SaveTag(newStubbedContext(), &tag); err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -246,10 +246,21 @@ func TestFindAllTagsWithScopeReturnsOnlyMatchingAndExcludesScopeless(t *testing.
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	if len(tags) != 1 {
-		t.Fatalf("Expected exactly 1 matching tag, got %d: %+v", len(tags), tags)
+	found := map[string]bool{}
+	for _, tag := range tags {
+		found[tag.Key] = true
 	}
-	if tags[0].Key != "matchKey" {
-		t.Errorf("Expected matchKey, got %v", tags[0].Key)
+
+	// the requested scope matches
+	if !found["matchKey"] {
+		t.Errorf("Expected the scope-matching tag to be included, got %+v", tags)
+	}
+	// unscoped tags stay reachable from any scoped caller (no backfill needed)
+	if !found["legacyScopeKey"] {
+		t.Errorf("Expected the unscoped tag to be included, got %+v", tags)
+	}
+	// a tag scoped to a *different* value is excluded
+	if found["otherKey"] {
+		t.Errorf("Expected the differently-scoped tag to be excluded, got %+v", tags)
 	}
 }
