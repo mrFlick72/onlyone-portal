@@ -32,12 +32,17 @@ var configurationManager = config.GetConfigurationManagerInstance()
 var logger = logging.GetLoggerInstance()
 
 func NewSearchTagRepository() tags.SearchTagRepository {
+	// budget-api only tags expenses, so it asks tag-api for the expense-scoped
+	// tags only. Scope is an adapter/wiring concern and never reaches the domain.
+	const expenseScope = "expense"
+
 	delegate := rest.NewRestSearchTagRepository(
 		httpclient.NewHTTPClient(),
 		configurationManager.GetConfigFor("tag-api.base-url"),
+		expenseScope,
 	)
 
-	return rest.NewRistrettoCachedSearchTagRepository(delegate)
+	return rest.NewRistrettoCachedSearchTagRepository(delegate, expenseScope)
 }
 
 func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {

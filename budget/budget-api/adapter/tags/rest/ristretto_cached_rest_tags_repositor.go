@@ -16,10 +16,11 @@ import (
 type RistrettoCachedSearchTagRepository struct {
 	CacheProvider cache.CacheProvider
 	Delegate      tags.SearchTagRepository
+	Scope         string
 	logger        *logging.Logger
 }
 
-func NewRistrettoCachedSearchTagRepository(delegate tags.SearchTagRepository) tags.SearchTagRepository {
+func NewRistrettoCachedSearchTagRepository(delegate tags.SearchTagRepository, scope string) tags.SearchTagRepository {
 	logger := logging.GetLoggerInstanceForComponentByType(&RistrettoCachedSearchTagRepository{})
 	cache, err := ristretto.NewCache(&ristretto.Config{
 		NumCounters: 1e7,     // number of keys to track frequency of (10M).
@@ -35,6 +36,7 @@ func NewRistrettoCachedSearchTagRepository(delegate tags.SearchTagRepository) ta
 			Cache: cache,
 		},
 		Delegate: delegate,
+		Scope:    scope,
 		logger:   logger,
 	}
 }
@@ -60,7 +62,7 @@ func (repository *RistrettoCachedSearchTagRepository) GetAllTags(ctx context.Con
 		return nil, err
 	}
 
-	cacheKey := fmt.Sprintf("search_tags_user_%s", *user.UserName)
+	cacheKey := fmt.Sprintf("search_tags_user_%s_scope_%s", *user.UserName, repository.Scope)
 
 	cachedSearchTags, found := repository.getFromTheCache(ctx, cacheKey)
 	if found {

@@ -40,7 +40,7 @@ func userContextFor(userName string) context.Context {
 
 func TestGetAllTagsReturnsCachedValueOnCacheHitWithoutCallingDelegate(t *testing.T) {
 	ctx := userContextFor("A_USER")
-	cacheKey := "search_tags_user_A_USER"
+	cacheKey := "search_tags_user_A_USER_scope_expense"
 	cachedTags := []tags.SearchTag{{Key: "tagKey", Value: "tagValue"}}
 	cachedJSON, _ := json.Marshal(cachedTags)
 
@@ -52,6 +52,7 @@ func TestGetAllTagsReturnsCachedValueOnCacheHitWithoutCallingDelegate(t *testing
 	repository := &RistrettoCachedSearchTagRepository{
 		CacheProvider: cacheProviderMock,
 		Delegate:      delegateMock,
+		Scope:         "expense",
 		logger:        logging.GetLoggerInstanceForComponentByType(&RistrettoCachedSearchTagRepository{}),
 	}
 
@@ -66,7 +67,7 @@ func TestGetAllTagsReturnsCachedValueOnCacheHitWithoutCallingDelegate(t *testing
 
 func TestGetAllTagsFetchesFromDelegateAndPopulatesCacheOnCacheMiss(t *testing.T) {
 	ctx := userContextFor("A_USER")
-	cacheKey := "search_tags_user_A_USER"
+	cacheKey := "search_tags_user_A_USER_scope_expense"
 	fetchedTags := []tags.SearchTag{{Key: "tagKey", Value: "tagValue"}}
 	fetchedJSON, _ := json.Marshal(fetchedTags)
 
@@ -80,6 +81,7 @@ func TestGetAllTagsFetchesFromDelegateAndPopulatesCacheOnCacheMiss(t *testing.T)
 	repository := &RistrettoCachedSearchTagRepository{
 		CacheProvider: cacheProviderMock,
 		Delegate:      delegateMock,
+		Scope:         "expense",
 		logger:        logging.GetLoggerInstanceForComponentByType(&RistrettoCachedSearchTagRepository{}),
 	}
 
