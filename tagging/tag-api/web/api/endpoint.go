@@ -17,7 +17,18 @@ func RegisterEndpoints(r *gin.Engine, contextFactoryConverter server.ContextFact
 
 	// GET /api/tags — return all tags as JSON, including the UNKNOWN sentinel tag
 	r.GET("/api/tags", func(c *gin.Context) {
-		tags, err := findAllTagsAction.Execute(contextFactoryConverter.CreateContextFromGin(c))
+		tags, err := findAllTagsAction.Execute(contextFactoryConverter.CreateContextFromGin(c), "")
+		if err != nil {
+			logger.LogErrorfFor("error occurred: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, tags)
+	})
+
+	// GET /api/tags/scope/:scope — return tags matching the given scope, including the UNKNOWN sentinel tag
+	r.GET("/api/tags/scope/:scope", func(c *gin.Context) {
+		tags, err := findAllTagsAction.Execute(contextFactoryConverter.CreateContextFromGin(c), c.Param("scope"))
 		if err != nil {
 			logger.LogErrorfFor("error occurred: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
