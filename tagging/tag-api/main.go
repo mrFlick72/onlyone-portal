@@ -17,7 +17,8 @@ func main() {
 	GinContextToPlainContextFactory := &server.GinContextToPlainContextFactory{}
 	repository := dynamodb.NewTagDynamoDBRepository()
 	findAllTagsAction := &domain.FindAllTags{Repository: repository}
-	api.RegisterEndpoints(ginEngine, GinContextToPlainContextFactory, repository, findAllTagsAction)
+	findTagsByScopeAction := &domain.FindTagsByScope{Repository: repository}
+	api.RegisterEndpoints(ginEngine, GinContextToPlainContextFactory, repository, findAllTagsAction, findTagsByScopeAction)
 
 	engine.StartEngine()
 }

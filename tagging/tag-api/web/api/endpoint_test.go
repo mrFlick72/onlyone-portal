@@ -23,7 +23,7 @@ func TestFindAllTagsGiveEmptyTags(t *testing.T) {
 	// simple in-memory mock implementing domain.TagRepository
 	mock := &MockRepo{tags: []domain.Tag{}}
 	var repo domain.TagRepository = mock
-	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo}, &domain.FindTagsByScope{Repository: repo})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/tags", nil)
@@ -49,7 +49,7 @@ func TestFindAllTagsGiveNotEmptyTags(t *testing.T) {
 	}}
 
 	var repo domain.TagRepository = mock
-	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo}, &domain.FindTagsByScope{Repository: repo})
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/tags", nil)
@@ -59,6 +59,44 @@ func TestFindAllTagsGiveNotEmptyTags(t *testing.T) {
 	assert.Equal(t, "[{\"key\":\"tag1\",\"value\":\"value1\"},{\"key\":\"tag2\",\"value\":\"value2\"},{\"key\":\"UNKNOWN\",\"value\":\"UNKNOWN\"}]", w.Body.String())
 }
 
+
+func TestFindTagsByScopeFiltersOutNonMatchingAndScopelessTags(t *testing.T) {
+	router := setupRouter()
+
+	mock := &MockRepo{tags: []domain.Tag{
+		{Key: "tag1", Value: "Groceries", Scope: "Expense"},
+		{Key: "tag2", Value: "Salary", Scope: "revenue"},
+		{Key: "tag3", Value: "Legacy", Scope: ""},
+	}}
+
+	var repo domain.TagRepository = mock
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo}, &domain.FindTagsByScope{Repository: repo})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/tags/scope/EXPENSE", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "[{\"key\":\"tag1\",\"value\":\"Groceries\",\"scope\":\"Expense\"},{\"key\":\"UNKNOWN\",\"value\":\"UNKNOWN\"}]", w.Body.String())
+}
+
+func TestFindTagsByScopeAlwaysIncludesUnknownSentinel(t *testing.T) {
+	router := setupRouter()
+
+	mock := &MockRepo{tags: []domain.Tag{
+		{Key: "tag1", Value: "Groceries", Scope: "expense"},
+	}}
+
+	var repo domain.TagRepository = mock
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo}, &domain.FindTagsByScope{Repository: repo})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/tags/scope/revenue", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "[{\"key\":\"UNKNOWN\",\"value\":\"UNKNOWN\"}]", w.Body.String())
+}
 
 // MockRepo is a simple in-memory implementation of domain.TagRepository for tests.
 type MockRepo struct {
@@ -81,4 +119,14 @@ func (m *MockRepo) GetTagBy(ctx context.Context, key string) (*domain.Tag, error
 
 func (m *MockRepo) FindAllTags(ctx context.Context) ([]domain.Tag, error) {
 	return m.tags, nil
+}
+
+func (m *MockRepo) FindTagsByScope(ctx context.Context, scope string) ([]domain.Tag, error) {
+	var matching []domain.Tag
+	for _, t := range m.tags {
+		if domain.NormalizeScope(t.Scope) == scope {
+			matching = append(matching, t)
+		}
+	}
+	return matching, nil
 }

@@ -11,13 +11,24 @@ import (
 	"github.com/mrFlick72/onlyone-portal/tagging/tag-api/domain"
 )
 
-func RegisterEndpoints(r *gin.Engine, contextFactoryConverter server.ContextFactoryConverter, repository domain.TagRepository, findAllTagsAction *domain.FindAllTags) *gin.Engine {
+func RegisterEndpoints(r *gin.Engine, contextFactoryConverter server.ContextFactoryConverter, repository domain.TagRepository, findAllTagsAction *domain.FindAllTags, findTagsByScopeAction *domain.FindTagsByScope) *gin.Engine {
 
 	var logger = logging.GetLoggerInstanceForComponentByTypeName("api.RegisterEndpoints")
 
 	// GET /api/tags — return all tags as JSON, including the UNKNOWN sentinel tag
 	r.GET("/api/tags", func(c *gin.Context) {
 		tags, err := findAllTagsAction.Execute(contextFactoryConverter.CreateContextFromGin(c))
+		if err != nil {
+			logger.LogErrorfFor("error occurred: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, tags)
+	})
+
+	// GET /api/tags/scope/:scope — return tags matching the given scope, including the UNKNOWN sentinel tag
+	r.GET("/api/tags/scope/:scope", func(c *gin.Context) {
+		tags, err := findTagsByScopeAction.Execute(contextFactoryConverter.CreateContextFromGin(c), c.Param("scope"))
 		if err != nil {
 			logger.LogErrorfFor("error occurred: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

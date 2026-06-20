@@ -9,8 +9,9 @@ import (
 )
 
 type findAllTagsMockRepo struct {
-	tags []Tag
-	err  error
+	tags          []Tag
+	err           error
+	receivedScope string
 }
 
 func (m *findAllTagsMockRepo) SaveTag(ctx context.Context, tag *Tag) error { return nil }
@@ -18,6 +19,11 @@ func (m *findAllTagsMockRepo) SaveTag(ctx context.Context, tag *Tag) error { ret
 func (m *findAllTagsMockRepo) GetTagBy(ctx context.Context, key string) (*Tag, error) { return nil, nil }
 
 func (m *findAllTagsMockRepo) FindAllTags(ctx context.Context) ([]Tag, error) { return m.tags, m.err }
+
+func (m *findAllTagsMockRepo) FindTagsByScope(ctx context.Context, scope string) ([]Tag, error) {
+	m.receivedScope = scope
+	return m.tags, m.err
+}
 
 func TestFindAllTagsAppendsUnknownSentinel(t *testing.T) {
 	action := &FindAllTags{Repository: &findAllTagsMockRepo{tags: []Tag{{Key: "tag1", Value: "value1"}}}}
@@ -44,4 +50,38 @@ func TestFindAllTagsPropagatesRepositoryError(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, result)
+}
+
+func TestFindTagsByScopeAppendsUnknownSentinel(t *testing.T) {
+	action := &FindTagsByScope{Repository: &findAllTagsMockRepo{tags: []Tag{{Key: "tag1", Value: "value1", Scope: "expense"}}}}
+
+	result, err := action.Execute(context.Background(), "expense")
+
+	assert.NoError(t, err)
+	assert.Equal(t, []Tag{{Key: "tag1", Value: "value1", Scope: "expense"}, {Key: "UNKNOWN", Value: "UNKNOWN"}}, result)
+}
+
+func TestFindTagsByScopeNormalizesScopeBeforeQuerying(t *testing.T) {
+	repo := &findAllTagsMockRepo{}
+	action := &FindTagsByScope{Repository: repo}
+
+	_, err := action.Execute(context.Background(), "  Expense  ")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "expense", repo.receivedScope)
+}
+
+func TestFindTagsByScopePropagatesRepositoryError(t *testing.T) {
+	action := &FindTagsByScope{Repository: &findAllTagsMockRepo{err: errors.New("boom")}}
+
+	result, err := action.Execute(context.Background(), "expense")
+
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestNormalizeScope(t *testing.T) {
+	assert.Equal(t, "expense", NormalizeScope("  Expense  "))
+	assert.Equal(t, "", NormalizeScope(""))
+	assert.Equal(t, "", NormalizeScope("   "))
 }

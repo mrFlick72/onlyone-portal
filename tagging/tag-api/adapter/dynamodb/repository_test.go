@@ -141,3 +141,63 @@ func TestFindAllTags(t *testing.T) {
 		t.Errorf("Expected some tags, got none")
 	}
 }
+
+func TestSaveTagPersistsNormalizedScope(t *testing.T) {
+	repo := newTagDynamoDBRepository()
+	tag := domain.Tag{Key: "scopedKey", Value: "scopedValue", Scope: "  Expense  "}
+
+	if err := repo.SaveTag(newStubbedContext(), &tag); err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	got, err := repo.GetTagBy(newStubbedContext(), "scopedKey")
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	if got.Scope != "expense" {
+		t.Errorf("Expected normalized scope %q, got %q", "expense", got.Scope)
+	}
+}
+
+func TestSaveTagWithoutScopeLeavesScopeAttributeAbsent(t *testing.T) {
+	repo := newTagDynamoDBRepository()
+	tag := domain.Tag{Key: "legacyKey", Value: "legacyValue"}
+
+	if err := repo.SaveTag(newStubbedContext(), &tag); err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	got, err := repo.GetTagBy(newStubbedContext(), "legacyKey")
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	if got.Scope != "" {
+		t.Errorf("Expected empty scope for legacy tag, got %q", got.Scope)
+	}
+}
+
+func TestFindTagsByScopeReturnsOnlyMatchingScopeAndExcludesScopeless(t *testing.T) {
+	repo := newTagDynamoDBRepository()
+
+	matching := domain.Tag{Key: "matchKey", Value: "matchValue", Scope: "Revenue"}
+	other := domain.Tag{Key: "otherKey", Value: "otherValue", Scope: "expense"}
+	legacy := domain.Tag{Key: "legacyScopeKey", Value: "legacyScopeValue"}
+
+	for _, tag := range []domain.Tag{matching, other, legacy} {
+		if err := repo.SaveTag(newStubbedContext(), &tag); err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	}
+
+	tags, err := repo.FindTagsByScope(newStubbedContext(), "revenue")
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	if len(tags) != 1 {
+		t.Fatalf("Expected exactly 1 matching tag, got %d: %+v", len(tags), tags)
+	}
+	if tags[0].Key != "matchKey" {
+		t.Errorf("Expected matchKey, got %v", tags[0].Key)
+	}
+}
