@@ -122,6 +122,9 @@ func (m *MockRepo) FindAllTags(ctx context.Context) ([]domain.Tag, error) {
 }
 
 func (m *MockRepo) FindTagsByScope(ctx context.Context, scope string) ([]domain.Tag, error) {
+	if scope == "" {
+		return m.tags, nil
+	}
 	var matching []domain.Tag
 	for _, t := range m.tags {
 		if domain.NormalizeScope(t.Scope) == scope {

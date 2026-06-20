@@ -159,20 +159,69 @@ func TestSaveTagPersistsNormalizedScope(t *testing.T) {
 	}
 }
 
-func TestSaveTagWithoutScopeLeavesScopeAttributeAbsent(t *testing.T) {
+func TestSaveTagWithoutScopePersistsEmptyStringScopeAttribute(t *testing.T) {
 	repo := newTagDynamoDBRepository()
-	tag := domain.Tag{Key: "legacyKey", Value: "legacyValue"}
+	tag := domain.Tag{Key: "unscopedKey", Value: "unscopedValue"}
 
 	if err := repo.SaveTag(newStubbedContext(), &tag); err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	got, err := repo.GetTagBy(newStubbedContext(), "legacyKey")
+	got, err := repo.GetTagBy(newStubbedContext(), "unscopedKey")
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 	if got.Scope != "" {
-		t.Errorf("Expected empty scope for legacy tag, got %q", got.Scope)
+		t.Errorf("Expected empty scope for unscoped tag, got %q", got.Scope)
+	}
+
+	// the attribute must actually be present and equal to "" (not absent) —
+	// scope is always written from this iteration forward, never omitted.
+	rawItem, err := client.GetItem(context.Background(), &dynamodb.GetItemInput{
+		TableName: aws.String(TableName),
+		Key: map[string]types.AttributeValue{
+			"user_name":      &types.AttributeValueMemberS{Value: "testuser"},
+			"search_tag_key": &types.AttributeValueMemberS{Value: "unscopedKey"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	scopeAttr, ok := rawItem.Item["scope"].(*types.AttributeValueMemberS)
+	if !ok {
+		t.Fatalf("Expected scope attribute to be present as a string, got %#v", rawItem.Item["scope"])
+	}
+	if scopeAttr.Value != "" {
+		t.Errorf("Expected stored scope attribute to be empty string, got %q", scopeAttr.Value)
+	}
+}
+
+func TestFindTagsByScopeWithEmptyScopeReturnsEverythingUnfiltered(t *testing.T) {
+	repo := newTagDynamoDBRepository()
+
+	scoped := domain.Tag{Key: "emptyScopeQueryScopedKey", Value: "scopedValue", Scope: "expense"}
+	unscoped := domain.Tag{Key: "emptyScopeQueryUnscopedKey", Value: "unscopedValue"}
+
+	for _, tag := range []domain.Tag{scoped, unscoped} {
+		if err := repo.SaveTag(newStubbedContext(), &tag); err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	}
+
+	tags, err := repo.FindTagsByScope(newStubbedContext(), "")
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	found := map[string]bool{}
+	for _, tag := range tags {
+		found[tag.Key] = true
+	}
+	if !found["emptyScopeQueryScopedKey"] {
+		t.Errorf("Expected scoped tag to be included in unfiltered (empty-scope) query, got %+v", tags)
+	}
+	if !found["emptyScopeQueryUnscopedKey"] {
+		t.Errorf("Expected unscoped tag to be included in unfiltered (empty-scope) query, got %+v", tags)
 	}
 }
 

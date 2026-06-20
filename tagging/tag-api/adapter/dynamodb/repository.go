@@ -55,22 +55,18 @@ func (r *TagDynamoDBRepository) SaveTag(ctx context.Context, tag *domain.Tag) er
 		return err
 	}
 
-	item := map[string]types.AttributeValue{
-		"search_tag_key":   &types.AttributeValueMemberS{Value: tag.Key},
-		"search_tag_value": &types.AttributeValueMemberS{Value: tag.Value},
-		"user_name":        &types.AttributeValueMemberS{Value: *user.UserName},
-	}
-
-	// scope is optional: only set the attribute when present, so a tag
-	// saved without one stays absent from the attribute entirely, the
-	// same as every tag written before this field existed.
-	if normalizedScope := domain.NormalizeScope(tag.Scope); normalizedScope != "" {
-		item["scope"] = &types.AttributeValueMemberS{Value: normalizedScope}
-	}
-
 	input := &dynamodb.PutItemInput{
 		TableName: aws.String(r.TableName),
-		Item:      item,
+		Item: map[string]types.AttributeValue{
+			"search_tag_key":   &types.AttributeValueMemberS{Value: tag.Key},
+			"search_tag_value": &types.AttributeValueMemberS{Value: tag.Value},
+			"user_name":        &types.AttributeValueMemberS{Value: *user.UserName},
+			// scope is always written, defaulting to "" when the caller
+			// doesn't supply one. "Optional" describes what the caller must
+			// send, not whether the attribute exists in storage — see
+			// docs/adr/0003-scope-always-persisted-empty-string-default.md.
+			"scope": &types.AttributeValueMemberS{Value: domain.NormalizeScope(tag.Scope)},
+		},
 	}
 	_, err = r.Client.PutItem(ctx, input)
 
@@ -148,10 +144,14 @@ func (r *TagDynamoDBRepository) FindAllTags(ctx context.Context) ([]domain.Tag, 
 	return tags, nil
 }
 
-// FindTagsByScope queries the same partition as FindAllTags (by user_name)
-// and applies a FilterExpression on the normalized scope attribute. There is
-// no GSI backing this: legacy tags saved before Scope existed have no scope
-// attribute and never match. See docs/adr/0002-scope-filter-without-gsi.md.
+// FindTagsByScope queries the same partition as FindAllTags (by user_name).
+// An empty scope means "no filter, return everything" rather than "match an
+// empty string" — the only way a tag saved before Scope existed (no scope
+// attribute at all) and a freshly-saved unscoped tag (scope == "") both stay
+// reachable without a backfill. A non-empty scope applies a FilterExpression
+// on the normalized scope attribute; there is no GSI backing this query. See
+// docs/adr/0002-scope-filter-without-gsi.md and
+// docs/adr/0003-scope-always-persisted-empty-string-default.md.
 func (r *TagDynamoDBRepository) FindTagsByScope(ctx context.Context, scope string) ([]domain.Tag, error) {
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
@@ -159,15 +159,17 @@ func (r *TagDynamoDBRepository) FindTagsByScope(ctx context.Context, scope strin
 	}
 	input := &dynamodb.QueryInput{
 		TableName: aws.String(r.TableName),
-		ExpressionAttributeNames: map[string]string{
-			"#scope": "scope", // "scope" is a DynamoDB reserved keyword
-		},
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":username": &types.AttributeValueMemberS{Value: *user.UserName},
-			":scope":    &types.AttributeValueMemberS{Value: scope},
 		},
 		KeyConditionExpression: aws.String("user_name = :username"),
-		FilterExpression:       aws.String("#scope = :scope"),
+	}
+	if scope != "" {
+		input.ExpressionAttributeNames = map[string]string{
+			"#scope": "scope", // "scope" is a DynamoDB reserved keyword
+		}
+		input.ExpressionAttributeValues[":scope"] = &types.AttributeValueMemberS{Value: scope}
+		input.FilterExpression = aws.String("#scope = :scope")
 	}
 	result, err := r.Client.Query(ctx, input)
 	if err != nil {
