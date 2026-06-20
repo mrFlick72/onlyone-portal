@@ -20,7 +20,7 @@ func NormalizeScope(scope string) string {
 type TagRepository interface {
 	SaveTag(ctx context.Context, tag *Tag) error
 	// FindAllTags returns the user's tags. An empty scope returns every tag
-	// unfiltered; a non-empty scope returns only tags whose normalized Scope
-	// matches it.
+	// unfiltered; a non-empty scope returns tags whose normalized Scope
+	// matches it plus unscoped tags (scope "" or unset).
 	FindAllTags(ctx context.Context, scope string) ([]Tag, error)
 }

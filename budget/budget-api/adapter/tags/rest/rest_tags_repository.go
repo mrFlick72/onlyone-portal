@@ -15,13 +15,15 @@ import (
 type RestSearchTagRepository struct {
 	Client  *http.Client
 	BaseURL string
+	Scope   string
 	logger  *logging.Logger
 }
 
-func NewRestSearchTagRepository(client *http.Client, baseURL string) tags.SearchTagRepository {
+func NewRestSearchTagRepository(client *http.Client, baseURL string, scope string) tags.SearchTagRepository {
 	return &RestSearchTagRepository{
 		Client:  client,
 		BaseURL: baseURL,
+		Scope:   scope,
 		logger:  logging.GetLoggerInstanceForComponentByType(&RestSearchTagRepository{}),
 	}
 }
@@ -42,7 +44,7 @@ func (repository *RestSearchTagRepository) GetTagBy(ctx context.Context, key str
 }
 
 func (repository *RestSearchTagRepository) GetAllTags(ctx context.Context) ([]tags.SearchTag, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api/tags", repository.BaseURL), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/api/tags/scope/%s", repository.BaseURL, repository.Scope), nil)
 	if err != nil {
 		repository.logger.LogErrorfFor("Error while calling tag API: %s", err)
 		return nil, err

@@ -85,11 +85,19 @@ func scopeFrom(item map[string]types.AttributeValue) string {
 // everything" rather than "match an empty string" — the only way a tag
 // saved before Scope existed (no scope attribute at all) and a
 // freshly-saved unscoped tag (scope == "") both stay reachable without a
-// backfill. A non-empty scope applies a FilterExpression on the normalized
-// scope attribute; there is no GSI backing this query. See
+// backfill.
+//
+// A non-empty scope is an INCLUSIVE filter: it returns tags whose normalized
+// scope matches, PLUS unscoped tags (scope == "" or no scope attribute at
+// all). Unscoped tags are shared and must remain reachable from any scoped
+// caller without a backfill — the frontend still creates tags through the
+// unscoped path, and pre-Scope tags have no scope attribute. Only tags scoped
+// to a *different* value (e.g. "revenue" when "expense" is requested) are
+// excluded. There is no GSI backing this query. See
 // docs/adr/0002-scope-filter-without-gsi.md,
-// docs/adr/0003-scope-always-persisted-empty-string-default.md, and
-// docs/adr/0004-single-find-all-tags-method-with-scope-parameter.md.
+// docs/adr/0003-scope-always-persisted-empty-string-default.md,
+// docs/adr/0004-single-find-all-tags-method-with-scope-parameter.md, and
+// docs/adr/0006-scoped-query-includes-unscoped-tags.md.
 func (r *TagDynamoDBRepository) FindAllTags(ctx context.Context, scope string) ([]domain.Tag, error) {
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
@@ -107,7 +115,10 @@ func (r *TagDynamoDBRepository) FindAllTags(ctx context.Context, scope string) (
 			"#scope": "scope", // "scope" is a DynamoDB reserved keyword
 		}
 		input.ExpressionAttributeValues[":scope"] = &types.AttributeValueMemberS{Value: scope}
-		input.FilterExpression = aws.String("#scope = :scope")
+		input.ExpressionAttributeValues[":empty"] = &types.AttributeValueMemberS{Value: ""}
+		// Match the requested scope OR unscoped tags: scope == "" (saved after
+		// the Scope field existed) or no scope attribute at all (legacy).
+		input.FilterExpression = aws.String("#scope = :scope OR #scope = :empty OR attribute_not_exists(#scope)")
 	}
 	result, err := r.Client.Query(ctx, input)
 	if err != nil {
