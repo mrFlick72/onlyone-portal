@@ -11,4 +11,4 @@ This is a polyglot monorepo of independent services; domain documentation is spl
 ## Relationships
 
 - **golang-web-framework → consumers**: `budget-api`, `tag-api`, `account-api`, and `plan-api` each pull this module in via a local path `replace` directive (no version pinning), so any breaking change here breaks all four immediately.
-- **Tagging → Budget Expense**: Budget Expense references tags by `(Key, Value)`, denormalized onto each expense at write time. The `UNKNOWN` Sentinel Tag is a convention duplicated as a literal string in both services — there is no shared code enforcing it stays in sync.
+- **Tagging → Budget Expense**: Budget Expense references tags by `(Key, Value)`, denormalized onto each expense at write time. The `UNKNOWN` Sentinel Tag is a convention duplicated as a literal string in both services — there is no shared code enforcing it stays in sync. Budget Expense only ever looks up tags within the `expense` Scope; it has no notion of any other Scope (revenue tracking does not use tagging).
