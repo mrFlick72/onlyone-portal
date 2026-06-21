@@ -27,10 +27,11 @@ func (action *CreateBudgetExpense) Execute(ctx context.Context, budgetExpense *B
 
 // applyDefaultTagIfMissing defaults an expense with no tags to the UNKNOWN sentinel tag,
 // which tag-api always includes in its catalog without requiring per-user onboarding
-// (see tagging/tag-api/docs/adr/0001-unknown-sentinel-tag-not-persisted.md).
+// (see tagging/tag-api/docs/adr/0001-unknown-sentinel-tag-not-persisted.md). The
+// sentinel is defined once in the tags package and shared with revenue.
 func applyDefaultTagIfMissing(budgetExpense *BudgetExpense) {
 	if len(budgetExpense.Tags) == 0 {
-		budgetExpense.Tags = []tags.SearchTag{{Key: "UNKNOWN", Value: "UNKNOWN"}}
+		budgetExpense.Tags = []tags.SearchTag{tags.UnknownSentinel()}
 	}
 }
 

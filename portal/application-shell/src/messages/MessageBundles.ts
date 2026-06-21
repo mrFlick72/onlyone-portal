@@ -89,7 +89,7 @@ export type ChangeTodoStatusModalMessageBundle = {
 
 export type PlanFormMessageBundle = { title: string; date: string };
 export type TodoFormMessageBundle = { date: string; content: string };
-export type BudgetRevenueFormMessageBundle = { date: string; amount: string; note: string };
+export type BudgetRevenueFormMessageBundle = { date: string; amount: string; searchTags: string; note: string };
 export type SpentBudgetFormMessageBundle = { date: string; amount: string; searchTags: string; note: string };
 export type SearchTagFormMessageBundle = { valueLabel: string; saveLabel: string };
 
@@ -118,7 +118,7 @@ export type TodoContentMessageBundle = {
 };
 
 export type BudgetRevenueTableMessageBundle = {
-    headers: { date: string; amount: string; note: string; options: string };
+    headers: { date: string; amount: string; note: string; tags: string; options: string };
     totalLabel: string;
     actions: BudgetActionsMessageBundle;
 };

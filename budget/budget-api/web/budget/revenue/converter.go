@@ -6,7 +6,9 @@ import (
 
 	domainrevenue "github.com/mrflick72/budget/budget-api/domain/budget/revenue"
 	"github.com/mrflick72/budget/budget-api/domain/money"
+	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
+	tagRep "github.com/mrflick72/budget/budget-api/web/tags"
 )
 
 func RevenueRepresentationToDomainModel(rep RevenueRepresentation) (*domainrevenue.Revenue, error) {
@@ -18,20 +20,33 @@ func RevenueRepresentationToDomainModel(rep RevenueRepresentation) (*domainreven
 	if err != nil {
 		return nil, err
 	}
+
+	searchTags := make([]tags.SearchTag, 0, len(rep.Tags))
+	for _, tag := range rep.Tags {
+		searchTags = append(searchTags, tags.SearchTag{Key: tag.Key, Value: tag.Value})
+	}
+
 	return &domainrevenue.Revenue{
 		Id:     domainrevenue.RevenueId(rep.Id),
 		Date:   *d,
 		Amount: m,
 		Note:   rep.Note,
+		Tags:   searchTags,
 	}, nil
 }
 
 func RevenueDomainToRepresentationModel(r *domainrevenue.Revenue) RevenueRepresentation {
+	searchTags := make([]tagRep.SearchTagRepresentation, 0, len(r.Tags))
+	for _, tag := range r.Tags {
+		searchTags = append(searchTags, tagRep.SearchTagRepresentation{Key: tag.Key, Value: tag.Value})
+	}
+
 	return RevenueRepresentation{
 		Id:     string(r.Id),
 		Date:   r.Date.GetFormattedDate(),
 		Amount: r.Amount.StringifyAmount(),
 		Note:   r.Note,
+		Tags:   searchTags,
 	}
 }
 

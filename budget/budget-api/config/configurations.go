@@ -31,18 +31,30 @@ import (
 var configurationManager = config.GetConfigurationManagerInstance()
 var logger = logging.GetLoggerInstance()
 
-func NewSearchTagRepository() tags.SearchTagRepository {
-	// budget-api only tags expenses, so it asks tag-api for the expense-scoped
-	// tags only. Scope is an adapter/wiring concern and never reaches the domain.
-	const expenseScope = "expense"
-
+// newSearchTagRepository builds a tag-api-backed, Ristretto-cached tag
+// repository scoped to a single tag Scope. The scope literal is supplied by the
+// named wrappers below, keeping it defined once per scope at the wiring layer.
+// Scope is an adapter/wiring concern and never reaches the domain. See
+// docs/adr/0001-expense-scoped-tag-lookup-hardcoded-at-wiring.md and
+// docs/adr/0002-revenue-tagging-mirrors-expense-without-events-or-totals.md.
+func newSearchTagRepository(scope string) tags.SearchTagRepository {
 	delegate := rest.NewRestSearchTagRepository(
 		httpclient.NewHTTPClient(),
 		configurationManager.GetConfigFor("tag-api.base-url"),
-		expenseScope,
+		scope,
 	)
 
-	return rest.NewRistrettoCachedSearchTagRepository(delegate, expenseScope)
+	return rest.NewRistrettoCachedSearchTagRepository(delegate, scope)
+}
+
+// NewExpenseSearchTagRepository resolves expense tags (GET /api/tags/scope/expense).
+func NewExpenseSearchTagRepository() tags.SearchTagRepository {
+	return newSearchTagRepository("expense")
+}
+
+// NewRevenueSearchTagRepository resolves revenue tags (GET /api/tags/scope/revenue).
+func NewRevenueSearchTagRepository() tags.SearchTagRepository {
+	return newSearchTagRepository("revenue")
 }
 
 func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
@@ -62,7 +74,7 @@ func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
 		&dynamodb.DynamoDbBudgetExpenseIdProvider{
 			SaltGenerator: func() string { return uuid.New().String() },
 		},
-		NewSearchTagRepository(),
+		NewExpenseSearchTagRepository(),
 	)
 
 }
@@ -91,7 +103,7 @@ func NewNewKafkaBudgetExpenseEventPublisher() expense.BudgetExpenseEventPublishe
 
 func NewBudgetExpenseActionsFacade() expense.BudgetExpenseActions {
 	budgetExpenseRepository := NewBudgetExpenseRepository()
-	searchTagRepository := NewSearchTagRepository()
+	searchTagRepository := NewExpenseSearchTagRepository()
 	eventPublisher := NewNewKafkaBudgetExpenseEventPublisher()
 	createBudgetExpense := &expense.CreateBudgetExpense{
 		Repository:     budgetExpenseRepository,
@@ -135,6 +147,7 @@ func NewRevenueRepository() revenue.RevenueRepository {
 		&revenuedynamo.DynamoDbRevenueIdProvider{
 			SaltGenerator: func() string { return uuid.New().String() },
 		},
+		NewRevenueSearchTagRepository(),
 	)
 }
 

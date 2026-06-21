@@ -14,6 +14,8 @@ import Menu from "../../components/menu/Menu";
 import OpenPopUpMenuItem from "../../components/menu/OpenPopUpMenuItem";
 import SearchTagsPageMenuItem from "../../components/menu/SearchTagsPageMenuItem";
 import { FormDateFormatPattern } from "../../components/form/FormDatePicker";
+import { SelectOption } from "../../components/form/FormSelect";
+import { getSearchTagRegistry } from "../search-tags/domain/SearchTagRepository";
 import BudgetRevenue from "./domain/BudgetRevenue";
 import UploadAttachmentPopUp from "../attachment/UploadAttachmentPopUp";
 import type { AttachmentTarget } from "../attachment/domain/Attachment";
@@ -31,6 +33,12 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
     const [currentBudgetRevenueDate, setCurrentBudgetRevenueDate] = useState(moment())
     const [currentBudgetRevenueAmount, setCurrentBudgetRevenueAmount] = useState("0.00")
     const [currentBudgetRevenueNote, setCurrentBudgetRevenueNote] = useState("")
+    const [selectedSearchTags, setSelectedSearchTags] = useState<SelectOption[]>([])
+    const [searchTagRegistry, setSearchTagRegistry] = useState<SearchTag[]>([])
+
+    useEffect(() => {
+        getSearchTagRegistry("revenue").then(setSearchTagRegistry)
+    }, [])
 
     const [openSaveBudgetRevenuePopUp, setOpenSaveBudgetRevenuePopUp] = useState(false)
     const makeSaveBudgetRevenuePopUpOpen = useCallback(() => {
@@ -38,6 +46,7 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
         setCurrentBudgetRevenueDate(moment())
         setCurrentBudgetRevenueAmount("0.00")
         setCurrentBudgetRevenueNote("")
+        setSelectedSearchTags([])
         setOpenSaveBudgetRevenuePopUp(true)
     }, [])
     const saveBudgetRevenuePopUpCloseHandler = useCallback(() => {
@@ -49,6 +58,7 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
         setCurrentBudgetRevenueDate(moment(revenue.date, "DD/MM/YYYY"))
         setCurrentBudgetRevenueAmount(revenue.amount!.toString())
         setCurrentBudgetRevenueNote(revenue.note)
+        setSelectedSearchTags((revenue.tags ?? []).map(tag => ({ value: tag.tagKey, label: tag.tagValue })))
         setOpenSaveBudgetRevenuePopUp(true)
     }, [])
 
@@ -114,7 +124,8 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
     const budgetRevenueHandlers = {
         date: (value:moment.Moment) => setCurrentBudgetRevenueDate(value),
         amount: (event: React.ChangeEvent<HTMLInputElement>) => setCurrentBudgetRevenueAmount(event.target.value),
-        note: (event: React.ChangeEvent<HTMLTextAreaElement>) => setCurrentBudgetRevenueNote(event.target.value)
+        note: (event: React.ChangeEvent<HTMLTextAreaElement>) => setCurrentBudgetRevenueNote(event.target.value),
+        searchTag: (selectedOptions: SelectOption[]) => setSelectedSearchTags(selectedOptions ?? [])
     }
 
     const deleteItem = useCallback(() => {
@@ -132,14 +143,15 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
             id: currentBudgetRevenueId,
             date: currentBudgetRevenueDate.format(FormDateFormatPattern),
             amount: currentBudgetRevenueAmount,
-            note: currentBudgetRevenueNote
+            note: currentBudgetRevenueNote,
+            tags: selectedSearchTags.map(tag => ({ tagKey: tag.value, tagValue: tag.label }))
         }).then(response => {
             if (response.status === 201 || response.status === 204) {
                 setOpenSaveBudgetRevenuePopUp(false)
                 budgetRevenue()
             }
         })
-    }, [currentBudgetRevenueId, currentBudgetRevenueDate, currentBudgetRevenueAmount, currentBudgetRevenueNote])
+    }, [currentBudgetRevenueId, currentBudgetRevenueDate, currentBudgetRevenueAmount, currentBudgetRevenueNote, selectedSearchTags])
 
     let deleteConfirmationPopupMessages = configMap.budgetRevenue(messageRegistry).deleteModal
     let theme = themeProvider
@@ -167,11 +179,13 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
                     budgetRevenue={{
                         date: currentBudgetRevenueDate.format(FormDateFormatPattern),
                         amount: currentBudgetRevenueAmount,
-                        note: currentBudgetRevenueNote
+                        note: currentBudgetRevenueNote,
+                        searchTags: selectedSearchTags
                     }}
                     handlers={budgetRevenueHandlers}
+                    searchTagRegistry={searchTagRegistry}
                     modal={configMap.budgetRevenue(messageRegistry).saveBudgetRevenueModal}
-                    formMessages={{ date: common.form.date, amount: common.form.amount, note: common.form.note }}
+                    formMessages={{ date: common.form.date, amount: common.form.amount, searchTags: common.form.searchTags, note: common.form.note }}
                     saveCallback={saveRevenue} />
 
                 <DeleteBudgetRevenueConfirmationPopUp
@@ -205,6 +219,7 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
                             date: common.table.date,
                             amount: common.table.amount,
                             note: common.table.note,
+                            tags: common.form.searchTags,
                             options: common.table.options
                         },
                         totalLabel: common.totalLabel,

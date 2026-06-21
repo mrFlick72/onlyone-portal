@@ -22,6 +22,7 @@ const BudgetRevenueTable: React.FC<BudgetRevenueTableProps> = ({ revenues, total
                     <TableCell>{messages.headers.date}</TableCell>
                     <TableCell>{messages.headers.amount}</TableCell>
                     <TableCell>{messages.headers.note}</TableCell>
+                    <TableCell>{messages.headers.tags}</TableCell>
                     <TableCell>{messages.headers.options}</TableCell>
                 </TableRow>
             </TableHead>
@@ -33,10 +34,10 @@ const BudgetRevenueTable: React.FC<BudgetRevenueTableProps> = ({ revenues, total
                     actions={messages.actions} />)}
                 <TableRow>
                     <TableCell sx={{ fontWeight: 'bold' }}>{messages.totalLabel}</TableCell>
-                    <TableCell></TableCell>
-                    <TableCell></TableCell>
                     <TableCell sx={{ fontWeight: 'bold' }}>{total}</TableCell>
-                    <TableCell colSpan={2} />
+                    <TableCell></TableCell>
+                    <TableCell></TableCell>
+                    <TableCell></TableCell>
                 </TableRow>
             </TableBody>
         </Table>

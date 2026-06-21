@@ -30,7 +30,10 @@ export async function findBudgetRevenue(year: string): Promise<BudgetRevenueList
             'Accept': 'application/json'
         }
     });
-    return response.json();
+    const body: BudgetRevenueList = await response.json();
+    // tags is always present from budget-api; guard empty/legacy payloads
+    body.revenues = (body.revenues ?? []).map(revenue => ({ ...revenue, tags: revenue.tags ?? [] }));
+    return body;
 }
 
 export async function saveBudgetRevenue(budgetRevenue: BudgetRevenue) {
