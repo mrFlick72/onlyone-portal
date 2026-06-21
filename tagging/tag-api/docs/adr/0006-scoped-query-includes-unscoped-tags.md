@@ -1,5 +1,7 @@
 # A scoped FindAllTags query is inclusive of unscoped tags
 
+> **Superseded by [0007](./0007-scope-mandatory-and-scoped-reads-are-strict.md).** Scoped reads are now strict (`#scope = :scope` only); the inclusion of unscoped/legacy tags described below was a migration-window measure and has been removed now that a real per-scope producer exists and existing data is backfilled.
+
 [0003](./0003-scope-always-persisted-empty-string-default.md) kept unscoped tags (`scope == ""`, or no `scope` attribute at all for pre-feature rows) reachable through the *empty-scope* read path — `FindAllTags(ctx, "")` skips the filter and returns everything. But a *non-empty* scope applied a strict `#scope = :scope` filter, so a scoped caller saw only tags whose scope matched exactly and nothing unscoped.
 
 That strict behavior broke `budget-api` the moment it started asking for expense-scoped tags. `budget-api` now calls `GET /api/tags/scope/expense` to resolve the tags stored on each expense. In production every one of those tags is **unscoped**: the frontend still creates tags through the unscoped `PUT /api/tags` (no scope sent → `scope == ""`), and legacy tags predate the field entirely. The strict filter returned only the `UNKNOWN` sentinel, so `budget-api`'s per-tag `GetTagBy` failed for every real tag, every expense was dropped in `FindByDateRange`, and single-expense reads 500'd. Nothing in the system actually produces `expense`-scoped tags yet, so strict scoping had no data to match.

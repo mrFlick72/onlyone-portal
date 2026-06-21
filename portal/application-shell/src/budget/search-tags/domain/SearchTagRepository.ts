@@ -1,8 +1,18 @@
 import { getTagApiBaseUrl } from "../../../config/ConfigLoader";
 
-export async function getSearchTagRegistry(): Promise<Array<SearchTag>> {
+// The tag catalog is partitioned by scope. The management UI maintains one
+// catalog per scope (e.g. "expense", "revenue") through these two calls.
+export type TagScope = "expense" | "revenue";
+
+// UNKNOWN is a technical, non-persisted sentinel tag that tag-api synthesizes
+// into every scoped read so consumers (e.g. expense tagging) have a catch-all.
+// It is returned here unchanged; consumers that present the catalog for
+// editing rather than selection (the management UI) hide it themselves.
+export const UNKNOWN_SENTINEL_KEY = "UNKNOWN";
+
+export async function getSearchTagRegistry(scope: TagScope): Promise<Array<SearchTag>> {
     const baseUrl = await getTagApiBaseUrl();
-    const response = await fetch(`${baseUrl}/api/tags`, {
+    const response = await fetch(`${baseUrl}/api/tags/scope/${scope}`, {
         method: "GET",
         mode: "cors",
         credentials: "include",
@@ -22,12 +32,12 @@ export async function getSearchTagRegistry(): Promise<Array<SearchTag>> {
     );
 }
 
-export async function saveSearchTag(searchTag: SearchTag): Promise<void> {
+export async function saveSearchTag(searchTag: SearchTag, scope: TagScope): Promise<void> {
     const baseUrl = await getTagApiBaseUrl();
     await fetch(`${baseUrl}/api/tags`, {
         method: "PUT",
         credentials: "same-origin",
-        body: JSON.stringify({ "key": searchTag.key, "value": searchTag.value }),
+        body: JSON.stringify({ "key": searchTag.key, "value": searchTag.value, "scope": scope }),
         headers: {
             Authorization: `Bearer ${window.sessionStorage.getItem("ACCESS_TOKEN")}`,
             "Content-Type": "application/json",

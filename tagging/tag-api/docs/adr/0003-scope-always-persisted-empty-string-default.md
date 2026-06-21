@@ -1,5 +1,7 @@
 # Scope is always persisted with an empty-string default, and an empty Scope query means "no filter"
 
+> **Superseded by [0007](./0007-scope-mandatory-and-scoped-reads-are-strict.md).** Scope is now mandatory and non-blank on write, and the empty-Scope "no filter, return everything" read path has been removed. The rules below described the migration window, before any producer wrote real scopes.
+
 The original plan for this iteration only wrote the `scope` attribute when the caller supplied a non-empty value, leaving it entirely absent otherwise — the natural way to model an "optional" field in DynamoDB, and consistent with how a sparse GSI would later treat it (see [0002](./0002-scope-filter-without-gsi.md)). We're changing that before this ships: starting with this iteration, every `SaveTag` call writes the `scope` attribute unconditionally, defaulting to `""` when the caller doesn't provide one. "Optional" now describes only what the caller must supply on write — not whether the attribute exists in storage.
 
 The reason is the read-side contract: querying `FindAllTags(ctx, scope)` with an empty `scope` is meant to mean "no filter, give me everything," not "give me tags whose Scope is literally the empty string." At this stage, before any `Tag` carries a real, non-empty `Scope`, that's the only way nearly every tag stays reachable through the scope-filtered read path. So an empty (post-normalization) `scope` skips the `FilterExpression` entirely, rather than filtering on `scope = ""`.

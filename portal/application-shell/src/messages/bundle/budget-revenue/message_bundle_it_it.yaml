@@ -8,6 +8,7 @@ menu:
 budgetRevenuePage:
   menu:
     changeYear: "Cerca"
+    searchTags: "Gestione tag"
   newBudgetRevenueModal:
     title: "Salva un'entrata"
   changeYear:

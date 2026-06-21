@@ -190,15 +190,19 @@ export type BudgetExpensePageMessageBundle = {
 };
 
 export type BudgetRevenuePageMessageBundle = {
-    menuMessages: MenuMessageBundle & { changeYearModal: string };
+    menuMessages: MenuMessageBundle & { changeYearModal: string; searchTags: string };
     deleteModal: WithId<DeleteModalMessageBundle>;
     saveBudgetRevenueModal: WithId<SaveModalMessageBundle>;
     changeYearModal: WithId<SaveModalMessageBundle>;
     uploadAttachmentModal: WithId<UploadAttachmentModalMessageBundle>;
 };
 
+export type SearchTagsTabsMessageBundle = { expense: string; revenue: string };
+
 export type SearchTagsPageMessageBundle = {
     menuMessages: MenuMessageBundle;
+    heading: string;
+    tabs: SearchTagsTabsMessageBundle;
     form: SearchTagFormMessageBundle;
 };
 

@@ -8,6 +8,7 @@ menu:
 budgetRevenuePage:
   menu:
     changeYear: "Search"
+    searchTags: "Manage tags"
   newBudgetRevenueModal:
     title: "Save a Revenue Expense"
   changeYear:

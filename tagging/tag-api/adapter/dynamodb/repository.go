@@ -81,23 +81,16 @@ func scopeFrom(item map[string]types.AttributeValue) string {
 	return ""
 }
 
-// FindAllTags queries by user_name. An empty scope means "no filter, return
-// everything" rather than "match an empty string" — the only way a tag
-// saved before Scope existed (no scope attribute at all) and a
-// freshly-saved unscoped tag (scope == "") both stay reachable without a
-// backfill.
-//
-// A non-empty scope is an INCLUSIVE filter: it returns tags whose normalized
-// scope matches, PLUS unscoped tags (scope == "" or no scope attribute at
-// all). Unscoped tags are shared and must remain reachable from any scoped
-// caller without a backfill — the frontend still creates tags through the
-// unscoped path, and pre-Scope tags have no scope attribute. Only tags scoped
-// to a *different* value (e.g. "revenue" when "expense" is requested) are
-// excluded. There is no GSI backing this query. See
-// docs/adr/0002-scope-filter-without-gsi.md,
-// docs/adr/0003-scope-always-persisted-empty-string-default.md,
+// FindAllTags queries by user_name and STRICTLY filters by scope: it returns
+// only tags whose normalized scope equals the requested scope. There is no
+// unfiltered read path and no inclusion of unscoped/legacy or foreign-scope
+// tags — scope is authoritative. Callers always pass a real, non-empty scope
+// (the only route is GET /api/tags/scope/:scope); pre-Scope and unscoped tags
+// are backfilled to a real scope out of band. There is no GSI backing this
+// query. See docs/adr/0002-scope-filter-without-gsi.md,
 // docs/adr/0004-single-find-all-tags-method-with-scope-parameter.md, and
-// docs/adr/0006-scoped-query-includes-unscoped-tags.md.
+// docs/adr/0007-scope-mandatory-and-scoped-reads-are-strict.md (which
+// superseded 0003 and 0006).
 func (r *TagDynamoDBRepository) FindAllTags(ctx context.Context, scope string) ([]domain.Tag, error) {
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
@@ -105,20 +98,15 @@ func (r *TagDynamoDBRepository) FindAllTags(ctx context.Context, scope string) (
 	}
 	input := &dynamodb.QueryInput{
 		TableName: aws.String(r.TableName),
+		ExpressionAttributeNames: map[string]string{
+			"#scope": "scope", // "scope" is a DynamoDB reserved keyword
+		},
 		ExpressionAttributeValues: map[string]types.AttributeValue{
 			":username": &types.AttributeValueMemberS{Value: *user.UserName},
+			":scope":    &types.AttributeValueMemberS{Value: scope},
 		},
 		KeyConditionExpression: aws.String("user_name = :username"),
-	}
-	if scope != "" {
-		input.ExpressionAttributeNames = map[string]string{
-			"#scope": "scope", // "scope" is a DynamoDB reserved keyword
-		}
-		input.ExpressionAttributeValues[":scope"] = &types.AttributeValueMemberS{Value: scope}
-		input.ExpressionAttributeValues[":empty"] = &types.AttributeValueMemberS{Value: ""}
-		// Match the requested scope OR unscoped tags: scope == "" (saved after
-		// the Scope field existed) or no scope attribute at all (legacy).
-		input.FilterExpression = aws.String("#scope = :scope OR #scope = :empty OR attribute_not_exists(#scope)")
+		FilterExpression:       aws.String("#scope = :scope"),
 	}
 	result, err := r.Client.Query(ctx, input)
 	if err != nil {
