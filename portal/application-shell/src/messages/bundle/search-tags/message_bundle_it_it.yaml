@@ -6,6 +6,10 @@ menu:
     label: "Esci"
 
 searchTagsPage:
+  heading: "Gestione tag"
+  tabs:
+    expense: "Spese"
+    revenue: "Entrate"
   form:
     value:
       label: "Valore tag di ricerca"

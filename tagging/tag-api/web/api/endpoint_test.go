@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -17,7 +18,7 @@ func setupRouter() *gin.Engine {
 	return r
 }
 
-func TestFindAllTagsGiveEmptyTags(t *testing.T) {
+func TestFindAllTagsByScopeGiveOnlyTheSentinelWhenScopeEmpty(t *testing.T) {
 	router := setupRouter()
 
 	// simple in-memory mock implementing domain.TagRepository
@@ -26,37 +27,65 @@ func TestFindAllTagsGiveEmptyTags(t *testing.T) {
 	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/tags", nil)
+	req, _ := http.NewRequest("GET", "/api/tags/scope/expense", nil)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "[{\"key\":\"UNKNOWN\",\"value\":\"UNKNOWN\"}]", w.Body.String())
 }
 
-func TestFindAllTagsGiveNotEmptyTags(t *testing.T) {
+func TestFindAllTagsByScopeGiveMatchingTagsPlusSentinel(t *testing.T) {
 	router := setupRouter()
 
 	// simple in-memory mock implementing domain.TagRepository
 	mock := &MockRepo{tags: []domain.Tag{
-		{
-			Key:   "tag1",
-			Value: "value1",
-		},
-		{
-			Key:   "tag2",
-			Value: "value2",
-		},
+		{Key: "tag1", Value: "value1", Scope: "expense"},
+		{Key: "tag2", Value: "value2", Scope: "expense"},
 	}}
 
 	var repo domain.TagRepository = mock
 	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/tags", nil)
+	req, _ := http.NewRequest("GET", "/api/tags/scope/expense", nil)
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "[{\"key\":\"tag1\",\"value\":\"value1\"},{\"key\":\"tag2\",\"value\":\"value2\"},{\"key\":\"UNKNOWN\",\"value\":\"UNKNOWN\"}]", w.Body.String())
+	assert.Equal(t, "[{\"key\":\"tag1\",\"value\":\"value1\",\"scope\":\"expense\"},{\"key\":\"tag2\",\"value\":\"value2\",\"scope\":\"expense\"},{\"key\":\"UNKNOWN\",\"value\":\"UNKNOWN\"}]", w.Body.String())
+}
+
+func TestPutTagRejectsBlankScope(t *testing.T) {
+	router := setupRouter()
+
+	mock := &MockRepo{tags: []domain.Tag{}}
+	var repo domain.TagRepository = mock
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/api/tags", strings.NewReader(`{"value":"Groceries","scope":"   "}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Empty(t, mock.tags, "no tag should be persisted when scope is blank")
+}
+
+func TestPutTagAcceptsNonBlankScope(t *testing.T) {
+	router := setupRouter()
+
+	mock := &MockRepo{tags: []domain.Tag{}}
+	var repo domain.TagRepository = mock
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/api/tags", strings.NewReader(`{"value":"Groceries","scope":"expense"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+	assert.Len(t, mock.tags, 1)
+	assert.Equal(t, "expense", mock.tags[0].Scope)
+	assert.NotEmpty(t, mock.tags[0].Key, "a server-side UUID key should be assigned")
 }
 
 func TestFindAllTagsByScopeFiltersOutNonMatchingAndScopelessTags(t *testing.T) {
@@ -108,9 +137,8 @@ func (m *MockRepo) SaveTag(ctx context.Context, tag *domain.Tag) error {
 }
 
 func (m *MockRepo) FindAllTags(ctx context.Context, scope string) ([]domain.Tag, error) {
-	if scope == "" {
-		return m.tags, nil
-	}
+	// Strict scope filtering — mirrors the real repository contract: only tags
+	// whose normalized scope equals the requested scope are returned.
 	var matching []domain.Tag
 	for _, t := range m.tags {
 		if domain.NormalizeScope(t.Scope) == scope {

@@ -6,6 +6,10 @@ menu:
     label: "Log Out"
 
 searchTagsPage:
+  heading: "Tag management"
+  tabs:
+    expense: "Expense"
+    revenue: "Revenue"
   form:
     value:
       label: "Search Tag Value"

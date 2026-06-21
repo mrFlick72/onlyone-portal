@@ -85,7 +85,7 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
 
     const loadCommonData = useCallback(() => {
         getMonthRegistry().then((data) => setMonthRegistry(data))
-        getSearchTagRegistry().then((data) => {
+        getSearchTagRegistry("expense").then((data) => {
             setSearchTagRegistry(data)
             setSelectedSearchTags((currentSelectedSearchTags) =>
                 currentSelectedSearchTags.map((selectedTag) => {
@@ -288,7 +288,7 @@ const BudgetExpensePage: React.FC<BudgetExpensePageProps> = ({ messageRegistry }
 
                     <OpenPopUpMenuItem icon={<Search />} openPopupHandler={makeSearchBudgetExpensePopUpOpen} text={budgetExpenseMessages.menuMessages.searchModal} />
 
-                    <SearchTagsPageMenuItem text={configMap.budgetExpense(messageRegistry).menuMessages.searchTags} />
+                    <SearchTagsPageMenuItem scope="expense" text={configMap.budgetExpense(messageRegistry).menuMessages.searchTags} />
                 </Menu>
 
                 <Container sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>

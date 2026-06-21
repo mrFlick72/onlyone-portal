@@ -12,6 +12,7 @@ import DeleteBudgetRevenueConfirmationPopUp from "./DeleteBudgetRevenueConfirmat
 import SaveBudgetRevenuePopUp from "./SaveBudgetRevenuePopUp";
 import Menu from "../../components/menu/Menu";
 import OpenPopUpMenuItem from "../../components/menu/OpenPopUpMenuItem";
+import SearchTagsPageMenuItem from "../../components/menu/SearchTagsPageMenuItem";
 import { FormDateFormatPattern } from "../../components/form/FormDatePicker";
 import BudgetRevenue from "./domain/BudgetRevenue";
 import UploadAttachmentPopUp from "../attachment/UploadAttachmentPopUp";
@@ -154,6 +155,9 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
                 <OpenPopUpMenuItem icon={<Search />}
                     openPopupHandler={makeRevenueSearchPopUpOpen}
                     text={configMap.budgetRevenue(messageRegistry).menuMessages.changeYearModal} />
+
+                <SearchTagsPageMenuItem scope="revenue"
+                    text={configMap.budgetRevenue(messageRegistry).menuMessages.searchTags} />
 
             </Menu>
             <Container>

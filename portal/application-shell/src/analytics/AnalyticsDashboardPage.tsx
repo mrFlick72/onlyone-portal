@@ -53,7 +53,7 @@ const AnalyticsDashboardPage: React.FC<AnalyticsDashboardPageProps> = ({ message
 
     useEffect(() => {
         getMonthRegistry().then((data) => setMonthRegistry(data))
-        getSearchTagRegistry().then((data) => setSearchTagRegistry(data))
+        getSearchTagRegistry("expense").then((data) => setSearchTagRegistry(data))
     }, [])
 
     useEffect(() => {

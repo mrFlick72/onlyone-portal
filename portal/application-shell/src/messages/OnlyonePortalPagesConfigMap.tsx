@@ -182,7 +182,8 @@ export class OnlyonePortalPagesConfigMap {
         return {
             menuMessages: {
                 ...baseMenuMessages(bundle),
-                changeYearModal: getMessageFor(bundle, "budgetRevenuePage.menu.changeYear")
+                changeYearModal: getMessageFor(bundle, "budgetRevenuePage.menu.changeYear"),
+                searchTags: getMessageFor(bundle, "budgetRevenuePage.menu.searchTags")
             },
             deleteModal: {
                 id: "deleteBudgetRevenueModal",
@@ -221,6 +222,11 @@ export class OnlyonePortalPagesConfigMap {
     searchTags(bundle: MessageBundle): SearchTagsPageMessageBundle {
         return {
             menuMessages: baseMenuMessages(bundle),
+            heading: getMessageFor(bundle, "searchTagsPage.heading"),
+            tabs: {
+                expense: getMessageFor(bundle, "searchTagsPage.tabs.expense"),
+                revenue: getMessageFor(bundle, "searchTagsPage.tabs.revenue")
+            },
             form: {
                 valueLabel: getMessageFor(bundle, "searchTagsPage.form.value.label"),
                 saveLabel: getMessageFor(bundle, "searchTagsPage.form.save.label")
