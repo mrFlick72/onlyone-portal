@@ -3,7 +3,7 @@ import FormInputTextField from "../../components/form/FormInputTextField";
 import FormButton from "../../components/form/FormButton";
 import { SearchTagFormMessageBundle } from "../../messages/MessageBundles";
 
-interface SearchTagFormProps {
+type SearchTagFormProps = {
     searchTag: SearchTag;
     handler: any;
     messages: SearchTagFormMessageBundle;

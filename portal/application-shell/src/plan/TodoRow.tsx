@@ -7,7 +7,7 @@ import { ApiDateFormatPattern, FormDateFormatPattern } from "../components/form/
 import { colorFor, isTerminal } from "./domain/TodoStatus";
 import { TodoRowActionsMessageBundle, TodoStatusMessageBundle } from "../messages/MessageBundles";
 
-interface TodoRowProps {
+type TodoRowProps = {
     todo: Todo;
     openUpdate: () => void;
     openDelete: () => void;

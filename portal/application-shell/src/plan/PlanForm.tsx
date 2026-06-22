@@ -10,7 +10,7 @@ export type PlanFormData = {
     date: string;
 };
 
-interface PlanFormProps {
+type PlanFormProps = {
     data: PlanFormData;
     handlers: {
         title: (event: React.ChangeEvent<HTMLInputElement>) => void;

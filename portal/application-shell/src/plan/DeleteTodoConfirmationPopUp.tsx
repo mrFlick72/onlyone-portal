@@ -2,7 +2,7 @@ import React from "react"
 import ConfirmationPopUp from "../components/layout/ConfirmationPopUp";
 import { DeleteModalMessageBundle } from "../messages/MessageBundles";
 
-interface DeleteTodoConfirmationPopUpProps {
+type DeleteTodoConfirmationPopUpProps = {
     open: boolean;
     handleClose: () => void;
     saveCallback: () => void;

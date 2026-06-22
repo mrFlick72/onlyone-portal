@@ -7,7 +7,7 @@ import { SelectOption } from "../../components/form/FormSelect";
 import { AddShoppingCart } from "@mui/icons-material";
 import { BudgetRevenueFormMessageBundle, SaveModalMessageBundle } from "../../messages/MessageBundles";
 
-interface SaveBudgetRevenuePopUpProps {
+type SaveBudgetRevenuePopUpProps = {
     budgetRevenue: {
         date: string;
         amount: string;

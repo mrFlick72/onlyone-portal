@@ -2,7 +2,7 @@ import React from "react";
 import { Button, Grid } from "@mui/material";
 import { commonStyle } from "../../theme/ThemeProvider";
 
-interface FormButtonProps {
+type FormButtonProps = {
     labelPrefix?: React.ReactNode,
     label: string,
     type: "button" | "submit" | "reset",

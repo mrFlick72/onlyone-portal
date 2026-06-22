@@ -6,7 +6,7 @@ import Plan from "./domain/Plan";
 import { ApiDateFormatPattern, FormDateFormatPattern } from "../components/form/FormDatePicker";
 import { PlanListRowActionsMessageBundle } from "../messages/MessageBundles";
 
-interface PlanListRowProps {
+type PlanListRowProps = {
     plan: Plan;
     openDetail: () => void;
     openDelete: () => void;

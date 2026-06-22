@@ -6,7 +6,7 @@ import {LocalizationProvider} from '@mui/x-date-pickers/LocalizationProvider';
 import {commonStyle} from "../../theme/ThemeProvider";
 import moment from "moment";
 
-interface FormDatePickerProps {
+type FormDatePickerProps = {
     label: string
     value: string
     onClickHandler: (value: any) => void

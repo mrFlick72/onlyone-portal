@@ -14,7 +14,7 @@ import AnalyticBarChart from "./charts/AnalyticBarChart"
 
 const MAX_YEAR_RANGE_SIZE = 20
 
-interface AnalyticsDashboardPageProps {
+type AnalyticsDashboardPageProps = {
     messageRegistry: MessageBundle
 }
 

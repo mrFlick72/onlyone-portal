@@ -7,11 +7,11 @@ import { MessageBundle } from '../messages/MessageRepository';
 
 const FONT_SIZE: number = 150
 
-interface HomePageMenuItemWrapperProps {
+type HomePageMenuItemWrapperProps = {
     content: HomePageMenuItemProps
 }
 
-interface HomePageMenuItemProps {
+type HomePageMenuItemProps = {
     titleText: string
     titleIcon: ReactNode
     body: string

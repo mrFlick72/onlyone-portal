@@ -6,7 +6,7 @@ import { getSearchTagRegistry, saveSearchTag, TagScope, UNKNOWN_SENTINEL_KEY } f
 import Separator from "../../components/form/Separator";
 import { SearchTagFormMessageBundle, SearchTagsTableMessageBundle } from '../../messages/MessageBundles';
 
-interface ScopedTagManagerProps {
+type ScopedTagManagerProps = {
     scope: TagScope;
     formMessages: SearchTagFormMessageBundle;
     tableMessages: SearchTagsTableMessageBundle;

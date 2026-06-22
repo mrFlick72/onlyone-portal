@@ -2,7 +2,7 @@ import { Grid, TextField } from "@mui/material";
 import React from "react";
 import { commonStyle } from "../../theme/ThemeProvider";
 
-interface FormInputTextFieldProps {
+type FormInputTextFieldProps = {
     id: string,
     label: string,
     type?: string,

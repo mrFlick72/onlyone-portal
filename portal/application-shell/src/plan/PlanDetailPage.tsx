@@ -16,7 +16,7 @@ import DeleteTodoConfirmationPopUp from "./DeleteTodoConfirmationPopUp";
 import ChangeTodoStatusPopUp from "./ChangeTodoStatusPopUp";
 import { MessageBundle } from "../messages/MessageRepository";
 
-interface PlanDetailPageProps {
+type PlanDetailPageProps = {
     messageRegistry: MessageBundle;
 }
 

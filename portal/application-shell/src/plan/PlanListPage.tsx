@@ -14,7 +14,7 @@ import SavePlanPopUp from "./SavePlanPopUp";
 import DeletePlanConfirmationPopUp from "./DeletePlanConfirmationPopUp";
 import { MessageBundle } from "../messages/MessageRepository";
 
-interface PlanListPageProps {
+type PlanListPageProps = {
     messageRegistry: MessageBundle;
 }
 

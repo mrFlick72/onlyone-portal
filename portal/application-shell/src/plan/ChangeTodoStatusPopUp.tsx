@@ -4,7 +4,7 @@ import { Todo, TodoStatus } from "./domain/Plan";
 import { allowedTransitionsFor, colorFor } from "./domain/TodoStatus";
 import { ChangeTodoStatusModalMessageBundle, TodoStatusMessageBundle } from "../messages/MessageBundles";
 
-interface ChangeTodoStatusPopUpProps {
+type ChangeTodoStatusPopUpProps = {
     open: boolean;
     todo: Todo | null;
     handleClose: () => void;
