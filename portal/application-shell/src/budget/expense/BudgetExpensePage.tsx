@@ -33,7 +33,7 @@ import type { Month } from "../../time/months"
 import type { BudgetExpense, SavedBudgetExpense, SpentBudget } from "./domain/BudgetExpense"
 import { MessageBundle } from "../../messages/MessageRepository";
 
-interface BudgetExpensePageProps {
+type BudgetExpensePageProps = {
     messageRegistry: MessageBundle
 }
 

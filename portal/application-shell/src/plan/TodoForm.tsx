@@ -11,7 +11,7 @@ export type TodoFormData = {
     date: string;
 };
 
-interface TodoFormProps {
+type TodoFormProps = {
     data: TodoFormData;
     handlers: {
         content: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;

@@ -4,7 +4,7 @@ import FormButton from "../../components/form/FormButton";
 import { FC } from "react";
 import { SearchTagsTableMessageBundle } from "../../messages/MessageBundles";
 
-interface SearchTagsTableProps {
+type SearchTagsTableProps = {
     searchTagsRegistry: SearchTag[];
     handler: (searchTagKey: string, searchTagValue: string) => void;
     messages: SearchTagsTableMessageBundle;

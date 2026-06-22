@@ -20,7 +20,7 @@ import BudgetRevenue from "./domain/BudgetRevenue";
 import UploadAttachmentPopUp from "../attachment/UploadAttachmentPopUp";
 import type { AttachmentTarget } from "../attachment/domain/Attachment";
 import { MessageBundle } from "../../messages/MessageRepository";
-interface BudgetRevenuePageProps {
+type BudgetRevenuePageProps = {
     messageRegistry: MessageBundle;
 }
 

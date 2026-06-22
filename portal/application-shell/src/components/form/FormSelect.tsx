@@ -5,12 +5,12 @@ import { commonStyle } from "../../theme/ThemeProvider";
 import Select, { GroupBase, OptionsOrGroups } from "react-select";
 import { Grid, InputLabel } from "@mui/material";
 
-export interface SelectOption {
+export type SelectOption = {
     value: string
     label: string
 }
 
-interface FormSelectProps {
+type FormSelectProps = {
     id: string
     label: string
     multi: boolean

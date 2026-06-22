@@ -2,7 +2,7 @@ import React, {ReactNode} from 'react';
 import {Grid} from "@mui/material";
 
 
-interface MenuCardContainerProps {
+type MenuCardContainerProps = {
     children: ReactNode
 }
 

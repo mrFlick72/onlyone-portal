@@ -10,14 +10,14 @@ import FormSelect, { SelectOption } from "../../components/form/FormSelect";
 import FormTextArea from "../../components/form/FormTextArea";
 import { BudgetRevenueFormMessageBundle } from "../../messages/MessageBundles";
 
-interface BudgetRevenueFormData {
+type BudgetRevenueFormData = {
     date: string;
     amount: string;
     note: string;
     searchTags: SelectOption[];
 }
 
-interface BudgetRevenueFormProps {
+type BudgetRevenueFormProps = {
     budgetRevenueData: BudgetRevenueFormData;
     budgetRevenueHandlers: {
         date: (date: moment.Moment) => void;

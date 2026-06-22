@@ -10,7 +10,7 @@ const classes = {
     }
 }
 
-interface MenuCardProps {
+type MenuCardProps = {
     title?: string
     content: any
     linkTo: string

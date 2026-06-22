@@ -4,7 +4,7 @@ import Plan from "./domain/Plan";
 import PlanListRow from "./PlanListRow";
 import { PlanListContentMessageBundle } from "../messages/MessageBundles";
 
-interface PlanListContentProps {
+type PlanListContentProps = {
     plans: Plan[];
     openDetail: (plan: Plan) => void;
     openDelete: (plan: Plan) => void;

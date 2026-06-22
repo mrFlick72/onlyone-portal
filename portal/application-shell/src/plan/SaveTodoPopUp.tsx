@@ -6,7 +6,7 @@ import TodoForm, { TodoFormData } from "./TodoForm";
 import YesAndNoButtonGroup from "../components/layout/YesAndNoButtonGroup";
 import { SaveModalMessageBundle, TodoFormMessageBundle } from "../messages/MessageBundles";
 
-interface SaveTodoPopUpProps {
+type SaveTodoPopUpProps = {
     open: boolean;
     handleClose: () => void;
     todo: TodoFormData;

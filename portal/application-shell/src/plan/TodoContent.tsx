@@ -4,7 +4,7 @@ import { Todo } from "./domain/Plan";
 import TodoRow from "./TodoRow";
 import { TodoContentMessageBundle } from "../messages/MessageBundles";
 
-interface TodoContentProps {
+type TodoContentProps = {
     todos: Todo[];
     openUpdate: (todo: Todo) => void;
     openDelete: (todo: Todo) => void;

@@ -5,7 +5,7 @@ import { v1 as uuidv1 } from "uuid";
 import BudgetRevenue from "./domain/BudgetRevenue";
 import { BudgetActionsMessageBundle } from "../../messages/MessageBundles";
 
-interface BudgetRevenueRowProps {
+type BudgetRevenueRowProps = {
     revenue: BudgetRevenue
     openDeletePopUp: () => void;
     openUpdatePopUp: () => void;

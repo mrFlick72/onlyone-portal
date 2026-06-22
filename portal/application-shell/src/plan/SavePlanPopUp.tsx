@@ -6,7 +6,7 @@ import PlanForm, { PlanFormData } from "./PlanForm";
 import YesAndNoButtonGroup from "../components/layout/YesAndNoButtonGroup";
 import { PlanFormMessageBundle, SaveModalMessageBundle } from "../messages/MessageBundles";
 
-interface SavePlanPopUpProps {
+type SavePlanPopUpProps = {
     open: boolean;
     handleClose: () => void;
     plan: PlanFormData;

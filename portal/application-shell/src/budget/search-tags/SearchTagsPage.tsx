@@ -8,7 +8,7 @@ import ScopedTagManager from "./ScopedTagManager";
 import { TagScope } from "./domain/SearchTagRepository";
 import { MessageBundle } from '../../messages/MessageRepository';
 
-interface SearchTagsPageProps {
+type SearchTagsPageProps = {
     messageRegistry: MessageBundle;
 }
 

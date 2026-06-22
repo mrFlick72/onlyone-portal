@@ -4,7 +4,7 @@ import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow
 import BudgetRevenue from "./domain/BudgetRevenue";
 import { BudgetRevenueTableMessageBundle } from "../../messages/MessageBundles";
 
-interface BudgetRevenueTableProps {
+type BudgetRevenueTableProps = {
     revenues: BudgetRevenue[];
     total: string;
     openDeletePopUp: (revenue: BudgetRevenue) => void;
