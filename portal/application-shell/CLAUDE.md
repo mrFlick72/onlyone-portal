@@ -8,6 +8,10 @@ The frontend SPA for OnlyOne Portal — a React 19 + TypeScript multi-page appli
 
 Use the local `typescript-expert`, `typescript-react-reviewer`, or `vercel-react-best-practices` skills when a change touches TypeScript/React behavior or performance. Use Context7/MUI documentation tools when current library details are needed.
 
+## Conventions
+
+- **Object shapes use `type`, not `interface`.** Declare component `Props`, domain models, and other object shapes as `type X = { … }`. Reserve `interface` for the two cases it earns: declaration merging, or extending a third-party `interface`. This is not yet lint-enforced (the frontend has no linter — only `tsc --noEmit`), so apply it by hand. See `docs/adr/0001-prefer-type-over-interface-for-object-shapes.md`.
+
 ## Tech Stack
 
 | Concern | Choice |
