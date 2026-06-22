@@ -58,7 +58,7 @@ const BudgetRevenuePage: React.FC<BudgetRevenuePageProps> = ({ messageRegistry }
         setCurrentBudgetRevenueDate(moment(revenue.date, "DD/MM/YYYY"))
         setCurrentBudgetRevenueAmount(revenue.amount!.toString())
         setCurrentBudgetRevenueNote(revenue.note)
-        setSelectedSearchTags((revenue.tags ?? []).map(tag => ({ value: tag.tagKey, label: tag.tagValue })))
+        setSelectedSearchTags(revenue.tags.map(tag => ({ value: tag.tagKey, label: tag.tagValue })))
         setOpenSaveBudgetRevenuePopUp(true)
     }, [])
 
