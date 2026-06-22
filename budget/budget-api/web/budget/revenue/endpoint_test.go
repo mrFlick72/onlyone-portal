@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-playground/assert/v2"
 	"github.com/mrflick72/budget/budget-api/domain/budget/revenue"
+	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/budget/budget-api/internal/testutils"
 	"github.com/stretchr/testify/mock"
@@ -24,6 +25,7 @@ func TestCreateANewRevenue(t *testing.T) {
 		Date:   testutils.SafeDateFor("01/01/2018"),
 		Amount: testutils.SafeMoneyFor("100.00"),
 		Note:   "Test note",
+		Tags:   []tags.SearchTag{},
 	}
 
 	rep := RevenueRepresentation{
@@ -57,6 +59,7 @@ func TestUpdateARevenue(t *testing.T) {
 		Date:   testutils.SafeDateFor("01/01/2018"),
 		Amount: testutils.SafeMoneyFor("100.00"),
 		Note:   "Test note",
+		Tags:   []tags.SearchTag{},
 	}
 
 	rep := RevenueRepresentation{

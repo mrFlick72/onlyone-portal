@@ -5,15 +5,26 @@ import (
 	"errors"
 	"sort"
 
+	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
+
+// applyDefaultTagIfMissing defaults a revenue with no tags to the shared UNKNOWN
+// sentinel — the exact analogue of the expense behavior — so every revenue has
+// at least one tag once saved.
+func applyDefaultTagIfMissing(revenue *Revenue) {
+	if len(revenue.Tags) == 0 {
+		revenue.Tags = []tags.SearchTag{tags.UnknownSentinel()}
+	}
+}
 
 type CreateRevenue struct {
 	Repository RevenueRepository
 }
 
 func (action *CreateRevenue) Execute(ctx context.Context, revenue *Revenue) error {
+	applyDefaultTagIfMissing(revenue)
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
 		return err
@@ -27,6 +38,7 @@ type UpdateRevenue struct {
 }
 
 func (action *UpdateRevenue) Execute(ctx context.Context, revenue *Revenue) error {
+	applyDefaultTagIfMissing(revenue)
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
 		return err

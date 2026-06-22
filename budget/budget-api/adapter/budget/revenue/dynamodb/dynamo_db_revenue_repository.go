@@ -10,27 +10,31 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/mrflick72/budget/budget-api/domain/budget/revenue"
 	"github.com/mrflick72/budget/budget-api/domain/money"
+	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
 
 type DynamoDbRevenueRepository struct {
-	TableName         string
-	Client            *dynamodb.Client
-	RevenueIdProvider revenue.RevenueIdProvider
-	logger            *logging.Logger
+	TableName           string
+	Client              *dynamodb.Client
+	RevenueIdProvider   revenue.RevenueIdProvider
+	SearchTagRepository tags.SearchTagRepository
+	logger              *logging.Logger
 }
 
 func NewDynamoDbRevenueRepository(
 	TableName string,
 	Client *dynamodb.Client,
-	RevenueIdProvider revenue.RevenueIdProvider) revenue.RevenueRepository {
+	RevenueIdProvider revenue.RevenueIdProvider,
+	SearchTagRepository tags.SearchTagRepository) revenue.RevenueRepository {
 	return &DynamoDbRevenueRepository{
-		TableName:         TableName,
-		Client:            Client,
-		RevenueIdProvider: RevenueIdProvider,
-		logger:            logging.GetLoggerInstanceForComponentByType(&DynamoDbRevenueRepository{}),
+		TableName:           TableName,
+		Client:              Client,
+		RevenueIdProvider:   RevenueIdProvider,
+		SearchTagRepository: SearchTagRepository,
+		logger:              logging.GetLoggerInstanceForComponentByType(&DynamoDbRevenueRepository{}),
 	}
 }
 
@@ -68,10 +72,10 @@ func (repository *DynamoDbRevenueRepository) FindFor(ctx context.Context, revenu
 		return nil, errors.New("Revenue not found")
 	}
 
-	return repository.fromDynamo(result.Items[0])
+	return repository.fromDynamo(ctx, result.Items[0])
 }
 
-func (repository *DynamoDbRevenueRepository) fromDynamo(item map[string]types.AttributeValue) (*revenue.Revenue, error) {
+func (repository *DynamoDbRevenueRepository) fromDynamo(ctx context.Context, item map[string]types.AttributeValue) (*revenue.Revenue, error) {
 	d, err := date.IsoDateFor(item["transaction_date"].(*types.AttributeValueMemberS).Value)
 	if err != nil {
 		repository.logger.LogErrorfFor("Error parsing transaction_date: %v", err)
@@ -84,13 +88,43 @@ func (repository *DynamoDbRevenueRepository) fromDynamo(item map[string]types.At
 		return nil, errors.New("invalid data format in Revenue")
 	}
 
+	searchTags, err := repository.resolveTags(ctx, item)
+	if err != nil {
+		return nil, err
+	}
+
 	return &revenue.Revenue{
 		Id:       revenue.RevenueId(item["budget_id"].(*types.AttributeValueMemberS).Value),
 		UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
 		Date:     *d,
 		Amount:   amount,
 		Note:     item["note"].(*types.AttributeValueMemberS).Value,
+		Tags:     searchTags,
 	}, nil
+}
+
+// resolveTags turns the stored comma-joined tag keys into SearchTags with their
+// current values, fetched from tag-api. It is read-tolerant: a revenue row that
+// predates tagging has no "tag" attribute (or an empty one) and resolves to the
+// UNKNOWN sentinel rather than panicking — unlike expense, real legacy revenue
+// rows exist. See budget/budget-api/docs/adr/0002-revenue-tagging-mirrors-expense-without-events-or-totals.md.
+func (repository *DynamoDbRevenueRepository) resolveTags(ctx context.Context, item map[string]types.AttributeValue) ([]tags.SearchTag, error) {
+	tagAttr, ok := item["tag"].(*types.AttributeValueMemberS)
+	if !ok || tagAttr.Value == "" {
+		return []tags.SearchTag{tags.UnknownSentinel()}, nil
+	}
+
+	tagKeys := strings.Split(tagAttr.Value, ",")
+	searchTags := make([]tags.SearchTag, 0, len(tagKeys))
+	for _, tagKey := range tagKeys {
+		searchTag, err := repository.SearchTagRepository.GetTagBy(ctx, tagKey)
+		if err != nil {
+			repository.logger.LogErrorfFor("Error getting tag: %v", err)
+			return nil, errors.New("invalid tag in Revenue")
+		}
+		searchTags = append(searchTags, *searchTag)
+	}
+	return searchTags, nil
 }
 
 func (repository *DynamoDbRevenueRepository) FindByDateRange(ctx context.Context, start date.Date, end date.Date) ([]revenue.Revenue, error) {
@@ -122,7 +156,7 @@ func (repository *DynamoDbRevenueRepository) FindByDateRange(ctx context.Context
 			return nil, err
 		}
 		for _, item := range items.Items {
-			r, err := repository.fromDynamo(item)
+			r, err := repository.fromDynamo(ctx, item)
 			if err != nil {
 				repository.logger.LogErrorfFor("Error processing item in FindByDateRange: %v", err)
 			} else {
@@ -159,6 +193,11 @@ func (repository *DynamoDbRevenueRepository) Save(ctx context.Context, revenueTo
 	}
 	revenueToSave.UserName = *user.UserName
 
+	tagKeys := make([]string, 0, len(revenueToSave.Tags))
+	for _, tag := range revenueToSave.Tags {
+		tagKeys = append(tagKeys, tag.Key)
+	}
+
 	queryInput := &dynamodb.PutItemInput{
 		TableName: &repository.TableName,
 		Item: map[string]types.AttributeValue{
@@ -169,6 +208,7 @@ func (repository *DynamoDbRevenueRepository) Save(ctx context.Context, revenueTo
 			"transaction_date": &types.AttributeValueMemberS{Value: revenueToSave.Date.GetIsoFormattedDate()},
 			"amount":           &types.AttributeValueMemberS{Value: revenueToSave.Amount.StringifyAmount()},
 			"note":             &types.AttributeValueMemberS{Value: revenueToSave.Note},
+			"tag":              &types.AttributeValueMemberS{Value: strings.Join(tagKeys, ",")},
 		},
 	}
 

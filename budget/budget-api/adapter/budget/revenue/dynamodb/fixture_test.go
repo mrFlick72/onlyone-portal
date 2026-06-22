@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/mrflick72/budget/budget-api/domain/budget/revenue"
+	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/internal/testutils"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 	"github.com/stretchr/testify/mock"
@@ -44,8 +45,17 @@ func newDynamoDBClient() (*dynamodb.Client, error) {
 
 var TableName = "BUDGET_REVENUE_TABLE_NAME_STAGING"
 
+// newRevenueRepository wires a repository with an unconfigured tag mock — fine
+// for untagged saves, whose empty "tag" attribute resolves to UNKNOWN without
+// ever calling the tag repository.
 func newRevenueRepository(revenueIdProvider revenue.RevenueIdProvider) *DynamoDbRevenueRepository {
-	return NewDynamoDbRevenueRepository(TableName, client, revenueIdProvider).(*DynamoDbRevenueRepository)
+	return newRevenueRepositoryWith(revenueIdProvider, new(tags.SearchTagRepositoryMock))
+}
+
+// newRevenueRepositoryWith lets a test supply a configured tag mock to assert
+// key→value resolution on read.
+func newRevenueRepositoryWith(revenueIdProvider revenue.RevenueIdProvider, searchTagRepository tags.SearchTagRepository) *DynamoDbRevenueRepository {
+	return NewDynamoDbRevenueRepository(TableName, client, revenueIdProvider, searchTagRepository).(*DynamoDbRevenueRepository)
 }
 
 func setupTestDynamoDBTable() error {

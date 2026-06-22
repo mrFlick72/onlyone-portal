@@ -12,6 +12,7 @@ import (
 
 const defaultTTL = 1 * time.Minute
 
+//todo move the logger as RistrettoCacheProvider field and then init it in the 
 type RistrettoCacheProvider struct {
 	Cache *ristretto.Cache
 	TTL   time.Duration

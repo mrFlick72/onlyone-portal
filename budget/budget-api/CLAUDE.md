@@ -140,17 +140,21 @@ For attachments, ownership is enforced inside the composite adapter and the meta
 ### Tag cache has no invalidation hook
 
 `RistrettoCachedSearchTagRepository` caches `GetAllTags` per user under key
-`search_tags_user_<userName>_scope_<scope>` (scope is `expense`, the only scope budget-api looks up). There is no
+`search_tags_user_<userName>_scope_<scope>`. budget-api now looks up **two** scopes — `expense` (expense tagging) and
+`revenue` (revenue tagging) — each with its own cache instance and key suffix, so they never collide. There is no
 invalidation on writes from `tag-api` — entries live until Ristretto evicts them or the process restarts. If you need
-fresh tag data immediately after a tag mutation, depend on `rest.NewRestSearchTagRepository` directly instead of
-`config.NewSearchTagRepository`.
+fresh tag data immediately after a tag mutation, depend on `rest.NewRestSearchTagRepository` directly instead of the
+cached wiring constructors.
 
-`budget-api` only tags expenses, so `RestSearchTagRepository` fetches `GET /api/tags/scope/expense` rather than the
-unscoped `GET /api/tags`. The `"expense"` scope literal is defined once at the wiring layer
-(`config.NewSearchTagRepository`) and passed into both the REST repository (drives the request path) and the Ristretto
-decorator (drives the cache key). Scope stays an adapter/wiring concern — `domain/tags.SearchTagRepository` and the
-`SearchTag` value object are unchanged and carry no `Scope`. See
-`docs/adr/0001-expense-scoped-tag-lookup-hardcoded-at-wiring.md`.
+Both expense and revenue store tag **keys** only and resolve each key to its current value from tag-api on read, so
+`RestSearchTagRepository` fetches `GET /api/tags/scope/<scope>` rather than the unscoped `GET /api/tags`. Each scope
+literal is defined once at the wiring layer via a named constructor — `config.NewExpenseSearchTagRepository`
+(`expense`) and `config.NewRevenueSearchTagRepository` (`revenue`), both over a private `newSearchTagRepository(scope)`
+helper. The literal is passed into both the REST repository (drives the request path) and the Ristretto decorator
+(drives the cache key). Scope stays an adapter/wiring concern — `domain/tags.SearchTagRepository` and the `SearchTag`
+value object are unchanged and carry no `Scope`. See
+`docs/adr/0001-expense-scoped-tag-lookup-hardcoded-at-wiring.md` and
+`docs/adr/0002-revenue-tagging-mirrors-expense-without-events-or-totals.md`.
 
 ### Composition root quirks
 

@@ -18,6 +18,7 @@ const BudgetRevenueRow: React.FC<BudgetRevenueRowProps> = ({ revenue, openDelete
         <TableCell>{revenue.date}</TableCell>
         <TableCell>{revenue.amount}</TableCell>
         <TableCell>{revenue.note}</TableCell>
+        <TableCell>{revenue.tags.map(tag => tag.tagValue).join(", ")}</TableCell>
         <TableCell>
             <ButtonGroup variant="contained" aria-label="outlined primary button group">
                 <Button onClick={openUpdatePopUp}><Edit /> {actions.edit}</Button>
