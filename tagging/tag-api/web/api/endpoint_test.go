@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -30,8 +31,9 @@ func TestFindAllTagsByScopeGiveOnlyTheSentinelWhenScopeEmpty(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/tags/scope/expense", nil)
 	router.ServeHTTP(w, req)
 
+	expected, _ := json.Marshal([]domain.Tag{{Key: "UNKNOWN", Value: "UNKNOWN"}})
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "[{\"key\":\"UNKNOWN\",\"value\":\"UNKNOWN\"}]", w.Body.String())
+	assert.Equal(t, string(expected), w.Body.String())
 }
 
 func TestFindAllTagsByScopeGiveMatchingTagsPlusSentinel(t *testing.T) {
@@ -50,8 +52,13 @@ func TestFindAllTagsByScopeGiveMatchingTagsPlusSentinel(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/tags/scope/expense", nil)
 	router.ServeHTTP(w, req)
 
+	expected, _ := json.Marshal([]domain.Tag{
+		{Key: "tag1", Value: "value1", Scope: "expense"},
+		{Key: "tag2", Value: "value2", Scope: "expense"},
+		{Key: "UNKNOWN", Value: "UNKNOWN"},
+	})
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "[{\"key\":\"tag1\",\"value\":\"value1\",\"scope\":\"expense\"},{\"key\":\"tag2\",\"value\":\"value2\",\"scope\":\"expense\"},{\"key\":\"UNKNOWN\",\"value\":\"UNKNOWN\"}]", w.Body.String())
+	assert.Equal(t, string(expected), w.Body.String())
 }
 
 func TestPutTagRejectsBlankScope(t *testing.T) {
@@ -104,8 +111,12 @@ func TestFindAllTagsByScopeFiltersOutNonMatchingAndScopelessTags(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/tags/scope/EXPENSE", nil)
 	router.ServeHTTP(w, req)
 
+	expected, _ := json.Marshal([]domain.Tag{
+		{Key: "tag1", Value: "Groceries", Scope: "Expense"},
+		{Key: "UNKNOWN", Value: "UNKNOWN"},
+	})
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "[{\"key\":\"tag1\",\"value\":\"Groceries\",\"scope\":\"Expense\"},{\"key\":\"UNKNOWN\",\"value\":\"UNKNOWN\"}]", w.Body.String())
+	assert.Equal(t, string(expected), w.Body.String())
 }
 
 func TestFindAllTagsByScopeAlwaysIncludesUnknownSentinel(t *testing.T) {
@@ -122,8 +133,9 @@ func TestFindAllTagsByScopeAlwaysIncludesUnknownSentinel(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/api/tags/scope/revenue", nil)
 	router.ServeHTTP(w, req)
 
+	expected, _ := json.Marshal([]domain.Tag{{Key: "UNKNOWN", Value: "UNKNOWN"}})
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "[{\"key\":\"UNKNOWN\",\"value\":\"UNKNOWN\"}]", w.Body.String())
+	assert.Equal(t, string(expected), w.Body.String())
 }
 
 func TestPatchTagUpdatesValue(t *testing.T) {
