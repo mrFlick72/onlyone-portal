@@ -5,7 +5,7 @@ Owns the per-user catalog of tags used to categorize budget records. Each user h
 ## Language
 
 **Tag**:
-A user-owned `(Key, Value, Scope)` tuple in the catalog. `Key` is a server-generated UUID, opaque and never chosen by the client; `Value` is the human-readable label the user picks (e.g. "Groceries"); `Scope` is mandatory — every `Tag` belongs to exactly one `Scope`.
+A user-owned `(Key, Value, Scope)` tuple in the catalog. `Key` is a server-generated UUID, minted once at creation and immutable thereafter — the client never chooses or changes it, only references an existing one (to update its `Value` or to delete it). `Value` is the human-readable label the user picks (e.g. "Groceries") and the only field a client can change once a `Tag` exists. `Scope` is mandatory at creation and, like `Key`, immutable afterward — every `Tag` belongs to exactly one `Scope` for its whole lifetime; re-classifying a tag's domain is delete-and-recreate, not update (see [ADR 0008](./docs/adr/0008-tag-update-is-value-only.md)). Update and delete both address a `Tag` by its `(Key, Scope)` composite identity — a request for a real `Key` through the wrong `Scope` is treated as not found, never as a cross-scope match.
 _Avoid_: Category, label
 
 **Scope**:

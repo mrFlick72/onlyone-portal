@@ -15,5 +15,5 @@ func (action *FindAllTags) Execute(ctx context.Context, scope string) ([]Tag, er
 	if err != nil {
 		return nil, err
 	}
-	return append(tags, Tag{Key: "UNKNOWN", Value: "UNKNOWN"}), nil
+	return append(tags, Tag{Key: UnknownSentinelKey, Value: UnknownSentinelKey}), nil
 }

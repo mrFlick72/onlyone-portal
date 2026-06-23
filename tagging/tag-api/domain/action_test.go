@@ -21,6 +21,14 @@ func (m *findAllTagsMockRepo) FindAllTags(ctx context.Context, scope string) ([]
 	return m.tags, m.err
 }
 
+func (m *findAllTagsMockRepo) UpdateTagValue(ctx context.Context, tag *Tag) error {
+	return nil
+}
+
+func (m *findAllTagsMockRepo) DeleteTag(ctx context.Context, key string, scope string) error {
+	return nil
+}
+
 func TestFindAllTagsAppendsUnknownSentinel(t *testing.T) {
 	action := &FindAllTags{Repository: &findAllTagsMockRepo{tags: []Tag{{Key: "tag1", Value: "value1"}}}}
 

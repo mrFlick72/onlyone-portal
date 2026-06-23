@@ -2,6 +2,7 @@ package dynamodb
 
 import (
 	"context"
+	"errors"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_config "github.com/aws/aws-sdk-go-v2/config"
@@ -123,4 +124,78 @@ func (r *TagDynamoDBRepository) FindAllTags(ctx context.Context, scope string) (
 	}
 
 	return tags, nil
+}
+
+// UpdateTagValue changes search_tag_value for the (user_name, search_tag_key)
+// item, conditioned on its stored scope matching tag.Scope. tag.Key and
+// tag.Scope are the lookup identity; tag.Value is the only field written. If
+// the item doesn't exist at all, or exists under a different scope, the
+// ConditionExpression fails the same way in both cases (DynamoDB treats a
+// missing attribute as not matching), so both collapse to ErrTagNotFound —
+// see docs/adr/0008-tag-update-is-value-only.md.
+func (r *TagDynamoDBRepository) UpdateTagValue(ctx context.Context, tag *domain.Tag) error {
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+		TableName: aws.String(r.TableName),
+		Key: map[string]types.AttributeValue{
+			"user_name":      &types.AttributeValueMemberS{Value: *user.UserName},
+			"search_tag_key": &types.AttributeValueMemberS{Value: tag.Key},
+		},
+		UpdateExpression: aws.String("SET search_tag_value = :value"),
+		ExpressionAttributeNames: map[string]string{
+			"#scope": "scope", // "scope" is a DynamoDB reserved keyword
+		},
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":value": &types.AttributeValueMemberS{Value: tag.Value},
+			":scope": &types.AttributeValueMemberS{Value: tag.Scope},
+		},
+		ConditionExpression: aws.String("#scope = :scope"),
+	})
+
+	if err != nil {
+		var conditionFailed *types.ConditionalCheckFailedException
+		if errors.As(err, &conditionFailed) {
+			return domain.ErrTagNotFound
+		}
+		return err
+	}
+	return nil
+}
+
+// DeleteTag removes the (user_name, search_tag_key) item, conditioned on its
+// stored scope matching the requested one — same not-found collapse as
+// UpdateTagValue above.
+func (r *TagDynamoDBRepository) DeleteTag(ctx context.Context, key string, scope string) error {
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.Client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
+		TableName: aws.String(r.TableName),
+		Key: map[string]types.AttributeValue{
+			"user_name":      &types.AttributeValueMemberS{Value: *user.UserName},
+			"search_tag_key": &types.AttributeValueMemberS{Value: key},
+		},
+		ExpressionAttributeNames: map[string]string{
+			"#scope": "scope",
+		},
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":scope": &types.AttributeValueMemberS{Value: scope},
+		},
+		ConditionExpression: aws.String("#scope = :scope"),
+	})
+
+	if err != nil {
+		var conditionFailed *types.ConditionalCheckFailedException
+		if errors.As(err, &conditionFailed) {
+			return domain.ErrTagNotFound
+		}
+		return err
+	}
+	return nil
 }

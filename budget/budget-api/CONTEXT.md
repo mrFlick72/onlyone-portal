@@ -15,3 +15,7 @@ _Avoid_: Uncategorized revenue, default-tagged revenue
 **UnknownSentinel**:
 The single budget-api-side definition of the `UNKNOWN` Sentinel Tag (`tags.UnknownSentinel`), shared by both the expense and revenue default-if-missing helpers so the literal is written once per service. It mirrors the same convention tag-api synthesizes on read; the two services duplicate the string with no shared enforcement (see Tagging context and tag-api ADR 0001).
 _Avoid_: Default tag, fallback tag
+
+**Unresolvable Tag Reference**:
+A stored tag `Key` on an `Untagged Expense`'s or `Untagged Revenue`'s record that no longer exists in tag-api's catalog — today, only because the tag was deleted (tag-api [ADR 0008](../../tagging/tag-api/docs/adr/0008-tag-update-is-value-only.md)). `GetTagBy` resolves it to the same `UnknownSentinel`, in place, at read time: no write touches the record's stored `Key`, and no analytics projection is updated (see [ADR 0003](./docs/adr/0003-deleted-tag-references-resolve-to-unknown-in-place.md)). Indistinguishable downstream from a record that was never tagged — both resolve to `UNKNOWN` the same way. Making the reclassification durable, and reflecting it in analytics, is deferred (#27).
+_Avoid_: Orphaned tag, dangling tag reference

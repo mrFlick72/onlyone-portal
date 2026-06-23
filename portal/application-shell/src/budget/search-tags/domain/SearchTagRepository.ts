@@ -45,3 +45,31 @@ export async function saveSearchTag(searchTag: SearchTag, scope: TagScope): Prom
     });
     return Promise.resolve();
 }
+
+// updateSearchTagValue changes only the Value of an existing tag — Key and
+// Scope are immutable once a tag exists (tag-api ADR 0008).
+export async function updateSearchTagValue(key: string, value: string, scope: TagScope): Promise<void> {
+    const baseUrl = await getTagApiBaseUrl();
+    await fetch(`${baseUrl}/api/tags/scope/${scope}/${key}`, {
+        method: "PATCH",
+        credentials: "same-origin",
+        body: JSON.stringify({ "value": value }),
+        headers: {
+            Authorization: `Bearer ${window.sessionStorage.getItem("ACCESS_TOKEN")}`,
+            "Content-Type": "application/json",
+        },
+    });
+    return Promise.resolve();
+}
+
+export async function deleteSearchTag(key: string, scope: TagScope): Promise<void> {
+    const baseUrl = await getTagApiBaseUrl();
+    await fetch(`${baseUrl}/api/tags/scope/${scope}/${key}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+        headers: {
+            Authorization: `Bearer ${window.sessionStorage.getItem("ACCESS_TOKEN")}`,
+        },
+    });
+    return Promise.resolve();
+}

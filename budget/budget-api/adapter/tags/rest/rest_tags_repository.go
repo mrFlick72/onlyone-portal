@@ -39,8 +39,12 @@ func (repository *RestSearchTagRepository) GetTagBy(ctx context.Context, key str
 			return &searchTag, nil
 		}
 	}
-	return nil, fmt.Errorf("tag with key '%s' not found", key)
-
+	// key isn't in the catalog — most likely because the tag was deleted
+	// (tag-api ADR 0008). Degrade to the UNKNOWN sentinel in place rather
+	// than erroring; see
+	// docs/adr/0003-deleted-tag-references-resolve-to-unknown-in-place.md.
+	unknown := tags.UnknownSentinel()
+	return &unknown, nil
 }
 
 func (repository *RestSearchTagRepository) GetAllTags(ctx context.Context) ([]tags.SearchTag, error) {
