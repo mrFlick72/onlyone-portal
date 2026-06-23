@@ -1,6 +1,7 @@
 package management
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -22,6 +23,7 @@ func TestHealth(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/management/health", nil)
 	router.ServeHTTP(w, req)
 
+	expected, _ := json.Marshal(map[string]string{"status": "UP"})
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "{\"status\":\"UP\"}", w.Body.String())
+	assert.Equal(t, string(expected), w.Body.String())
 }

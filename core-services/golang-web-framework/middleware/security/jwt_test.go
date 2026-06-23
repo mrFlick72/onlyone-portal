@@ -1,6 +1,7 @@
 package security
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -38,8 +39,9 @@ func TestWhenARequestIsAuthorized(t *testing.T) {
 	req.Header.Set("Authorization", testutils.CreateTestToken([]string{"ROLE_USER", "ROLE_ADMIN"}))
 	router.ServeHTTP(w, req)
 
+	expected, _ := json.Marshal(map[string]string{"message": "sample endpoint"})
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "{\"message\":\"sample endpoint\"}", w.Body.String())
+	assert.Equal(t, string(expected), w.Body.String())
 }
 
 func TestWhenARequestIsNoAuthorized(t *testing.T) {
