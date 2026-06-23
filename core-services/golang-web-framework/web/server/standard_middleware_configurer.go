@@ -42,7 +42,7 @@ func (c *StandardMiddlewareConfigurer) Dispose(_ context.Context) error {
 func corsConfigurer() gin.HandlerFunc {
 	return cors.New(cors.Config{
 		AllowOrigins:     strings.Split(configurationManager.GetConfigFor("cors.allowed.origins"), ","),
-		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "OPTIONS"},
+		AllowMethods:     []string{"GET", "PUT", "POST", "DELETE", "PATCH", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type", "Accept"},
 		AllowCredentials: true,
 		MaxAge:           60 * time.Minute,

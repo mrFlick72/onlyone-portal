@@ -28,7 +28,11 @@ const SearchTagsPage: FC<SearchTagsPageProps> = ({ messageRegistry }) => {
     const messages = configMap.searchTags(messageRegistry)
     const tableMessages = {
         description: configMap.common(messageRegistry).table.description,
-        operation: configMap.common(messageRegistry).table.operation
+        operation: configMap.common(messageRegistry).table.operation,
+        actions: {
+            edit: configMap.common(messageRegistry).action.edit,
+            delete: configMap.common(messageRegistry).action.delete
+        }
     }
 
     const [tabPanel, setTabPanel] = useState<number>(initialTabFromQuery)
@@ -64,7 +68,9 @@ const SearchTagsPage: FC<SearchTagsPageProps> = ({ messageRegistry }) => {
                             <ScopedTagManager
                                 scope={scope}
                                 formMessages={messages.form}
-                                tableMessages={tableMessages} />
+                                tableMessages={tableMessages}
+                                editModal={messages.editSearchTagModal}
+                                deleteModal={messages.deleteSearchTagModal} />
                         </TabPanel>
                     ))}
                 </Box>

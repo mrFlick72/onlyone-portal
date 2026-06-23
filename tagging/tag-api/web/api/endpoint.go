@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
@@ -54,6 +55,70 @@ func RegisterEndpoints(r *gin.Engine, contextFactoryConverter server.ContextFact
 		}
 
 		c.JSON(http.StatusCreated, tag)
+	})
+
+	// PATCH /api/tags/scope/:scope/:key — update only the Value of the tag at
+	// that (key, scope) composite identity. Key and Scope are immutable; a
+	// :key/:scope pair that doesn't match an existing tag is 404, and the
+	// UNKNOWN sentinel key is rejected with 400 since it is never persisted.
+	// See docs/adr/0008-tag-update-is-value-only.md.
+	r.PATCH("/api/tags/scope/:scope/:key", func(c *gin.Context) {
+		key := c.Param("key")
+		scope := domain.NormalizeScope(c.Param("scope"))
+
+		if key == domain.UnknownSentinelKey {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "the UNKNOWN sentinel tag cannot be updated"})
+			return
+		}
+
+		var body struct {
+			Value string `json:"value"`
+		}
+		if err := c.ShouldBindJSON(&body); err != nil {
+			logger.LogErrorfFor("error occurred: %v", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		ctx := contextFactoryConverter.CreateContextFromGin(c)
+		err := repository.UpdateTagValue(ctx, &domain.Tag{Key: key, Scope: scope, Value: body.Value})
+		if errors.Is(err, domain.ErrTagNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		if err != nil {
+			logger.LogErrorfFor("error occurred: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.Status(http.StatusNoContent)
+	})
+
+	// DELETE /api/tags/scope/:scope/:key — delete the tag at that (key, scope)
+	// composite identity. Same 404/400 rules as PATCH above.
+	r.DELETE("/api/tags/scope/:scope/:key", func(c *gin.Context) {
+		key := c.Param("key")
+		scope := domain.NormalizeScope(c.Param("scope"))
+
+		if key == domain.UnknownSentinelKey {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "the UNKNOWN sentinel tag cannot be deleted"})
+			return
+		}
+
+		ctx := contextFactoryConverter.CreateContextFromGin(c)
+		err := repository.DeleteTag(ctx, key, scope)
+		if errors.Is(err, domain.ErrTagNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		if err != nil {
+			logger.LogErrorfFor("error occurred: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.Status(http.StatusNoContent)
 	})
 
 	return r

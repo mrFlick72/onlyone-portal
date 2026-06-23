@@ -94,3 +94,28 @@ func TestGetAllTagsFetchesFromDelegateAndPopulatesCacheOnCacheMiss(t *testing.T)
 	cacheProviderMock.AssertNotCalled(t, "Get", mock.Anything)
 	cacheProviderMock.AssertNotCalled(t, "Set", mock.Anything, mock.Anything)
 }
+
+func TestGetTagByReturnsUnknownSentinelWhenKeyNotInCachedCatalog(t *testing.T) {
+	ctx := userContextFor("A_USER")
+	cacheKey := "search_tags_user_A_USER_scope_expense"
+	cachedTags := []tags.SearchTag{{Key: "other", Value: "otherValue"}}
+	cachedJSON, _ := json.Marshal(cachedTags)
+
+	cacheProviderMock := new(CacheProviderMock)
+	cacheProviderMock.On("GetContext", ctx, cacheKey).Return(string(cachedJSON), true)
+
+	delegateMock := new(tags.SearchTagRepositoryMock)
+
+	repository := &RistrettoCachedSearchTagRepository{
+		CacheProvider: cacheProviderMock,
+		Delegate:      delegateMock,
+		Scope:         "expense",
+		logger:        logging.GetLoggerInstanceForComponentByType(&RistrettoCachedSearchTagRepository{}),
+	}
+
+	result, err := repository.GetTagBy(ctx, "deletedTagKey")
+
+	assert.Equal(t, nil, err)
+	assert.Equal(t, &tags.SearchTag{Key: "UNKNOWN", Value: "UNKNOWN"}, result)
+	delegateMock.AssertNotCalled(t, "GetAllTags", mock.Anything)
+}

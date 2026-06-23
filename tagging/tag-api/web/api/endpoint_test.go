@@ -126,6 +126,97 @@ func TestFindAllTagsByScopeAlwaysIncludesUnknownSentinel(t *testing.T) {
 	assert.Equal(t, "[{\"key\":\"UNKNOWN\",\"value\":\"UNKNOWN\"}]", w.Body.String())
 }
 
+func TestPatchTagUpdatesValue(t *testing.T) {
+	router := setupRouter()
+
+	mock := &MockRepo{tags: []domain.Tag{{Key: "tag1", Value: "Groceries", Scope: "expense"}}}
+	var repo domain.TagRepository = mock
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PATCH", "/api/tags/scope/expense/tag1", strings.NewReader(`{"value":"Supermarket"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	assert.Equal(t, "Supermarket", mock.tags[0].Value)
+}
+
+func TestPatchTagGivenWrongScopeReturnsNotFound(t *testing.T) {
+	router := setupRouter()
+
+	mock := &MockRepo{tags: []domain.Tag{{Key: "tag1", Value: "Groceries", Scope: "expense"}}}
+	var repo domain.TagRepository = mock
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PATCH", "/api/tags/scope/revenue/tag1", strings.NewReader(`{"value":"Supermarket"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Equal(t, "Groceries", mock.tags[0].Value, "the tag must not change when the scope doesn't match")
+}
+
+func TestPatchTagRejectsUnknownSentinelKey(t *testing.T) {
+	router := setupRouter()
+
+	mock := &MockRepo{tags: []domain.Tag{}}
+	var repo domain.TagRepository = mock
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PATCH", "/api/tags/scope/expense/UNKNOWN", strings.NewReader(`{"value":"Supermarket"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestDeleteTagRemovesIt(t *testing.T) {
+	router := setupRouter()
+
+	mock := &MockRepo{tags: []domain.Tag{{Key: "tag1", Value: "Groceries", Scope: "expense"}}}
+	var repo domain.TagRepository = mock
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/api/tags/scope/expense/tag1", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	assert.Empty(t, mock.tags)
+}
+
+func TestDeleteTagGivenWrongScopeReturnsNotFound(t *testing.T) {
+	router := setupRouter()
+
+	mock := &MockRepo{tags: []domain.Tag{{Key: "tag1", Value: "Groceries", Scope: "expense"}}}
+	var repo domain.TagRepository = mock
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/api/tags/scope/revenue/tag1", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Len(t, mock.tags, 1, "the tag must not be removed when the scope doesn't match")
+}
+
+func TestDeleteTagRejectsUnknownSentinelKey(t *testing.T) {
+	router := setupRouter()
+
+	mock := &MockRepo{tags: []domain.Tag{}}
+	var repo domain.TagRepository = mock
+	RegisterEndpoints(router, &server.GinContextToPlainContextFactory{}, repo, &domain.FindAllTags{Repository: repo})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/api/tags/scope/expense/UNKNOWN", nil)
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
 // MockRepo is a simple in-memory implementation of domain.TagRepository for tests.
 type MockRepo struct {
 	tags []domain.Tag
@@ -146,4 +237,24 @@ func (m *MockRepo) FindAllTags(ctx context.Context, scope string) ([]domain.Tag,
 		}
 	}
 	return matching, nil
+}
+
+func (m *MockRepo) UpdateTagValue(ctx context.Context, tag *domain.Tag) error {
+	for i, t := range m.tags {
+		if t.Key == tag.Key && domain.NormalizeScope(t.Scope) == tag.Scope {
+			m.tags[i].Value = tag.Value
+			return nil
+		}
+	}
+	return domain.ErrTagNotFound
+}
+
+func (m *MockRepo) DeleteTag(ctx context.Context, key string, scope string) error {
+	for i, t := range m.tags {
+		if t.Key == key && domain.NormalizeScope(t.Scope) == scope {
+			m.tags = append(m.tags[:i], m.tags[i+1:]...)
+			return nil
+		}
+	}
+	return domain.ErrTagNotFound
 }

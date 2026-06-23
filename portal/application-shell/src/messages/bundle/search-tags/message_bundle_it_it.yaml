@@ -15,3 +15,10 @@ searchTagsPage:
       label: "Valore tag di ricerca"
     save:
       label: "Salva"
+  editTag:
+    popup:
+      title: "Modifica tag"
+  deleteTag:
+    popup:
+      title: "Elimina tag"
+      message: "Sei sicuro di voler eliminare questo tag?"

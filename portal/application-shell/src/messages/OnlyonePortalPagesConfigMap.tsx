@@ -230,6 +230,19 @@ export class OnlyonePortalPagesConfigMap {
             form: {
                 valueLabel: getMessageFor(bundle, "searchTagsPage.form.value.label"),
                 saveLabel: getMessageFor(bundle, "searchTagsPage.form.save.label")
+            },
+            editSearchTagModal: {
+                id: "editSearchTagModal",
+                title: getMessageFor(bundle, "searchTagsPage.editTag.popup.title"),
+                closeButtonLabel: getMessageFor(bundle, "common.button.close.label"),
+                saveButtonLabel: getMessageFor(bundle, "common.button.save.label")
+            },
+            deleteSearchTagModal: {
+                id: "deleteSearchTagModal",
+                title: getMessageFor(bundle, "searchTagsPage.deleteTag.popup.title"),
+                message: getMessageFor(bundle, "searchTagsPage.deleteTag.popup.message"),
+                yesLabel: getMessageFor(bundle, "common.confirm.yesLabel"),
+                noLabel: getMessageFor(bundle, "common.confirm.noLabel")
             }
         }
     }

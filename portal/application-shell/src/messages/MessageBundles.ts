@@ -98,7 +98,7 @@ export type SearchTagFormMessageBundle = { valueLabel: string; saveLabel: string
 /** Localized label per todo status, keyed by the {@link TodoStatus} union. */
 export type TodoStatusMessageBundle = Record<TodoStatus, string>;
 
-export type SearchTagsTableMessageBundle = { description: string; operation: string };
+export type SearchTagsTableMessageBundle = { description: string; operation: string; actions: { edit: string; delete: string } };
 export type TotalBySearchTagsMessageBundle = { category: string; total: string };
 
 export type PlanListRowActionsMessageBundle = { open: string; delete: string };
@@ -204,6 +204,8 @@ export type SearchTagsPageMessageBundle = {
     heading: string;
     tabs: SearchTagsTabsMessageBundle;
     form: SearchTagFormMessageBundle;
+    editSearchTagModal: WithId<SaveModalMessageBundle>;
+    deleteSearchTagModal: WithId<DeleteModalMessageBundle>;
 };
 
 export type PlanPageMessageBundle = {

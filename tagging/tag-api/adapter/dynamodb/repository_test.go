@@ -190,3 +190,99 @@ func TestFindAllTagsWithScopeReturnsOnlyExactlyMatchingScope(t *testing.T) {
 		t.Errorf("Expected the differently-scoped tag to be excluded, got %+v", tags)
 	}
 }
+
+func TestUpdateTagValueChangesValueWhenScopeMatches(t *testing.T) {
+	repo := newTagDynamoDBRepository()
+	tag := domain.Tag{Key: "updateKey", Value: "before", Scope: "expense"}
+	if err := repo.SaveTag(newStubbedContext(), &tag); err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	if err := repo.UpdateTagValue(newStubbedContext(), &domain.Tag{Key: "updateKey", Scope: "expense", Value: "after"}); err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	tags, err := repo.FindAllTags(newStubbedContext(), "expense")
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	got := findTagByKey(tags, "updateKey")
+	if got == nil {
+		t.Fatalf("Expected to find tag with key %q, got %+v", "updateKey", tags)
+	}
+	if got.Value != "after" {
+		t.Errorf("Expected value %q, got %q", "after", got.Value)
+	}
+}
+
+func TestUpdateTagValueGivenWrongScopeReturnsNotFound(t *testing.T) {
+	repo := newTagDynamoDBRepository()
+	tag := domain.Tag{Key: "wrongScopeUpdateKey", Value: "before", Scope: "expense"}
+	if err := repo.SaveTag(newStubbedContext(), &tag); err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	err := repo.UpdateTagValue(newStubbedContext(), &domain.Tag{Key: "wrongScopeUpdateKey", Scope: "revenue", Value: "after"})
+	if !errors.Is(err, domain.ErrTagNotFound) {
+		t.Errorf("Expected ErrTagNotFound, got %v", err)
+	}
+}
+
+func TestUpdateTagValueGivenMissingKeyReturnsNotFound(t *testing.T) {
+	repo := newTagDynamoDBRepository()
+
+	err := repo.UpdateTagValue(newStubbedContext(), &domain.Tag{Key: "missingUpdateKey", Scope: "expense", Value: "after"})
+	if !errors.Is(err, domain.ErrTagNotFound) {
+		t.Errorf("Expected ErrTagNotFound, got %v", err)
+	}
+}
+
+func TestDeleteTagRemovesItWhenScopeMatches(t *testing.T) {
+	repo := newTagDynamoDBRepository()
+	tag := domain.Tag{Key: "deleteKey", Value: "value", Scope: "expense"}
+	if err := repo.SaveTag(newStubbedContext(), &tag); err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	if err := repo.DeleteTag(newStubbedContext(), "deleteKey", "expense"); err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	tags, err := repo.FindAllTags(newStubbedContext(), "expense")
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	if findTagByKey(tags, "deleteKey") != nil {
+		t.Errorf("Expected the tag to be deleted, got %+v", tags)
+	}
+}
+
+func TestDeleteTagGivenWrongScopeReturnsNotFound(t *testing.T) {
+	repo := newTagDynamoDBRepository()
+	tag := domain.Tag{Key: "wrongScopeDeleteKey", Value: "value", Scope: "expense"}
+	if err := repo.SaveTag(newStubbedContext(), &tag); err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	err := repo.DeleteTag(newStubbedContext(), "wrongScopeDeleteKey", "revenue")
+	if !errors.Is(err, domain.ErrTagNotFound) {
+		t.Errorf("Expected ErrTagNotFound, got %v", err)
+	}
+
+	tags, findErr := repo.FindAllTags(newStubbedContext(), "expense")
+	if findErr != nil {
+		t.Errorf("Expected no error, got %v", findErr)
+	}
+	if findTagByKey(tags, "wrongScopeDeleteKey") == nil {
+		t.Errorf("Expected the tag to remain when the scope didn't match, got %+v", tags)
+	}
+}
+
+func TestDeleteTagGivenMissingKeyReturnsNotFound(t *testing.T) {
+	repo := newTagDynamoDBRepository()
+
+	err := repo.DeleteTag(newStubbedContext(), "missingDeleteKey", "expense")
+	if !errors.Is(err, domain.ErrTagNotFound) {
+		t.Errorf("Expected ErrTagNotFound, got %v", err)
+	}
+}

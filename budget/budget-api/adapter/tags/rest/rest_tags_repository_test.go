@@ -57,3 +57,18 @@ func TestGetTagByCallsScopedTagEndpointAndFiltersByKey(t *testing.T) {
 	assert.Equal(t, "/api/tags/scope/expense", requestedPath)
 	assert.Equal(t, &tags.SearchTag{Key: "tagKey", Value: "tagValue"}, result)
 }
+
+func TestGetTagByReturnsUnknownSentinelWhenKeyNotInCatalog(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[{"key":"other","value":"otherValue"}]`))
+	}))
+	defer server.Close()
+
+	repository := NewRestSearchTagRepository(server.Client(), server.URL, "expense")
+
+	result, err := repository.GetTagBy(userContextWithToken("A_USER", "A_TOKEN"), "deletedTagKey")
+
+	assert.Equal(t, nil, err)
+	assert.Equal(t, &tags.SearchTag{Key: "UNKNOWN", Value: "UNKNOWN"}, result)
+}
