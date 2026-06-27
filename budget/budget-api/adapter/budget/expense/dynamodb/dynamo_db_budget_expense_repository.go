@@ -78,42 +78,6 @@ func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx context.Context, 
 	return repository.fromDynamo(ctx, item)
 }
 
-func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Context, item map[string]types.AttributeValue) (*expense.BudgetExpense, error) {
-	date, err := date.IsoDateFor(item["transaction_date"].(*types.AttributeValueMemberS).Value)
-	if err != nil {
-		repository.logger.LogErrorfFor("Error parsing transaction_date: %v", err)
-		return nil, errors.New("invalid data format in BudgetExpense")
-	}
-
-	moneyAmount, err := money.MoneyFor(item["amount"].(*types.AttributeValueMemberS).Value)
-	if err != nil {
-		repository.logger.LogErrorfFor("invalid data format in BudgetExpense: %v", err)
-		return nil, errors.New("invalid data format in BudgetExpense")
-	}
-
-	tagKeys := strings.Split(item["tag"].(*types.AttributeValueMemberS).Value, ",")
-	searchTags := make([]tags.SearchTag, 0, len(tagKeys))
-
-	for _, tagKey := range tagKeys {
-		searchTag, err := repository.SearchTagRepository.GetTagBy(ctx, tagKey)
-		if err != nil {
-			repository.logger.LogErrorfFor("Error getting tag: %v", err)
-			return nil, errors.New("invalid tag in BudgetExpense")
-		}
-		searchTags = append(searchTags, *searchTag)
-	}
-
-	budgetExpense := &expense.BudgetExpense{
-		Id:       item["budget_id"].(*types.AttributeValueMemberS).Value,
-		UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
-		Date:     *date,
-		Amount:   moneyAmount,
-		Note:     item["note"].(*types.AttributeValueMemberS).Value,
-		Tags:     searchTags,
-	}
-	return budgetExpense, nil
-}
-
 func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx context.Context, start date.Date, end date.Date, searchTags []tags.SearchTagKey) ([]expense.BudgetExpense, error) {
 	budgetExpenses := make([]expense.BudgetExpense, 0)
 	user, err := security.GetCurrentUser(ctx)
@@ -164,6 +128,54 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx context.C
 	}
 
 	return budgetExpenses, nil
+}
+
+func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Context, item map[string]types.AttributeValue) (*expense.BudgetExpense, error) {
+	date, err := date.IsoDateFor(item["transaction_date"].(*types.AttributeValueMemberS).Value)
+	if err != nil {
+		repository.logger.LogErrorfFor("Error parsing transaction_date: %v", err)
+		return nil, errors.New("invalid data format in BudgetExpense")
+	}
+
+	moneyAmount, err := money.MoneyFor(item["amount"].(*types.AttributeValueMemberS).Value)
+	if err != nil {
+		repository.logger.LogErrorfFor("invalid data format in BudgetExpense: %v", err)
+		return nil, errors.New("invalid data format in BudgetExpense")
+	}
+
+	tagKeys := strings.Split(item["tag"].(*types.AttributeValueMemberS).Value, ",")
+
+	searchTags := make([]tags.SearchTag, 0, len(tagKeys))
+	searchTagsOccurrenceMap := make(map[string]bool)
+
+	for _, tagKey := range tagKeys {
+
+		searchTag, err := repository.SearchTagRepository.GetTagBy(ctx, tagKey)
+		if err != nil {
+			repository.logger.LogErrorfFor("Error getting tag: %v", err)
+			return nil, errors.New("invalid tag in BudgetExpense")
+		}
+
+		//defaultSearchTagKey := tags.UnknownSentinel().Key
+		//if tagKey != defaultSearchTagKey && searchTag.Key == defaultSearchTagKey {
+		//	ctx = context.WithValue(ctx, item["budget_id"].(*types.AttributeValueMemberS).Value, fmt.Sprintf("%s:%s", tagKey, defaultSearchTagKey))
+		//}
+
+		if searchTagsOccurrenceMap[searchTag.Key] == false {
+			searchTags = append(searchTags, *searchTag)
+		}
+		searchTagsOccurrenceMap[searchTag.Key] = true
+	}
+
+	budgetExpense := &expense.BudgetExpense{
+		Id:       item["budget_id"].(*types.AttributeValueMemberS).Value,
+		UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
+		Date:     *date,
+		Amount:   moneyAmount,
+		Note:     item["note"].(*types.AttributeValueMemberS).Value,
+		Tags:     searchTags,
+	}
+	return budgetExpense, nil
 }
 
 func (repository *DynamoDbBudgetExpenseRepository) partitionKeysForDateRangeAndUser(idProvider *DynamoDbBudgetExpenseIdProvider, start, end date.Date, userName security.UserName) []string {
