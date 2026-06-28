@@ -5,14 +5,21 @@ import (
 	"sync"
 )
 
-type EventBus = chan string
+/*
+InternalEventBus
+
+	This is intended to make possible async event communication at intra class level.
+	ex: notify to teh UpdateExpenseAction that at repository layer we noticed that one search tags is been removed to it has to be updated at storage level and
+	notified to teh anaytics api service
+*/
+type InternalEventBus = chan string
 
 var (
 	once    sync.Once
-	channel EventBus
+	channel InternalEventBus
 )
 
-func NewEventBus() EventBus {
+func NewEventBus() InternalEventBus {
 	once.Do(func() {
 		channel = make(chan string)
 	})

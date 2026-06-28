@@ -23,7 +23,7 @@ type DynamoDbBudgetExpenseRepository struct {
 	BudgetExpenseIdProvider expense.BudgetExpenseIdProvider
 	SearchTagRepository     tags.SearchTagRepository
 	logger                  *logging.Logger
-	EventBus                expense.EventBus
+	EventBus                expense.InternalEventBus
 }
 
 func NewDynamoDbBudgetExpenseRepository(
@@ -159,20 +159,18 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Contex
 			return nil, errors.New("invalid tag in BudgetExpense")
 		}
 
-		defaultSearchTagKey := tags.UnknownSentinel().Key
-		go func() {
-			repository.logger.LogDebugfFor("event pre sending")
-			repository.EventBus <- fmt.Sprintf("%s:%s", tagKey, defaultSearchTagKey)
-			repository.logger.LogDebugfFor("event post sending")
-		}()
-		if tagKey != defaultSearchTagKey && searchTag.Key == defaultSearchTagKey {
-
-		}
-
 		if searchTagsOccurrenceMap[searchTag.Key] == false {
 			searchTags = append(searchTags, *searchTag)
 		}
 		searchTagsOccurrenceMap[searchTag.Key] = true
+	}
+
+	if len(searchTags) < len(tagKeys) || len(searchTags) == 1 && searchTags[0].Key == tags.UnknownSentinel().Key {
+		go func() {
+			repository.logger.LogDebugfFor("event pre sending")
+			repository.EventBus <- fmt.Sprintf("%v:%v", item["budget_id"].(*types.AttributeValueMemberS).Value, searchTags)
+			repository.logger.LogDebugfFor("event post sending")
+		}()
 	}
 
 	budgetExpense := &expense.BudgetExpense{

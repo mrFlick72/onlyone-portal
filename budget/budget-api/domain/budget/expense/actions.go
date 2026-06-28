@@ -82,7 +82,7 @@ func (action *FindSpentBudget) getAllSearchTagFor(ctx context.Context, budgetExp
 type UpdateBudgetExpense struct {
 	Repository     BudgetExpenseRepository
 	EventPublisher BudgetExpenseEventPublisher
-	EventBus       EventBus
+	EventBus       InternalEventBus
 }
 
 func (action *UpdateBudgetExpense) Listen() {
