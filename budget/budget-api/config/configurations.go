@@ -75,6 +75,7 @@ func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
 			SaltGenerator: func() string { return uuid.New().String() },
 		},
 		NewExpenseSearchTagRepository(),
+		expense.NewEventBus(),
 	)
 
 }
@@ -112,7 +113,10 @@ func NewBudgetExpenseActionsFacade() expense.BudgetExpenseActions {
 	updateBudgetExpense := &expense.UpdateBudgetExpense{
 		Repository:     budgetExpenseRepository,
 		EventPublisher: eventPublisher,
+		EventBus:       expense.NewEventBus(),
 	}
+	go updateBudgetExpense.Listen()
+
 	findSpentBudget := &expense.FindSpentBudget{
 		BudgetExpenseRepository: budgetExpenseRepository,
 		SearchTagRepository:     searchTagRepository,

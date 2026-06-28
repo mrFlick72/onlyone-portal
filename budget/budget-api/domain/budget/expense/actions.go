@@ -3,6 +3,7 @@ package expense
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
@@ -19,7 +20,7 @@ func (action *CreateBudgetExpense) Execute(ctx context.Context, budgetExpense *B
 	user, _ := security.GetCurrentUser(ctx)
 	budgetExpense.UserName = *user.UserName
 	err := action.Repository.Save(ctx, budgetExpense)
-		if err == nil {
+	if err == nil {
 		action.EventPublisher.CreateBudgetExpense(ctx, *budgetExpense)
 	}
 	return err
@@ -81,6 +82,16 @@ func (action *FindSpentBudget) getAllSearchTagFor(ctx context.Context, budgetExp
 type UpdateBudgetExpense struct {
 	Repository     BudgetExpenseRepository
 	EventPublisher BudgetExpenseEventPublisher
+	EventBus       EventBus
+}
+
+func (action *UpdateBudgetExpense) Listen() {
+	for {
+		event := <-action.EventBus
+
+		fmt.Println(event)
+		fmt.Println("event listener event consumed")
+	}
 }
 
 func (action *UpdateBudgetExpense) Execute(ctx context.Context, budgetExpense *BudgetExpense) error {
