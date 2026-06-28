@@ -31,7 +31,7 @@ func NewDynamoDbBudgetExpenseRepository(
 	Client *dynamodb.Client,
 	BudgetExpenseIdProvider expense.BudgetExpenseIdProvider,
 	SearchTagRepository tags.SearchTagRepository,
-	EventBus chan string) expense.BudgetExpenseRepository {
+	EventBus expense.InternalEventBus) expense.BudgetExpenseRepository {
 	return &DynamoDbBudgetExpenseRepository{
 		TableName:               TableName,
 		Client:                  Client,
@@ -165,14 +165,6 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Contex
 		searchTagsOccurrenceMap[searchTag.Key] = true
 	}
 
-	if len(searchTags) < len(tagKeys) || len(searchTags) == 1 && searchTags[0].Key == tags.UnknownSentinel().Key {
-		go func() {
-			repository.logger.LogDebugfFor("event pre sending")
-			repository.EventBus <- fmt.Sprintf("%v:%v", item["budget_id"].(*types.AttributeValueMemberS).Value, searchTags)
-			repository.logger.LogDebugfFor("event post sending")
-		}()
-	}
-
 	budgetExpense := &expense.BudgetExpense{
 		Id:       item["budget_id"].(*types.AttributeValueMemberS).Value,
 		UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
@@ -180,6 +172,16 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Contex
 		Amount:   moneyAmount,
 		Note:     item["note"].(*types.AttributeValueMemberS).Value,
 		Tags:     searchTags,
+	}
+	if len(searchTags) < len(tagKeys) || len(searchTags) == 1 && searchTags[0].Key == tags.UnknownSentinel().Key {
+		go func() {
+			repository.logger.LogDebugfFor("event pre sending")
+			repository.EventBus <- expense.InternalEvent{
+				Payload: budgetExpense,
+				Ctx:     ctx,
+			}
+			repository.logger.LogDebugfFor("event post sending")
+		}()
 	}
 	return budgetExpense, nil
 }

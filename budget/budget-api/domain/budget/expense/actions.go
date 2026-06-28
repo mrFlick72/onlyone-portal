@@ -88,8 +88,15 @@ type UpdateBudgetExpense struct {
 func (action *UpdateBudgetExpense) Listen() {
 	for {
 		event := <-action.EventBus
+		err := action.Repository.Save(event.Ctx, event.Payload)
 
-		fmt.Println(event)
+		if err != nil {
+			fmt.Printf("Error saving event: %v", err)
+		}
+		err = action.EventPublisher.UpdateBudgetExpense(event.Ctx, *event.Payload)
+		if err != nil {
+			fmt.Printf("Error updating event: %v", err)
+		}
 		fmt.Println("event listener event consumed")
 	}
 }

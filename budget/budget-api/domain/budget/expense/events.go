@@ -12,7 +12,11 @@ InternalEventBus
 	ex: notify to teh UpdateExpenseAction that at repository layer we noticed that one search tags is been removed to it has to be updated at storage level and
 	notified to teh anaytics api service
 */
-type InternalEventBus = chan string
+type InternalEvent struct {
+	Payload *BudgetExpense
+	Ctx     context.Context
+}
+type InternalEventBus = chan InternalEvent
 
 var (
 	once    sync.Once
@@ -21,7 +25,7 @@ var (
 
 func NewEventBus() InternalEventBus {
 	once.Do(func() {
-		channel = make(chan string)
+		channel = make(chan InternalEvent)
 	})
 
 	return channel
