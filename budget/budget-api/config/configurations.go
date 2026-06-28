@@ -109,21 +109,25 @@ func NewBudgetExpenseActionsFacade() expense.BudgetExpenseActions {
 	createBudgetExpense := &expense.CreateBudgetExpense{
 		Repository:     budgetExpenseRepository,
 		EventPublisher: eventPublisher,
+		Logger:         logging.GetLoggerInstanceForComponentByTypeName("CreateBudgetExpense"),
 	}
 	updateBudgetExpense := &expense.UpdateBudgetExpense{
 		Repository:     budgetExpenseRepository,
 		EventPublisher: eventPublisher,
 		EventBus:       expense.NewEventBus(),
+		Logger:         logging.GetLoggerInstanceForComponentByTypeName("UpdateBudgetExpense"),
 	}
 	go updateBudgetExpense.Listen()
 
 	findSpentBudget := &expense.FindSpentBudget{
 		BudgetExpenseRepository: budgetExpenseRepository,
 		SearchTagRepository:     searchTagRepository,
+		Logger:                  logging.GetLoggerInstanceForComponentByTypeName("FindSpentBudget"),
 	}
 	deleteBudgetExpense := &expense.DeleteBudgetExpense{
 		Repository:     budgetExpenseRepository,
 		EventPublisher: eventPublisher,
+		Logger:         logging.GetLoggerInstanceForComponentByTypeName("DeleteBudgetExpense"),
 	}
 
 	return &expense.BudgetExpenseActionsFacade{

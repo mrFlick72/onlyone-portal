@@ -3,16 +3,17 @@ package expense
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
 
 type CreateBudgetExpense struct {
 	Repository     BudgetExpenseRepository
 	EventPublisher BudgetExpenseEventPublisher
+	Logger         *logging.Logger
 }
 
 func (action *CreateBudgetExpense) Execute(ctx context.Context, budgetExpense *BudgetExpense) error {
@@ -39,6 +40,7 @@ func applyDefaultTagIfMissing(budgetExpense *BudgetExpense) {
 type FindSpentBudget struct {
 	BudgetExpenseRepository BudgetExpenseRepository
 	SearchTagRepository     tags.SearchTagRepository
+	Logger                  *logging.Logger
 }
 
 func (action *FindSpentBudget) Execute(ctx context.Context, month date.Month, year date.Year, searchTagKeys []tags.SearchTagKey) (*SpentBudget, error) {
@@ -83,6 +85,7 @@ type UpdateBudgetExpense struct {
 	Repository     BudgetExpenseRepository
 	EventPublisher BudgetExpenseEventPublisher
 	EventBus       InternalEventBus
+	Logger         *logging.Logger
 }
 
 func (action *UpdateBudgetExpense) Listen() {
@@ -91,13 +94,13 @@ func (action *UpdateBudgetExpense) Listen() {
 		err := action.Repository.Save(event.Ctx, event.Payload)
 
 		if err != nil {
-			fmt.Printf("Error saving event: %v", err)
+			action.Logger.LogErrorfFor("Error saving event: %v", err)
 		}
 		err = action.EventPublisher.UpdateBudgetExpense(event.Ctx, *event.Payload)
 		if err != nil {
-			fmt.Printf("Error updating event: %v", err)
+			action.Logger.LogErrorfFor("Error updating event: %v", err)
 		}
-		fmt.Println("event listener event consumed")
+		action.Logger.LogDebugfFor("event listener event consumed")
 	}
 }
 
@@ -115,7 +118,10 @@ func (action *UpdateBudgetExpense) Execute(ctx context.Context, budgetExpense *B
 	if existingBudgetExpense != nil && existingBudgetExpense.UserName == *userName.UserName {
 		err := action.Repository.Save(ctx, budgetExpense)
 		if err == nil {
-			action.EventPublisher.UpdateBudgetExpense(ctx, *budgetExpense)
+			err = action.EventPublisher.UpdateBudgetExpense(ctx, *budgetExpense)
+			if err != nil {
+				action.Logger.LogErrorfFor("Error publishing update event: %v", err)
+			}
 		}
 		return err
 	}
@@ -125,6 +131,7 @@ func (action *UpdateBudgetExpense) Execute(ctx context.Context, budgetExpense *B
 type DeleteBudgetExpense struct {
 	Repository     BudgetExpenseRepository
 	EventPublisher BudgetExpenseEventPublisher
+	Logger         *logging.Logger
 }
 
 func (action *DeleteBudgetExpense) Execute(ctx context.Context, id BudgetExpenseId) error {
@@ -141,7 +148,10 @@ func (action *DeleteBudgetExpense) Execute(ctx context.Context, id BudgetExpense
 	if existingBudgetExpense != nil && existingBudgetExpense.UserName == *userName.UserName {
 		err := action.Repository.Delete(ctx, id)
 		if err == nil {
-			action.EventPublisher.DeleteBudgetExpense(ctx, *existingBudgetExpense)
+			err = action.EventPublisher.DeleteBudgetExpense(ctx, *existingBudgetExpense)
+			if err != nil {
+				action.Logger.LogErrorfFor("Error publishing update event: %v", err)
+			}
 		}
 		return err
 	}
