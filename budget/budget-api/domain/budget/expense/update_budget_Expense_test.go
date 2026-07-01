@@ -57,7 +57,8 @@ func TestListenConsumesAnInternalEventThenPersistsAndPublishes(t *testing.T) {
 	mockedRepository := new(BudgetExpenseRepositoryMock)
 	mockedPublisher := new(BudgetExpenseEventPublisherMock)
 
-	bus := make(chan InternalEvent, 1)
+	bus := NewEventBus()
+	defer bus.Close()
 	uut := UpdateBudgetExpense{
 		Repository:     mockedRepository,
 		EventPublisher: mockedPublisher,
@@ -65,20 +66,22 @@ func TestListenConsumesAnInternalEventThenPersistsAndPublishes(t *testing.T) {
 		Logger:         logging.GetLoggerInstanceForComponentByTypeName("UpdateBudgetExpenseTest"),
 	}
 
-	ctx := testutils.NewUserContext()
 	aBudgetExpense := &BudgetExpense{
 		Id:       "A_BUDGET_ID",
 		UserName: "A_USER_NAME",
 		Tags:     []tags.SearchTag{tags.UnknownSentinel()},
 	}
 
+	// The listener detaches the request context via context.WithoutCancel, so the
+	// context reaching Save/UpdateBudgetExpense is a derived value, not the one
+	// published — hence mock.Anything on the context argument.
 	done := make(chan struct{})
-	mockedRepository.On("Save", ctx, aBudgetExpense).Return(nil)
-	mockedPublisher.On("UpdateBudgetExpense", ctx, *aBudgetExpense).Return(nil).
+	mockedRepository.On("Save", mock.Anything, aBudgetExpense).Return(nil)
+	mockedPublisher.On("UpdateBudgetExpense", mock.Anything, *aBudgetExpense).Return(nil).
 		Run(func(args mock.Arguments) { close(done) })
 
 	go uut.Listen()
-	bus <- InternalEvent{Payload: aBudgetExpense, Ctx: ctx}
+	bus.Publish(InternalEvent{Payload: aBudgetExpense, Ctx: testutils.NewUserContext()})
 
 	select {
 	case <-done:
@@ -86,19 +89,20 @@ func TestListenConsumesAnInternalEventThenPersistsAndPublishes(t *testing.T) {
 		t.Fatal("timed out waiting for Listen to consume the internal event")
 	}
 
-	mockedRepository.AssertCalled(t, "Save", ctx, aBudgetExpense)
-	mockedPublisher.AssertCalled(t, "UpdateBudgetExpense", ctx, *aBudgetExpense)
+	mockedRepository.AssertCalled(t, "Save", mock.Anything, aBudgetExpense)
+	mockedPublisher.AssertCalled(t, "UpdateBudgetExpense", mock.Anything, *aBudgetExpense)
 }
 
-// The consumer publishes the UPDATE event (which drives the analytics reindex)
-// even when the durable Save fails, logging the persistence error rather than
-// dropping the event. This test pins that current behavior.
-func TestListenStillPublishesWhenPersistenceFails(t *testing.T) {
+// On a persistence failure the listener logs and does NOT re-emit the UPDATE
+// event, so the analytics projection is never told a reclassification happened
+// that did not durably land in DynamoDB.
+func TestListenDoesNotPublishWhenPersistenceFails(t *testing.T) {
 
 	mockedRepository := new(BudgetExpenseRepositoryMock)
 	mockedPublisher := new(BudgetExpenseEventPublisherMock)
 
-	bus := make(chan InternalEvent, 1)
+	bus := NewEventBus()
+	defer bus.Close()
 	uut := UpdateBudgetExpense{
 		Repository:     mockedRepository,
 		EventPublisher: mockedPublisher,
@@ -106,29 +110,29 @@ func TestListenStillPublishesWhenPersistenceFails(t *testing.T) {
 		Logger:         logging.GetLoggerInstanceForComponentByTypeName("UpdateBudgetExpenseTest"),
 	}
 
-	ctx := testutils.NewUserContext()
 	aBudgetExpense := &BudgetExpense{
 		Id:       "A_BUDGET_ID",
 		UserName: "A_USER_NAME",
 		Tags:     []tags.SearchTag{tags.UnknownSentinel()},
 	}
 
-	done := make(chan struct{})
-	mockedRepository.On("Save", ctx, aBudgetExpense).Return(fmt.Errorf("save failed"))
-	mockedPublisher.On("UpdateBudgetExpense", ctx, *aBudgetExpense).Return(nil).
-		Run(func(args mock.Arguments) { close(done) })
+	saved := make(chan struct{})
+	mockedRepository.On("Save", mock.Anything, aBudgetExpense).Return(fmt.Errorf("save failed")).
+		Run(func(args mock.Arguments) { close(saved) })
 
 	go uut.Listen()
-	bus <- InternalEvent{Payload: aBudgetExpense, Ctx: ctx}
+	bus.Publish(InternalEvent{Payload: aBudgetExpense, Ctx: testutils.NewUserContext()})
 
 	select {
-	case <-done:
+	case <-saved:
 	case <-time.After(2 * time.Second):
-		t.Fatal("timed out waiting for Listen to publish after a persistence failure")
+		t.Fatal("timed out waiting for the listener to attempt the save")
 	}
 
-	mockedRepository.AssertCalled(t, "Save", ctx, aBudgetExpense)
-	mockedPublisher.AssertCalled(t, "UpdateBudgetExpense", ctx, *aBudgetExpense)
+	// Give the listener a window to (incorrectly) publish if the guard regressed.
+	time.Sleep(100 * time.Millisecond)
+	mockedRepository.AssertCalled(t, "Save", mock.Anything, aBudgetExpense)
+	mockedPublisher.AssertNotCalled(t, "UpdateBudgetExpense", mock.Anything, mock.Anything)
 }
 
 func TestWhenABudgetExpenseUpdateWithNoTagsDefaultsToUnknown(t *testing.T) {
@@ -172,6 +176,7 @@ func TestWhenABudgetExpenseUpdateDoesDoneNothingBecauseTheBudgetExpenseDoesNotEx
 	mockedRepository := new(BudgetExpenseRepositoryMock)
 	uut := UpdateBudgetExpense{
 		Repository: mockedRepository,
+		Logger:     testLogger,
 	}
 
 	aDate, _ := date.IsoDateFor("2018-01-01")
@@ -202,6 +207,7 @@ func TestWhenABudgetExpenseUpdateFails(t *testing.T) {
 	mockedRepository := new(BudgetExpenseRepositoryMock)
 	uut := UpdateBudgetExpense{
 		Repository: mockedRepository,
+		Logger:     testLogger,
 	}
 
 	aDate, _ := date.IsoDateFor("2018-01-01")
@@ -236,6 +242,7 @@ func TestWhenABudgetExpenseUpdateFailsBecauseUserOwnership(t *testing.T) {
 	mockedRepository := new(BudgetExpenseRepositoryMock)
 	uut := UpdateBudgetExpense{
 		Repository: mockedRepository,
+		Logger:     testLogger,
 	}
 
 	ctx := testutils.NewUserContext()

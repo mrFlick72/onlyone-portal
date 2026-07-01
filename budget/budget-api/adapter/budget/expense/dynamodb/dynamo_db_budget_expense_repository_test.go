@@ -297,46 +297,53 @@ func TestDeleteBudgetExpenseFailsWhenTheBudgetExpenseDoesNotBelongsToTheUserInTh
 	assert.Equal(t, anotherUserBudgetExpense, expected)
 }
 
-// The detection tests below exercise fromDynamo directly with a hand-built
-// item so they do not need a LocalStack round-trip and can hit every branch of
-// the "a tag was deleted" condition deterministically. Each test injects its
-// own buffered channel instead of the shared expense.NewEventBus() singleton so
-// the emitted event can be asserted in isolation.
+// The detection tests below exercise fromDynamo directly with a hand-built item
+// so they do not need a LocalStack round-trip and can hit every branch of the
+// "a tag was deleted" condition deterministically. Each test injects its own
+// bus so the emitted event can be asserted in isolation. A read distinguishes a
+// deleted tag (a stored key that now resolves to UNKNOWN) from a record stored
+// with the UNKNOWN sentinel as its key (the default applied at create time),
+// which is not a deletion.
 
 func TestWhenASearchTagIsBeenRemoved(t *testing.T) {
 	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
 	mockSearchTagRepository.On("GetTagBy", ctx, "deleted-tag").Return(searchTagPtr(tags.UnknownSentinel()), nil)
 
-	bus := make(chan expense.InternalEvent, 1)
+	bus := expense.NewEventBus()
 	repo := newDetectionRepository(mockSearchTagRepository, bus)
 
 	result, err := repo.fromDynamo(ctx, dynamoItemFor("deleted-tag"))
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, []tags.SearchTag{tags.UnknownSentinel()}, result.Tags)
-	assertReclassifyEventFired(t, bus)
+	event := awaitReclassifyEvent(t, bus)
+	assert.Equal(t, expense.BudgetExpenseId("A_BUDGET_ID"), event.Payload.Id)
+	assert.Equal(t, []tags.SearchTag{tags.UnknownSentinel()}, event.Payload.Tags)
 }
 
-func TestWhenEverySearchTagWasRemovedTheDeduplicatedRecordIsReclassified(t *testing.T) {
+func TestWhenEverySearchTagWasRemovedTheReclassifiedPayloadIsDeduplicated(t *testing.T) {
 	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
 	mockSearchTagRepository.On("GetTagBy", ctx, "gone-a").Return(searchTagPtr(tags.UnknownSentinel()), nil)
 	mockSearchTagRepository.On("GetTagBy", ctx, "gone-b").Return(searchTagPtr(tags.UnknownSentinel()), nil)
 
-	bus := make(chan expense.InternalEvent, 1)
+	bus := expense.NewEventBus()
 	repo := newDetectionRepository(mockSearchTagRepository, bus)
 
 	result, err := repo.fromDynamo(ctx, dynamoItemFor("gone-a,gone-b"))
 
 	assert.Equal(t, nil, err)
-	assert.Equal(t, []tags.SearchTag{tags.UnknownSentinel()}, result.Tags)
-	assertReclassifyEventFired(t, bus)
+	// The read output preserves one resolved tag per stored key...
+	assert.Equal(t, []tags.SearchTag{tags.UnknownSentinel(), tags.UnknownSentinel()}, result.Tags)
+	// ...while the durable-reclassify payload collapses the repeated sentinels.
+	event := awaitReclassifyEvent(t, bus)
+	assert.Equal(t, []tags.SearchTag{tags.UnknownSentinel()}, event.Payload.Tags)
 }
 
 func TestWhenNoSearchTagWasRemovedNoReclassifyEventIsFired(t *testing.T) {
 	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
 	mockSearchTagRepository.On("GetTagBy", ctx, "super-market").Return(&tags.SearchTag{Key: "super-market", Value: "super-market"}, nil)
 
-	bus := make(chan expense.InternalEvent, 1)
+	bus := expense.NewEventBus()
 	repo := newDetectionRepository(mockSearchTagRepository, bus)
 
 	result, err := repo.fromDynamo(ctx, dynamoItemFor("super-market"))
@@ -346,46 +353,59 @@ func TestWhenNoSearchTagWasRemovedNoReclassifyEventIsFired(t *testing.T) {
 	assertNoReclassifyEventFired(t, bus)
 }
 
-// KNOWN GAP (issue #27): when a record keeps at least one live tag but loses
-// another, fromDynamo resolves it to [live, UNKNOWN] — the slice length is
-// unchanged, so neither branch of the detection condition trips and the record
-// is never durably reclassified nor reindexed in analytics. This test pins the
-// *current* behavior; flip it to assertReclassifyEventFired once the detection
-// logic is corrected to fire whenever any tag resolves to UNKNOWN.
-func TestPartialTagDeletionIsNotYetReclassified(t *testing.T) {
+// A record legitimately stored with the UNKNOWN sentinel as its tag key (the
+// default applied at create time) resolves to UNKNOWN but was not deleted, so
+// it must not be reclassified — otherwise every untagged record would re-Save
+// and re-emit on every read.
+func TestWhenTheStoredTagIsTheUnknownSentinelNoReclassifyEventIsFired(t *testing.T) {
+	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
+	mockSearchTagRepository.On("GetTagBy", ctx, tags.UnknownSentinel().Key).Return(searchTagPtr(tags.UnknownSentinel()), nil)
+
+	bus := expense.NewEventBus()
+	repo := newDetectionRepository(mockSearchTagRepository, bus)
+
+	result, err := repo.fromDynamo(ctx, dynamoItemFor(tags.UnknownSentinel().Key))
+
+	assert.Equal(t, nil, err)
+	assert.Equal(t, []tags.SearchTag{tags.UnknownSentinel()}, result.Tags)
+	assertNoReclassifyEventFired(t, bus)
+}
+
+// A record that keeps a live tag but loses another resolves to [live, UNKNOWN]:
+// the deleted reference must still be durably reclassified.
+func TestPartialTagDeletionIsReclassified(t *testing.T) {
 	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
 	mockSearchTagRepository.On("GetTagBy", ctx, "super-market").Return(&tags.SearchTag{Key: "super-market", Value: "super-market"}, nil)
 	mockSearchTagRepository.On("GetTagBy", ctx, "deleted-tag").Return(searchTagPtr(tags.UnknownSentinel()), nil)
 
-	bus := make(chan expense.InternalEvent, 1)
+	bus := expense.NewEventBus()
 	repo := newDetectionRepository(mockSearchTagRepository, bus)
 
 	result, err := repo.fromDynamo(ctx, dynamoItemFor("super-market,deleted-tag"))
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, []tags.SearchTag{{Key: "super-market", Value: "super-market"}, tags.UnknownSentinel()}, result.Tags)
-	assertNoReclassifyEventFired(t, bus)
+	event := awaitReclassifyEvent(t, bus)
+	assert.Equal(t, []tags.SearchTag{{Key: "super-market", Value: "super-market"}, tags.UnknownSentinel()}, event.Payload.Tags)
 }
 
-// KNOWN QUIRK (issue #27): duplicate stored tag keys deduplicate to a shorter
-// slice, tripping len(searchTags) < len(tagKeys) even though nothing was
-// deleted, so a spurious reclassify event is fired. Pinned here to document the
-// current behavior.
-func TestDuplicateStoredTagsFireASpuriousReclassifyEvent(t *testing.T) {
+// Duplicate stored keys that both resolve to a live tag are not a deletion, so
+// no reclassify event is fired (the read output keeps the duplicates).
+func TestDuplicateStoredLiveTagsAreNotTreatedAsDeletion(t *testing.T) {
 	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
 	mockSearchTagRepository.On("GetTagBy", ctx, "dinner").Return(&tags.SearchTag{Key: "dinner", Value: "dinner"}, nil)
 
-	bus := make(chan expense.InternalEvent, 1)
+	bus := expense.NewEventBus()
 	repo := newDetectionRepository(mockSearchTagRepository, bus)
 
 	result, err := repo.fromDynamo(ctx, dynamoItemFor("dinner,dinner"))
 
 	assert.Equal(t, nil, err)
-	assert.Equal(t, []tags.SearchTag{{Key: "dinner", Value: "dinner"}}, result.Tags)
-	assertReclassifyEventFired(t, bus)
+	assert.Equal(t, []tags.SearchTag{{Key: "dinner", Value: "dinner"}, {Key: "dinner", Value: "dinner"}}, result.Tags)
+	assertNoReclassifyEventFired(t, bus)
 }
 
-func newDetectionRepository(searchTagRepository tags.SearchTagRepository, bus expense.InternalEventBus) *DynamoDbBudgetExpenseRepository {
+func newDetectionRepository(searchTagRepository tags.SearchTagRepository, bus *expense.InternalEventBus) *DynamoDbBudgetExpenseRepository {
 	return NewDynamoDbBudgetExpenseRepository(TableName, client, new(DynamoDbBudgetExpenseIdProviderMock), searchTagRepository, bus).(*DynamoDbBudgetExpenseRepository)
 }
 
@@ -406,20 +426,21 @@ func dynamoItemFor(tag string) map[string]types.AttributeValue {
 	}
 }
 
-func assertReclassifyEventFired(t *testing.T, bus expense.InternalEventBus) {
+func awaitReclassifyEvent(t *testing.T, bus *expense.InternalEventBus) expense.InternalEvent {
 	t.Helper()
 	select {
-	case event := <-bus:
-		assert.Equal(t, expense.BudgetExpenseId("A_BUDGET_ID"), event.Payload.Id)
+	case event := <-bus.Events():
+		return event
 	case <-time.After(2 * time.Second):
 		t.Fatalf("expected a durable-reclassify event but none was fired")
+		return expense.InternalEvent{}
 	}
 }
 
-func assertNoReclassifyEventFired(t *testing.T, bus expense.InternalEventBus) {
+func assertNoReclassifyEventFired(t *testing.T, bus *expense.InternalEventBus) {
 	t.Helper()
 	select {
-	case <-bus:
+	case <-bus.Events():
 		t.Fatalf("expected no durable-reclassify event but one was fired")
 	case <-time.After(200 * time.Millisecond):
 	}

@@ -23,7 +23,7 @@ type DynamoDbBudgetExpenseRepository struct {
 	BudgetExpenseIdProvider expense.BudgetExpenseIdProvider
 	SearchTagRepository     tags.SearchTagRepository
 	logger                  *logging.Logger
-	EventBus                expense.InternalEventBus
+	EventBus                *expense.InternalEventBus
 }
 
 func NewDynamoDbBudgetExpenseRepository(
@@ -31,7 +31,7 @@ func NewDynamoDbBudgetExpenseRepository(
 	Client *dynamodb.Client,
 	BudgetExpenseIdProvider expense.BudgetExpenseIdProvider,
 	SearchTagRepository tags.SearchTagRepository,
-	EventBus expense.InternalEventBus) expense.BudgetExpenseRepository {
+	EventBus *expense.InternalEventBus) expense.BudgetExpenseRepository {
 	return &DynamoDbBudgetExpenseRepository{
 		TableName:               TableName,
 		Client:                  Client,
@@ -147,22 +147,24 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Contex
 	}
 
 	tagKeys := strings.Split(item["tag"].(*types.AttributeValueMemberS).Value, ",")
-
 	searchTags := make([]tags.SearchTag, 0, len(tagKeys))
-	searchTagsOccurrenceMap := make(map[string]bool)
+	hasDeletedTagReference := false
 
 	for _, tagKey := range tagKeys {
-
 		searchTag, err := repository.SearchTagRepository.GetTagBy(ctx, tagKey)
 		if err != nil {
 			repository.logger.LogErrorfFor("Error getting tag: %v", err)
 			return nil, errors.New("invalid tag in BudgetExpense")
 		}
-
-		if searchTagsOccurrenceMap[searchTag.Key] == false {
-			searchTags = append(searchTags, *searchTag)
+		// A stored key that resolves to the UNKNOWN sentinel while the stored key
+		// itself was not UNKNOWN is a reference to a tag deleted in tag-api, and
+		// must be durably reclassified. A record stored with the UNKNOWN sentinel
+		// as its key (the default applied at create time) resolves to UNKNOWN too
+		// but is not a deletion, so it is excluded by the second comparison.
+		if searchTag.Key == tags.UnknownSentinel().Key && tagKey != tags.UnknownSentinel().Key {
+			hasDeletedTagReference = true
 		}
-		searchTagsOccurrenceMap[searchTag.Key] = true
+		searchTags = append(searchTags, *searchTag)
 	}
 
 	budgetExpense := &expense.BudgetExpense{
@@ -173,17 +175,35 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Contex
 		Note:     item["note"].(*types.AttributeValueMemberS).Value,
 		Tags:     searchTags,
 	}
-	if len(searchTags) < len(tagKeys) || len(searchTags) == 1 && searchTags[0].Key == tags.UnknownSentinel().Key {
-		go func() {
-			repository.logger.LogDebugfFor("event pre sending")
-			repository.EventBus <- expense.InternalEvent{
-				Payload: budgetExpense,
-				Ctx:     ctx,
-			}
-			repository.logger.LogDebugfFor("event post sending")
-		}()
+	if hasDeletedTagReference {
+		repository.publishReclassification(ctx, budgetExpense)
 	}
 	return budgetExpense, nil
+}
+
+// publishReclassification hands a copy of the just-read expense to the
+// reclassification bus so the service layer can durably rewrite its deleted-tag
+// references to UNKNOWN. It sends a clone — never the pointer returned to the
+// caller — so the async listener and the read caller never share mutable state.
+// The clone's tags are de-duplicated so a record whose every tag was deleted
+// persists a single UNKNOWN rather than repeated sentinels.
+func (repository *DynamoDbBudgetExpenseRepository) publishReclassification(ctx context.Context, source *expense.BudgetExpense) {
+	clone := *source
+	clone.Tags = distinctTags(source.Tags)
+	repository.EventBus.Publish(expense.InternalEvent{Payload: &clone, Ctx: ctx})
+}
+
+func distinctTags(searchTags []tags.SearchTag) []tags.SearchTag {
+	seen := make(map[string]bool, len(searchTags))
+	distinct := make([]tags.SearchTag, 0, len(searchTags))
+	for _, searchTag := range searchTags {
+		if seen[searchTag.Key] {
+			continue
+		}
+		seen[searchTag.Key] = true
+		distinct = append(distinct, searchTag)
+	}
+	return distinct
 }
 
 func (repository *DynamoDbBudgetExpenseRepository) partitionKeysForDateRangeAndUser(idProvider *DynamoDbBudgetExpenseIdProvider, start, end date.Date, userName security.UserName) []string {

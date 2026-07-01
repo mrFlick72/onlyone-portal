@@ -57,7 +57,7 @@ func NewRevenueSearchTagRepository() tags.SearchTagRepository {
 	return newSearchTagRepository("revenue")
 }
 
-func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
+func NewBudgetExpenseRepository(eventBus *expense.InternalEventBus) expense.BudgetExpenseRepository {
 	cfg, err := awsclient.LoadDefaultConfig(
 		context.TODO(),
 		aws_config.WithRegion("eu-central-1"),
@@ -75,7 +75,7 @@ func NewBudgetExpenseRepository() expense.BudgetExpenseRepository {
 			SaltGenerator: func() string { return uuid.New().String() },
 		},
 		NewExpenseSearchTagRepository(),
-		expense.NewEventBus(),
+		eventBus,
 	)
 
 }
@@ -102,8 +102,13 @@ func NewNewKafkaBudgetExpenseEventPublisher() expense.BudgetExpenseEventPublishe
 	return kafka.NewKafkaBudgetExpenseEventPublisher(topic, client)
 }
 
-func NewBudgetExpenseActionsFacade() expense.BudgetExpenseActions {
-	budgetExpenseRepository := NewBudgetExpenseRepository()
+// NewBudgetExpenseActionsFacade wires the expense actions and starts the
+// reclassification listener. The returned stop function stops that listener and
+// must be deferred by the caller so the goroutine is torn down with the process
+// (after the HTTP server has drained, so no in-flight read can still publish).
+func NewBudgetExpenseActionsFacade() (expense.BudgetExpenseActions, func()) {
+	eventBus := expense.NewEventBus()
+	budgetExpenseRepository := NewBudgetExpenseRepository(eventBus)
 	searchTagRepository := NewExpenseSearchTagRepository()
 	eventPublisher := NewNewKafkaBudgetExpenseEventPublisher()
 	createBudgetExpense := &expense.CreateBudgetExpense{
@@ -114,7 +119,7 @@ func NewBudgetExpenseActionsFacade() expense.BudgetExpenseActions {
 	updateBudgetExpense := &expense.UpdateBudgetExpense{
 		Repository:     budgetExpenseRepository,
 		EventPublisher: eventPublisher,
-		EventBus:       expense.NewEventBus(),
+		EventBus:       eventBus,
 		Logger:         logging.GetLoggerInstanceForComponentByTypeName("UpdateBudgetExpense"),
 	}
 	go updateBudgetExpense.Listen()
@@ -130,12 +135,13 @@ func NewBudgetExpenseActionsFacade() expense.BudgetExpenseActions {
 		Logger:         logging.GetLoggerInstanceForComponentByTypeName("DeleteBudgetExpense"),
 	}
 
-	return &expense.BudgetExpenseActionsFacade{
+	facade := &expense.BudgetExpenseActionsFacade{
 		CreateBudgetExpenseAction: createBudgetExpense,
 		UpdateBudgetExpenseAction: updateBudgetExpense,
 		FindSpentBudgetAction:     findSpentBudget,
 		DeleteBudgetExpenseAction: deleteBudgetExpense,
 	}
+	return facade, eventBus.Close
 }
 
 func NewRevenueRepository() revenue.RevenueRepository {
