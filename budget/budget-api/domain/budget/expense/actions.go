@@ -109,6 +109,23 @@ func (action *UpdateBudgetExpense) Listen() {
 		case event := <-action.EventBus.Events():
 			action.reclassify(event)
 		case <-action.EventBus.Done():
+			action.drainAndStop()
+			return
+		}
+	}
+}
+
+// drainAndStop processes any events still buffered when the bus is closed, so a
+// shutdown does not silently drop reclassifications already queued. The bus is
+// closed only after the HTTP server has drained (see the composition root), so
+// no new events are published during the drain and the buffer only shrinks; the
+// non-blocking default returns once it is empty.
+func (action *UpdateBudgetExpense) drainAndStop() {
+	for {
+		select {
+		case event := <-action.EventBus.Events():
+			action.reclassify(event)
+		default:
 			action.Logger.LogInfofFor("reclassification listener stopped")
 			return
 		}

@@ -62,10 +62,10 @@ func (bus *InternalEventBus) Done() <-chan struct{} {
 	return bus.done
 }
 
-// Close stops the bus: the listener selecting on Done returns. The events
-// channel is intentionally left open so a read racing shutdown cannot panic on
-// a send to a closed channel — the process exits immediately afterwards, so any
-// buffered-but-undrained event is harmless. Safe to call more than once.
+// Close signals the listener to stop after draining any still-buffered events
+// (see UpdateBudgetExpense.Listen / drainAndStop). The events channel is
+// intentionally left open so a read racing shutdown cannot panic on a send to a
+// closed channel. Safe to call more than once.
 func (bus *InternalEventBus) Close() {
 	bus.closeOnce.Do(func() { close(bus.done) })
 }

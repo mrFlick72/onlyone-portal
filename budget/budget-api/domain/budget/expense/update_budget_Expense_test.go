@@ -135,6 +135,47 @@ func TestListenDoesNotPublishWhenPersistenceFails(t *testing.T) {
 	mockedPublisher.AssertNotCalled(t, "UpdateBudgetExpense", mock.Anything, mock.Anything)
 }
 
+// On shutdown the listener drains events already buffered before returning, so
+// queued reclassifications are not silently dropped (review finding #3).
+func TestListenDrainsBufferedEventsOnShutdown(t *testing.T) {
+
+	mockedRepository := new(BudgetExpenseRepositoryMock)
+	mockedPublisher := new(BudgetExpenseEventPublisherMock)
+
+	bus := NewEventBus()
+	uut := UpdateBudgetExpense{
+		Repository:     mockedRepository,
+		EventPublisher: mockedPublisher,
+		EventBus:       bus,
+		Logger:         testLogger,
+	}
+
+	mockedRepository.On("Save", mock.Anything, mock.Anything).Return(nil)
+	mockedPublisher.On("UpdateBudgetExpense", mock.Anything, mock.Anything).Return(nil)
+
+	// Queue several events and stop the bus before the listener runs; every
+	// buffered event must still be processed before Listen returns.
+	for i := 0; i < 3; i++ {
+		bus.Publish(InternalEvent{Payload: &BudgetExpense{Id: "A_BUDGET_ID"}, Ctx: testutils.NewUserContext()})
+	}
+	bus.Close()
+
+	done := make(chan struct{})
+	go func() {
+		uut.Listen()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Listen did not drain buffered events and stop")
+	}
+
+	mockedRepository.AssertNumberOfCalls(t, "Save", 3)
+	mockedPublisher.AssertNumberOfCalls(t, "UpdateBudgetExpense", 3)
+}
+
 func TestWhenABudgetExpenseUpdateWithNoTagsDefaultsToUnknown(t *testing.T) {
 
 	mockedRepository := new(BudgetExpenseRepositoryMock)
