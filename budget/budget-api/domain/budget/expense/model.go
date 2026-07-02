@@ -48,12 +48,12 @@ func (spentBudget *SpentBudget) TotalForSearchTags() map[tags.SearchTag]money.Mo
 		// the same resolved key more than once (e.g. two deleted tags both resolve
 		// to UNKNOWN), and adding its amount per entry would double-count that tag's
 		// total. Distinct keys still each receive the amount.
-		//countedForExpense := make(map[string]bool, len(budgetExpense.Tags))
+		countedForExpense := make(map[string]bool, len(budgetExpense.Tags))
 		for _, tag := range budgetExpense.Tags {
-			//if countedForExpense[tag.Key] {
-			//	continue
-			//}
-			//countedForExpense[tag.Key] = true
+			if countedForExpense[tag.Key] {
+				continue
+			}
+			countedForExpense[tag.Key] = true
 
 			searchTag := spentBudget.findSearchTagFor(tag.Key)
 			if searchTag != nil {
