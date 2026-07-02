@@ -44,7 +44,17 @@ func (spentBudget *SpentBudget) Total() money.Money {
 func (spentBudget *SpentBudget) TotalForSearchTags() map[tags.SearchTag]money.Money {
 	result := make(map[tags.SearchTag]money.Money)
 	for _, budgetExpense := range spentBudget.BudgetExpenseList {
+		// Count each distinct tag key at most once per expense: a record may carry
+		// the same resolved key more than once (e.g. two deleted tags both resolve
+		// to UNKNOWN), and adding its amount per entry would double-count that tag's
+		// total. Distinct keys still each receive the amount.
+		countedForExpense := make(map[string]bool, len(budgetExpense.Tags))
 		for _, tag := range budgetExpense.Tags {
+			if countedForExpense[tag.Key] {
+				continue
+			}
+			countedForExpense[tag.Key] = true
+
 			searchTag := spentBudget.findSearchTagFor(tag.Key)
 			if searchTag != nil {
 				currentTotal, exists := result[*searchTag]
@@ -54,7 +64,6 @@ func (spentBudget *SpentBudget) TotalForSearchTags() map[tags.SearchTag]money.Mo
 				result[*searchTag] = currentTotal.Plus(budgetExpense.Amount)
 			}
 		}
-
 	}
 	return result
 }
