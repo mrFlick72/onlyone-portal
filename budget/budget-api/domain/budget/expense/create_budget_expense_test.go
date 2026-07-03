@@ -78,6 +78,7 @@ func TestWhenANewBudgetExpenseCreationFails(t *testing.T) {
 	mockedRepository := new(BudgetExpenseRepositoryMock)
 	uut := CreateBudgetExpense{
 		Repository: mockedRepository,
+		Logger:     testLogger,
 	}
 
 	aDate, _ := date.IsoDateFor("2018-01-01")

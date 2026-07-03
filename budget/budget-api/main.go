@@ -16,7 +16,9 @@ func main() {
 
 	ginEngine := engine.ConfigureEngine()
 	GinContextToPlainContextFactory := &server.GinContextToPlainContextFactory{}
-	expense.RegisterExpenseEndpoints(ginEngine, GinContextToPlainContextFactory, config.NewBudgetExpenseActionsFacade())
+	expenseFacade, stopReclassificationListener := config.NewBudgetExpenseActionsFacade()
+	defer stopReclassificationListener()
+	expense.RegisterExpenseEndpoints(ginEngine, GinContextToPlainContextFactory, expenseFacade)
 	revenue.RegisterRevenueEndpoints(ginEngine, GinContextToPlainContextFactory, config.NewRevenueActionsFacade())
 	attachment.RegisterAttachmentEndpoints(ginEngine, GinContextToPlainContextFactory, config.NewAttachmentActionsFacade())
 

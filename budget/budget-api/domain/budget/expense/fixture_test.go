@@ -4,8 +4,14 @@ import (
 	"context"
 
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 	"github.com/stretchr/testify/mock"
 )
+
+// testLogger stands in for the logger the composition root always injects, so
+// actions can be exercised on their error paths (which now log) without a nil
+// dereference.
+var testLogger = logging.GetLoggerInstanceForComponentByTypeName("expense-test")
 
 type BudgetExpenseRepositoryMock struct {
 	mock.Mock

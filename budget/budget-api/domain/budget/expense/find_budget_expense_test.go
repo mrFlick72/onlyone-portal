@@ -42,6 +42,32 @@ func TestBudgetExpenseTotalBySearchTagsWithConstraints(t *testing.T) {
 	mockedBudgetExpenseRepository.AssertCalled(t, "FindByDateRange", ctx, testutils.SafeDateFor("01/04/2018"), testutils.SafeDateFor("30/04/2018"), []string{"dinner", "super-market"})
 }
 
+// Regression for review finding #2: an expense that carries the same resolved
+// tag key more than once (e.g. two deleted tags both resolving to UNKNOWN) must
+// contribute its amount to that tag's total only once; an expense tagged with
+// distinct keys still contributes to each. Before the fix, [UNKNOWN, UNKNOWN]
+// added 10.00 twice, making the UNKNOWN total 25.00 instead of 15.00.
+func TestTotalForSearchTagsCountsDuplicateResolvedTagsOncePerExpense(t *testing.T) {
+	unknown := tags.UnknownSentinel()
+	food := tags.SearchTag{Key: "food", Value: "Food"}
+	transport := tags.SearchTag{Key: "transport", Value: "Transport"}
+
+	spentBudget := NewSpentBudget(
+		[]BudgetExpense{
+			{Id: "1", Amount: testutils.SafeMoneyFor("10.00"), Tags: []tags.SearchTag{unknown, unknown}},
+			{Id: "2", Amount: testutils.SafeMoneyFor("5.00"), Tags: []tags.SearchTag{unknown}},
+			{Id: "3", Amount: testutils.SafeMoneyFor("7.00"), Tags: []tags.SearchTag{food, transport}},
+		},
+		[]tags.SearchTag{unknown, food, transport},
+	)
+
+	totals := spentBudget.TotalForSearchTags()
+
+	assert.Equal(t, "15.00", totals[unknown].StringifyAmount())
+	assert.Equal(t, "7.00", totals[food].StringifyAmount())
+	assert.Equal(t, "7.00", totals[transport].StringifyAmount())
+}
+
 func TestBudgetExpenseTotalBySearchTagsWithoutConstraints(t *testing.T) {
 	ctx := testutils.NewUserContext()
 	mockedSearchTagRepository := new(tags.SearchTagRepositoryMock)

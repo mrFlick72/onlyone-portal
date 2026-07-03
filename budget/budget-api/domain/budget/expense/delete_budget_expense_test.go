@@ -40,6 +40,7 @@ func TestWhenABudgetExpenseDeletionFails(t *testing.T) {
 	mockedRepository := new(BudgetExpenseRepositoryMock)
 	uut := DeleteBudgetExpense{
 		Repository: mockedRepository,
+		Logger:     testLogger,
 	}
 
 	ctx := testutils.NewUserContext()
@@ -64,6 +65,7 @@ func TestWhenABudgetExpenseDeleteDoesDoneNothingBecauseTheBudgetExpenseDoesNotEx
 	mockedRepository := new(BudgetExpenseRepositoryMock)
 	uut := DeleteBudgetExpense{
 		Repository: mockedRepository,
+		Logger:     testLogger,
 	}
 	ctx := testutils.NewUserContext()
 
@@ -81,6 +83,7 @@ func TestWhenABudgetExpenseDeleteFailsBecauseUserOwnership(t *testing.T) {
 mockedRepository := new(BudgetExpenseRepositoryMock)
 	uut := DeleteBudgetExpense{
 		Repository: mockedRepository,
+		Logger:     testLogger,
 	}
 
 	ctx := testutils.NewUserContext()

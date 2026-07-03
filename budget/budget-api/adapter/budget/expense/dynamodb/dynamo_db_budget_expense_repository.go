@@ -23,19 +23,22 @@ type DynamoDbBudgetExpenseRepository struct {
 	BudgetExpenseIdProvider expense.BudgetExpenseIdProvider
 	SearchTagRepository     tags.SearchTagRepository
 	logger                  *logging.Logger
+	EventBus                *expense.InternalEventBus
 }
 
 func NewDynamoDbBudgetExpenseRepository(
 	TableName string,
 	Client *dynamodb.Client,
 	BudgetExpenseIdProvider expense.BudgetExpenseIdProvider,
-	SearchTagRepository tags.SearchTagRepository) expense.BudgetExpenseRepository {
+	SearchTagRepository tags.SearchTagRepository,
+	EventBus *expense.InternalEventBus) expense.BudgetExpenseRepository {
 	return &DynamoDbBudgetExpenseRepository{
 		TableName:               TableName,
 		Client:                  Client,
 		BudgetExpenseIdProvider: BudgetExpenseIdProvider,
 		SearchTagRepository:     SearchTagRepository,
 		logger:                  logging.GetLoggerInstanceForComponentByType(&DynamoDbBudgetExpenseRepository{}),
+		EventBus:                EventBus,
 	}
 }
 
@@ -75,43 +78,12 @@ func (repository *DynamoDbBudgetExpenseRepository) FindFor(ctx context.Context, 
 
 	item := result.Items[0]
 
-	return repository.fromDynamo(ctx, item)
-}
-
-func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Context, item map[string]types.AttributeValue) (*expense.BudgetExpense, error) {
-	date, err := date.IsoDateFor(item["transaction_date"].(*types.AttributeValueMemberS).Value)
-	if err != nil {
-		repository.logger.LogErrorfFor("Error parsing transaction_date: %v", err)
-		return nil, errors.New("invalid data format in BudgetExpense")
-	}
-
-	moneyAmount, err := money.MoneyFor(item["amount"].(*types.AttributeValueMemberS).Value)
-	if err != nil {
-		repository.logger.LogErrorfFor("invalid data format in BudgetExpense: %v", err)
-		return nil, errors.New("invalid data format in BudgetExpense")
-	}
-
-	tagKeys := strings.Split(item["tag"].(*types.AttributeValueMemberS).Value, ",")
-	searchTags := make([]tags.SearchTag, 0, len(tagKeys))
-
-	for _, tagKey := range tagKeys {
-		searchTag, err := repository.SearchTagRepository.GetTagBy(ctx, tagKey)
-		if err != nil {
-			repository.logger.LogErrorfFor("Error getting tag: %v", err)
-			return nil, errors.New("invalid tag in BudgetExpense")
-		}
-		searchTags = append(searchTags, *searchTag)
-	}
-
-	budgetExpense := &expense.BudgetExpense{
-		Id:       item["budget_id"].(*types.AttributeValueMemberS).Value,
-		UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
-		Date:     *date,
-		Amount:   moneyAmount,
-		Note:     item["note"].(*types.AttributeValueMemberS).Value,
-		Tags:     searchTags,
-	}
-	return budgetExpense, nil
+	// FindFor is the ownership pre-check for update/delete, never a standalone
+	// read, so it deliberately drops the deleted-tag flag and never reclassifies:
+	// an async re-Save of the pre-mutation snapshot would resurrect a just-deleted
+	// expense or clobber an in-flight update. Only FindByDateRange reclassifies.
+	budgetExpense, _, err := repository.fromDynamo(ctx, item)
+	return budgetExpense, err
 }
 
 func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx context.Context, start date.Date, end date.Date, searchTags []tags.SearchTagKey) ([]expense.BudgetExpense, error) {
@@ -154,16 +126,95 @@ func (repository *DynamoDbBudgetExpenseRepository) FindByDateRange(ctx context.C
 			return nil, err
 		}
 		for _, item := range items.Items {
-			budgetExpense, err := repository.fromDynamo(ctx, item)
+			budgetExpense, needsReclassification, err := repository.fromDynamo(ctx, item)
 			if err != nil {
 				repository.logger.LogErrorfFor("Error processing item in FindByDateRange: %v", err)
 			} else {
 				budgetExpenses = append(budgetExpenses, *budgetExpense)
+				if needsReclassification {
+					repository.publishReclassification(ctx, budgetExpense)
+				}
 			}
 		}
 	}
 
 	return budgetExpenses, nil
+}
+
+// fromDynamo decodes a DynamoDB item into a BudgetExpense and reports whether it
+// carries a deleted-tag reference (a stored key that resolved to the UNKNOWN
+// sentinel). It has no side effect: the caller decides whether to durably
+// reclassify, so the write is confined to genuine read paths (FindByDateRange)
+// and never to FindFor's update/delete pre-check.
+func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Context, item map[string]types.AttributeValue) (*expense.BudgetExpense, bool, error) {
+	date, err := date.IsoDateFor(item["transaction_date"].(*types.AttributeValueMemberS).Value)
+	if err != nil {
+		repository.logger.LogErrorfFor("Error parsing transaction_date: %v", err)
+		return nil, false, errors.New("invalid data format in BudgetExpense")
+	}
+
+	moneyAmount, err := money.MoneyFor(item["amount"].(*types.AttributeValueMemberS).Value)
+	if err != nil {
+		repository.logger.LogErrorfFor("invalid data format in BudgetExpense: %v", err)
+		return nil, false, errors.New("invalid data format in BudgetExpense")
+	}
+
+	tagKeys := strings.Split(item["tag"].(*types.AttributeValueMemberS).Value, ",")
+	searchTags := make([]tags.SearchTag, 0, len(tagKeys))
+	unknownKey := tags.UnknownSentinel().Key
+	hasDeletedTagReference := false
+
+	for _, tagKey := range tagKeys {
+		searchTag, err := repository.SearchTagRepository.GetTagBy(ctx, tagKey)
+		if err != nil {
+			repository.logger.LogErrorfFor("Error getting tag: %v", err)
+			return nil, false, errors.New("invalid tag in BudgetExpense")
+		}
+		// A stored key that resolves to the UNKNOWN sentinel while the stored key
+		// itself was not UNKNOWN is a reference to a tag deleted in tag-api, and
+		// must be durably reclassified. A record stored with the UNKNOWN sentinel
+		// as its key (the default applied at create time) resolves to UNKNOWN too
+		// but is not a deletion, so it is excluded by the second comparison.
+		if searchTag.Key == unknownKey && tagKey != unknownKey {
+			hasDeletedTagReference = true
+		}
+		searchTags = append(searchTags, *searchTag)
+	}
+
+	budgetExpense := &expense.BudgetExpense{
+		Id:       item["budget_id"].(*types.AttributeValueMemberS).Value,
+		UserName: item["user_name"].(*types.AttributeValueMemberS).Value,
+		Date:     *date,
+		Amount:   moneyAmount,
+		Note:     item["note"].(*types.AttributeValueMemberS).Value,
+		Tags:     searchTags,
+	}
+	return budgetExpense, hasDeletedTagReference, nil
+}
+
+// publishReclassification hands a copy of the just-read expense to the
+// reclassification bus so the service layer can durably rewrite its deleted-tag
+// references to UNKNOWN. It sends a clone — never the pointer returned to the
+// caller — so the async listener and the read caller never share mutable state.
+// The clone's tags are de-duplicated so a record whose every tag was deleted
+// persists a single UNKNOWN rather than repeated sentinels.
+func (repository *DynamoDbBudgetExpenseRepository) publishReclassification(ctx context.Context, source *expense.BudgetExpense) {
+	clone := *source
+	clone.Tags = distinctTags(source.Tags)
+	repository.EventBus.Publish(expense.InternalEvent{Payload: &clone, Ctx: ctx})
+}
+
+func distinctTags(searchTags []tags.SearchTag) []tags.SearchTag {
+	seen := make(map[string]bool, len(searchTags))
+	distinct := make([]tags.SearchTag, 0, len(searchTags))
+	for _, searchTag := range searchTags {
+		if seen[searchTag.Key] {
+			continue
+		}
+		seen[searchTag.Key] = true
+		distinct = append(distinct, searchTag)
+	}
+	return distinct
 }
 
 func (repository *DynamoDbBudgetExpenseRepository) partitionKeysForDateRangeAndUser(idProvider *DynamoDbBudgetExpenseIdProvider, start, end date.Date, userName security.UserName) []string {
