@@ -13,5 +13,10 @@ RUN apt-get update && \
 USER application
 
 WORKDIR /opt/app
-COPY app /opt/app/app      
-ENTRYPOINT ["/opt/app/app"]
+COPY venv /opt/app/venv
+
+RUN source venv/bin/activate
+
+ENV ANALYTIC_API_CONFIG_FILE_LOCATION=.env
+
+ENTRYPOINT ["app"]
