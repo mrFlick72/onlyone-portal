@@ -48,7 +48,7 @@ dev = [
 ]
 
 [project.scripts]
-analytic-api = "app.main:main"
+app = "app.main:main"
 
 [project.urls]
 Homepage = "https://github.com/mrFlick72/onlyone-portal/tree/main/budget/analytic-api"
