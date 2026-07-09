@@ -15,8 +15,6 @@ USER application
 WORKDIR /opt/app
 COPY venv /opt/app/venv
 
-RUN source venv/bin/activate
-
-ENV ANALYTIC_API_CONFIG_FILE_LOCATION=.env
+RUN . venv/bin/activate
 
 ENTRYPOINT ["app"]
