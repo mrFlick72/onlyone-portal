@@ -39,6 +39,8 @@ server:
   write-timeout: 30s
   idle-timeout: 120s
   shutdown-timeout: 10s     # total budget for graceful shutdown (drain + configurer Dispose, including OTel flush)
+  access-log:
+    health-check-logging-enabled: false  # true to include GET /management/health in the gin access log (default: skipped)
 
 idp:
   jwks-endpoint: http://local.api.vauthenticator.com:9090/oauth2/jwks
@@ -86,7 +88,7 @@ type WebServerConfigurer interface {
 `ConfigureEngine()` registers the production chain (the registration order is also the middleware order):
 
 1. `OTelConfigurer` — `otel.Setup(ctx)` for global trace/metric/log providers; mounts `otelgin.Middleware` with a `/management/*` filter so health probes don't pollute traces. **Non-fatal**: if setup fails, logs and falls back to a no-op shutdown so the service still boots without tracing.
-2. `StandardMiddlewareConfigurer` — `gin.Logger()`, `gin.Recovery()`, CORS.
+2. `StandardMiddlewareConfigurer` — `gin.Logger()`, `gin.Recovery()`, CORS. `GET /management/health` is skipped from the access log unless `server.access-log.health-check-logging-enabled: true`.
 3. `OAuth2Configurer` — calls `security.SetUpOAuth2(ctx)`. The lifetime `ctx` is owned by the configurer; `Dispose` cancels it, which stops the JWKS refresh goroutine.
 
 After the configurers run, `management.RegisterEndpoints` mounts `GET /management/health` → `{"status": "UP"}` (no auth).
