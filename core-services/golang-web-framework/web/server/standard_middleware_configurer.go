@@ -9,6 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const healthCheckPath = "/management/health"
+
 // StandardMiddlewareConfigurer registers the always-on Gin middleware:
 // access logger, panic recovery, and CORS. It is registered between the OTel
 // configurer and the OAuth2 configurer so the standard middleware runs inside
@@ -29,7 +31,8 @@ func (c *StandardMiddlewareConfigurer) Name() string {
 }
 
 func (c *StandardMiddlewareConfigurer) Configure() error {
-	c.wsp.engine.Use(gin.Logger())
+	skipPaths := accessLogSkipPaths(configurationManager.GetConfigBoolFor("server.access-log.health-check-logging-enabled"))
+	c.wsp.engine.Use(gin.LoggerWithConfig(gin.LoggerConfig{SkipPaths: skipPaths}))
 	c.wsp.engine.Use(gin.Recovery())
 	c.wsp.engine.Use(corsConfigurer())
 	return nil
@@ -37,6 +40,18 @@ func (c *StandardMiddlewareConfigurer) Configure() error {
 
 func (c *StandardMiddlewareConfigurer) Dispose(_ context.Context) error {
 	return nil
+}
+
+// accessLogSkipPaths returns the gin access-log SkipPaths list. k8s liveness/
+// readiness probes hit healthCheckPath every few seconds per pod, which
+// drowns out real request activity in the access log — so it's skipped by
+// default and only included when a service opts in via
+// server.access-log.health-check-logging-enabled.
+func accessLogSkipPaths(healthCheckLoggingEnabled bool) []string {
+	if healthCheckLoggingEnabled {
+		return nil
+	}
+	return []string{healthCheckPath}
 }
 
 func corsConfigurer() gin.HandlerFunc {

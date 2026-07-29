@@ -103,7 +103,7 @@ github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../
 **`server.WebServerProvisioner` is built around `WebServerConfigurer`s.** Each configurer owns one cross-cutting concern with a `Configure() error` step at boot and a `Dispose(ctx) error` step at shutdown. `ConfigureEngine()` registers them in this order (the order is the middleware order on the Gin engine):
 
 1. `OTelConfigurer` — installs global OTel providers (trace/metric/log) via `otel.Setup(ctx)` and registers `otelgin.Middleware`; `/management/*` is filtered so health probes don't pollute traces. Failure is non-fatal: logs and falls back to a no-op shutdown so the service still boots without tracing.
-2. `StandardMiddlewareConfigurer` — `gin.Logger()`, `gin.Recovery()`, CORS (origins from `cors.allowed.origins`).
+2. `StandardMiddlewareConfigurer` — `gin.Logger()`, `gin.Recovery()`, CORS (origins from `cors.allowed.origins`). `GET /management/health` is skipped from the gin access log by default; set `server.access-log.health-check-logging-enabled: true` to include it (probe traffic is otherwise noisy at every k8s liveness/readiness interval).
 3. `OAuth2Configurer` — calls `security.SetUpOAuth2(ctx)` which builds the JWKS-cached middleware. The lifetime `ctx` is owned by the configurer and cancelled on `Dispose`, stopping the JWKS refresh goroutine.
 
 `management.RegisterEndpoints` then mounts `GET /management/health` → `{"status": "UP"}` (no auth).
@@ -118,7 +118,7 @@ github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../
 **JWT middleware behavior:**
 - `security.SetUpOAuth2(ctx)` takes a context — cancel it to stop the background JWKS refresh goroutine. (The `OAuth2Configurer` does this for you.)
 - JWKS is fetched through `httpclient.NewHTTPClient()` so refresh requests appear as `JWKS refresh` client spans when OTel is enabled.
-- Skips `/management/*` paths and `OPTIONS` requests automatically.
+- Skips `/management/*` paths and `OPTIONS` requests automatically; each skip is logged at Debug level (`logger.level: debug` to see it — off by default, separate from the access-log flag above).
 - Validated user is stored in Gin context under key `"user"` as `security.User{UserName, Authorities, AccessToken}`.
 - Retrieve in handlers via `security.GetCurrentUser(ctx)` after converting Gin context with `server.GinContextToPlainContextFactory`.
 - JWT claims used: `user_name` (string) and `authorities` ([]string).

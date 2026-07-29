@@ -38,13 +38,13 @@ func NewOAuth2Middleware(keySet jwk.Set, allowedAuthority string, ignored []stri
 			m := wild.MustCompile(path, wild.Extended())
 
 			if m.Match(ctx.FullPath()) {
-				jwt_logger.LogInfofFor("skipping oauth2 evaluation for path: %s\n", path)
+				jwt_logger.LogDebugfFor("skipping oauth2 evaluation for path: %s\n", path)
 				ctx.Next()
 				return
 			}
 		}
 		if ctx.Request.Method == "OPTIONS" {
-			jwt_logger.LogInfofFor("skipping oauth2 evaluation for OPTIONS request\n")
+			jwt_logger.LogDebugfFor("skipping oauth2 evaluation for OPTIONS request\n")
 			ctx.Next()
 			return
 		}
