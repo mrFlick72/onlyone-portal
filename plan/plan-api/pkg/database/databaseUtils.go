@@ -11,7 +11,9 @@ var logger = logging.GetLoggerInstance()
 
 func GetDatabaseConnectionFor(connectionString string) (*sql.DB, error) {
 	db, err := sql.Open("postgres", connectionString)
-	logger.LogErrorFor(err)
+	if err != nil {
+		logger.LogErrorFor(err)
+	}
 	return db, err
 }
 

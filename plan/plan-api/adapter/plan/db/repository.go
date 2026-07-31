@@ -30,7 +30,9 @@ func (r *PlanPostgresRepository) GetAllPlanBy(userName string) ([]*plan.Plan, er
 	}
 
 	rows, err := query.Query(userName)
-	logger.LogErrorFor(err)
+	if err != nil {
+		logger.LogErrorFor(err)
+	}
 	result = buildPlans(rows)
 
 	database.CloseResources(rows, query, db)
@@ -57,7 +59,9 @@ func (r *PlanPostgresRepository) GetPlan(idPlanId string, userName string) (*pla
 	}
 
 	rows, err := query.Query(idPlanId, userName)
-	logger.LogErrorFor(err)
+	if err != nil {
+		logger.LogErrorFor(err)
+	}
 	results := buildPlans(rows)
 
 	database.CloseResources(rows, query, db)
@@ -85,7 +89,9 @@ func (r *PlanPostgresRepository) loadTodosFor(planId string) ([]*plan.Todo, erro
 	}
 
 	rows, err := query.Query(planId)
-	logger.LogErrorFor(err)
+	if err != nil {
+		logger.LogErrorFor(err)
+	}
 
 	for rows.Next() {
 		var t plan.Todo
@@ -128,7 +134,9 @@ func (r *PlanPostgresRepository) CreateNewPlan(p plan.Plan) (string, error) {
 	}
 
 	_, err = query.Exec(planId, p.UserName, p.Title, p.Date)
-	logger.LogErrorFor(err)
+	if err != nil {
+		logger.LogErrorFor(err)
+	}
 	database.CloseResources(nil, query, db)
 	return planId, err
 }
@@ -145,7 +153,9 @@ func (r *PlanPostgresRepository) DeletePlan(idPlanId string, userName string) er
 	}
 
 	_, err = query.Exec(idPlanId, userName)
-	logger.LogErrorFor(err)
+	if err != nil {
+		logger.LogErrorFor(err)
+	}
 	database.CloseResources(nil, query, db)
 	return err
 }
@@ -162,7 +172,9 @@ func (r *PlanPostgresRepository) AddTodo(idPlanId string, t plan.Todo) error {
 	}
 
 	_, err = query.Exec(t.Id, idPlanId, t.UserName, t.Date, t.Content, string(t.Status))
-	logger.LogErrorFor(err)
+	if err != nil {
+		logger.LogErrorFor(err)
+	}
 	database.CloseResources(nil, query, db)
 	return err
 }
@@ -179,7 +191,9 @@ func (r *PlanPostgresRepository) UpdateTodo(idPlanId string, t plan.Todo) error 
 	}
 
 	_, err = query.Exec(t.Content, t.Date, t.Id, idPlanId)
-	logger.LogErrorFor(err)
+	if err != nil {
+		logger.LogErrorFor(err)
+	}
 	database.CloseResources(nil, query, db)
 	return err
 }
@@ -196,7 +210,9 @@ func (r *PlanPostgresRepository) UpdateTodoStatus(idPlanId string, todoId string
 	}
 
 	_, err = query.Exec(string(status), todoId, idPlanId)
-	logger.LogErrorFor(err)
+	if err != nil {
+		logger.LogErrorFor(err)
+	}
 	database.CloseResources(nil, query, db)
 	return err
 }
@@ -213,7 +229,9 @@ func (r *PlanPostgresRepository) RemoveTodo(idPlanId string, todoId string) erro
 	}
 
 	_, err = query.Exec(todoId, idPlanId)
-	logger.LogErrorFor(err)
+	if err != nil {
+		logger.LogErrorFor(err)
+	}
 	database.CloseResources(nil, query, db)
 	return err
 }
