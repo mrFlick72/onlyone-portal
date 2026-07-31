@@ -15,6 +15,6 @@ USER application
 WORKDIR /opt/app
 COPY venv /opt/app/venv
 
-RUN venv/bin/activate
+ENV PATH="/opt/app/venv/bin:${PATH}"
 
 ENTRYPOINT ["app"]
