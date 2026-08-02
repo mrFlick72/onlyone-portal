@@ -66,6 +66,19 @@ func (repository *RestSearchTagRepository) GetAllTags(ctx context.Context) ([]ta
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		// A non-2xx response must never fall through to the unmarshal path below:
+		// an empty or stub body on a degraded/misrouted response would otherwise
+		// unmarshal into a valid, empty []SearchTag — indistinguishable from "this
+		// user genuinely has zero tags in this scope" and, via GetTagBy's
+		// not-found-in-catalog fallback (ADR 0003), silently drives durable
+		// UNKNOWN reclassification for every tag key looked up in this window
+		// (see docs/adr/0004-tag-catalog-fetch-must-validate-http-status-before-trusting-empty-result.md).
+		repository.logger.LogErrorfFor("Unexpected status code %d from tag API", resp.StatusCode)
+		return nil, fmt.Errorf("unexpected status code %d from tag API", resp.StatusCode)
+	}
+
 	// Read response
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

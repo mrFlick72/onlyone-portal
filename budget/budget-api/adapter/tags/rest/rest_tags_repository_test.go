@@ -72,3 +72,36 @@ func TestGetTagByReturnsUnknownSentinelWhenKeyNotInCatalog(t *testing.T) {
 	assert.Equal(t, nil, err)
 	assert.Equal(t, &tags.SearchTag{Key: "UNKNOWN", Value: "UNKNOWN"}, result)
 }
+
+func TestGetAllTagsReturnsErrorOnNon2xxStatusEvenWithAnEmptyArrayBody(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`[]`))
+	}))
+	defer server.Close()
+
+	repository := NewRestSearchTagRepository(server.Client(), server.URL, "expense")
+
+	result, err := repository.GetAllTags(userContextWithToken("A_USER", "A_TOKEN"))
+
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, 0, len(result))
+}
+
+func TestGetTagByReturnsErrorRatherThanUnknownSentinelWhenCatalogFetchDegrades(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_, _ = w.Write([]byte(`[]`))
+	}))
+	defer server.Close()
+
+	repository := NewRestSearchTagRepository(server.Client(), server.URL, "expense")
+
+	result, err := repository.GetTagBy(userContextWithToken("A_USER", "A_TOKEN"), "someTagKey")
+
+	assert.NotEqual(t, nil, err)
+	var nilResult *tags.SearchTag
+	assert.Equal(t, nilResult, result)
+}
