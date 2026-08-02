@@ -76,6 +76,7 @@ func NewBudgetExpenseRepository(eventBus *expense.InternalEventBus) expense.Budg
 		},
 		NewExpenseSearchTagRepository(),
 		eventBus,
+		configurationManager.GetConfigBoolFor("budget-api.reclassification.enabled"),
 	)
 
 }

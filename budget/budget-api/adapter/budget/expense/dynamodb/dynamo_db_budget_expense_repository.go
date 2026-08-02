@@ -24,6 +24,15 @@ type DynamoDbBudgetExpenseRepository struct {
 	SearchTagRepository     tags.SearchTagRepository
 	logger                  *logging.Logger
 	EventBus                *expense.InternalEventBus
+	// ReclassificationEnabled is the single decision point for durable
+	// reclassification: when false, a detected deleted-tag reference is only
+	// logged, never published to EventBus, so UpdateBudgetExpense.reclassify
+	// never runs and no Save/Kafka-republish happens. It defaults to disabled
+	// (Go's bool zero value mirrors the config-missing default at the wiring
+	// layer), matching the read-time UNKNOWN fallback from ADR 0003, which is
+	// unaffected by this flag and remains always on. See
+	// docs/adr/0004-tag-catalog-fetch-must-validate-http-status-before-trusting-empty-result.md.
+	ReclassificationEnabled bool
 }
 
 func NewDynamoDbBudgetExpenseRepository(
@@ -31,7 +40,8 @@ func NewDynamoDbBudgetExpenseRepository(
 	Client *dynamodb.Client,
 	BudgetExpenseIdProvider expense.BudgetExpenseIdProvider,
 	SearchTagRepository tags.SearchTagRepository,
-	EventBus *expense.InternalEventBus) expense.BudgetExpenseRepository {
+	EventBus *expense.InternalEventBus,
+	ReclassificationEnabled bool) expense.BudgetExpenseRepository {
 	return &DynamoDbBudgetExpenseRepository{
 		TableName:               TableName,
 		Client:                  Client,
@@ -39,6 +49,7 @@ func NewDynamoDbBudgetExpenseRepository(
 		SearchTagRepository:     SearchTagRepository,
 		logger:                  logging.GetLoggerInstanceForComponentByType(&DynamoDbBudgetExpenseRepository{}),
 		EventBus:                EventBus,
+		ReclassificationEnabled: ReclassificationEnabled,
 	}
 }
 
@@ -198,9 +209,21 @@ func (repository *DynamoDbBudgetExpenseRepository) fromDynamo(ctx context.Contex
 // caller — so the async listener and the read caller never share mutable state.
 // The clone's tags are de-duplicated so a record whose every tag was deleted
 // persists a single UNKNOWN rather than repeated sentinels.
+//
+// When ReclassificationEnabled is false, nothing is published — the event
+// never reaches EventBus, so UpdateBudgetExpense.reclassify never runs and no
+// durable write or Kafka re-publish can happen. Only a log line records what
+// would have been reclassified, so production behavior stays observable while
+// the write path is off.
 func (repository *DynamoDbBudgetExpenseRepository) publishReclassification(ctx context.Context, source *expense.BudgetExpense) {
 	clone := *source
 	clone.Tags = distinctTags(source.Tags)
+
+	if !repository.ReclassificationEnabled {
+		repository.logger.LogInfofFor("reclassification disabled by config: budget expense %s would have been durably reclassified to tags %v", clone.Id, clone.Tags)
+		return
+	}
+
 	repository.EventBus.Publish(expense.InternalEvent{Payload: &clone, Ctx: ctx})
 }
 
