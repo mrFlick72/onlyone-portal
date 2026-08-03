@@ -51,7 +51,7 @@ func newDynamoDBClient() (*dynamodb.Client, error) {
 var TableName = "BUDGET_EXPENSE_TABLE_NAME_STAGING"
 
 func newBudgetExpenseRepository(budgetExpenseIdProvider expense.BudgetExpenseIdProvider, searchTagRepository tags.SearchTagRepository) *DynamoDbBudgetExpenseRepository {
-	return NewDynamoDbBudgetExpenseRepository(TableName, client, budgetExpenseIdProvider, searchTagRepository, expense.NewEventBus()).(*DynamoDbBudgetExpenseRepository)
+	return NewDynamoDbBudgetExpenseRepository(TableName, client, budgetExpenseIdProvider, searchTagRepository, expense.NewEventBus(), true).(*DynamoDbBudgetExpenseRepository)
 }
 
 func setupTestDynamoDBTable() error {

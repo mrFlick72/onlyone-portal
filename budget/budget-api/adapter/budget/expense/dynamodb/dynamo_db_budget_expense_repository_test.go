@@ -406,7 +406,7 @@ func TestFindForDoesNotPublishReclassification(t *testing.T) {
 	mockSearchTagRepository.On("GetTagBy", guardCtx, "deleted-tag").Return(searchTagPtr(tags.UnknownSentinel()), nil)
 
 	bus := expense.NewEventBus()
-	repo := NewDynamoDbBudgetExpenseRepository(TableName, client, idProvider, mockSearchTagRepository, bus).(*DynamoDbBudgetExpenseRepository)
+	repo := NewDynamoDbBudgetExpenseRepository(TableName, client, idProvider, mockSearchTagRepository, bus, true).(*DynamoDbBudgetExpenseRepository)
 
 	stored := expense.BudgetExpense{
 		UserName: "delete-guard-user",
@@ -427,15 +427,16 @@ func TestFindForDoesNotPublishReclassification(t *testing.T) {
 }
 
 // The genuine read path still reclassifies: a deleted-tag reference found during
-// a range read publishes a reclassification event with the deduplicated payload.
-func TestFindByDateRangePublishesReclassificationForADeletedTag(t *testing.T) {
+// a range read publishes a reclassification event with the deduplicated payload,
+// as long as reclassification is enabled by config.
+func TestFindByDateRangePublishesReclassificationForADeletedTagWhenEnabled(t *testing.T) {
 	readCtx := testutils.NewStubbedContextWith("reclassify-read-user")
 	idProvider := &DynamoDbBudgetExpenseIdProvider{SaltGenerator: func() string { return uuid.New().String() }}
 	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
 	mockSearchTagRepository.On("GetTagBy", readCtx, "deleted-tag").Return(searchTagPtr(tags.UnknownSentinel()), nil)
 
 	bus := expense.NewEventBus()
-	repo := NewDynamoDbBudgetExpenseRepository(TableName, client, idProvider, mockSearchTagRepository, bus).(*DynamoDbBudgetExpenseRepository)
+	repo := NewDynamoDbBudgetExpenseRepository(TableName, client, idProvider, mockSearchTagRepository, bus, true).(*DynamoDbBudgetExpenseRepository)
 
 	stored := expense.BudgetExpense{
 		UserName: "reclassify-read-user",
@@ -457,8 +458,40 @@ func TestFindByDateRangePublishesReclassificationForADeletedTag(t *testing.T) {
 	assert.Equal(t, []tags.SearchTag{tags.UnknownSentinel()}, event.Payload.Tags)
 }
 
+// The feature flag's whole purpose: with reclassification disabled by config, a
+// detected deleted-tag reference must publish nothing to the bus at all — only
+// the read-time in-place UNKNOWN resolution (ADR 0003) applies, and the durable
+// write/Kafka-republish never runs.
+func TestFindByDateRangeDoesNotPublishReclassificationWhenDisabled(t *testing.T) {
+	readCtx := testutils.NewStubbedContextWith("reclassify-disabled-user")
+	idProvider := &DynamoDbBudgetExpenseIdProvider{SaltGenerator: func() string { return uuid.New().String() }}
+	mockSearchTagRepository := new(tags.SearchTagRepositoryMock)
+	mockSearchTagRepository.On("GetTagBy", readCtx, "deleted-tag").Return(searchTagPtr(tags.UnknownSentinel()), nil)
+
+	bus := expense.NewEventBus()
+	repo := NewDynamoDbBudgetExpenseRepository(TableName, client, idProvider, mockSearchTagRepository, bus, false).(*DynamoDbBudgetExpenseRepository)
+
+	stored := expense.BudgetExpense{
+		UserName: "reclassify-disabled-user",
+		Date:     testutils.SafeDateFor("05/03/2024"),
+		Amount:   testutils.SafeMoneyFor("10.50"),
+		Note:     "NOTE",
+		Tags:     []tags.SearchTag{{Key: "deleted-tag", Value: "deleted-tag"}},
+	}
+	if err := repo.Save(readCtx, &stored); err != nil {
+		t.Fatalf("failed to save fixture: %v", err)
+	}
+
+	result, err := repo.FindByDateRange(readCtx, testutils.SafeDateFor("01/03/2024"), testutils.SafeDateFor("31/03/2024"), []tags.SearchTagKey{})
+
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 1, len(result))
+	assert.Equal(t, []tags.SearchTag{tags.UnknownSentinel()}, result[0].Tags)
+	assertNoReclassifyEventFired(t, bus)
+}
+
 func newDetectionRepository(searchTagRepository tags.SearchTagRepository) *DynamoDbBudgetExpenseRepository {
-	return NewDynamoDbBudgetExpenseRepository(TableName, client, new(DynamoDbBudgetExpenseIdProviderMock), searchTagRepository, expense.NewEventBus()).(*DynamoDbBudgetExpenseRepository)
+	return NewDynamoDbBudgetExpenseRepository(TableName, client, new(DynamoDbBudgetExpenseIdProviderMock), searchTagRepository, expense.NewEventBus(), true).(*DynamoDbBudgetExpenseRepository)
 }
 
 func searchTagPtr(tag tags.SearchTag) *tags.SearchTag {
