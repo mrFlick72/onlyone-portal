@@ -22,3 +22,44 @@ form:
     placeholder: "Phone"
   save:
     value: "Save changes"
+
+mfaDevices:
+  title: "MFA Devices"
+  emptyState:
+    label: "You haven't enrolled any MFA devices yet."
+  table:
+    method:
+      label: "Method"
+    channel:
+      label: "Destination"
+    default:
+      label: "Default"
+      chip: "Default"
+      setAction: "Set as default"
+    actions:
+      label: "Actions"
+  method:
+    email: "Email"
+    sms: "SMS"
+  delete:
+    label: "Delete"
+    disabledTooltip: "Removing a device isn't supported yet."
+  addDevice:
+    label: "Add Device"
+
+enrollDialog:
+  title: "Add MFA Device"
+  step:
+    method:
+      title: "Choose a method"
+      emailLabel: "Email"
+      smsLabel: "SMS"
+      noMethodsAvailable: "You've already enrolled every available method."
+      nextButtonLabel: "Send code"
+    code:
+      title: "Enter the code"
+      description: "Enter the code we sent you."
+      inputLabel: "Code"
+      confirmButtonLabel: "Confirm"
+  cancelButtonLabel: "Cancel"
+  genericErrorMessage: "Something went wrong. Check the code, or cancel and start again."

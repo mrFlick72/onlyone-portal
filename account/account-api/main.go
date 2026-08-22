@@ -15,6 +15,7 @@ func main() {
 	ginEngine := engine.ConfigureEngine()
 	GinContextToPlainContextFactory := &server.GinContextToPlainContextFactory{}
 	web.RegisterEndpoints(ginEngine, config.NewAccountUpdate(), config.NewVauthenticatorAccountRepository(), GinContextToPlainContextFactory)
+	web.RegisterMfaEndpoints(ginEngine, config.NewVauthenticatorMfaRepository(), GinContextToPlainContextFactory)
 
 	engine.StartEngine()
 }

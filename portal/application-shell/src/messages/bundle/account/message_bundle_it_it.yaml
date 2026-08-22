@@ -22,3 +22,44 @@ form:
     placeholder: "Telefono"
   save:
     value: "Salva modifiche"
+
+mfaDevices:
+  title: "Dispositivi MFA"
+  emptyState:
+    label: "Non hai ancora registrato nessun dispositivo MFA."
+  table:
+    method:
+      label: "Metodo"
+    channel:
+      label: "Destinazione"
+    default:
+      label: "Predefinito"
+      chip: "Predefinito"
+      setAction: "Imposta come predefinito"
+    actions:
+      label: "Azioni"
+  method:
+    email: "Email"
+    sms: "SMS"
+  delete:
+    label: "Elimina"
+    disabledTooltip: "La rimozione di un dispositivo non è ancora supportata."
+  addDevice:
+    label: "Aggiungi dispositivo"
+
+enrollDialog:
+  title: "Aggiungi dispositivo MFA"
+  step:
+    method:
+      title: "Scegli un metodo"
+      emailLabel: "Email"
+      smsLabel: "SMS"
+      noMethodsAvailable: "Hai già registrato tutti i metodi disponibili."
+      nextButtonLabel: "Invia codice"
+    code:
+      title: "Inserisci il codice"
+      description: "Inserisci il codice che ti abbiamo inviato."
+      inputLabel: "Codice"
+      confirmButtonLabel: "Conferma"
+  cancelButtonLabel: "Annulla"
+  genericErrorMessage: "Qualcosa è andato storto. Controlla il codice oppure annulla e ricomincia."

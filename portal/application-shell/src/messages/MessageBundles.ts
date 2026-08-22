@@ -258,4 +258,38 @@ export type AccountPageMessageBundle = {
         phoneLabel: string;
         saveButtonLabel: string;
     };
+    mfaDevices: MfaDevicesSectionMessageBundle;
+    enrollDialog: EnrollMfaDeviceDialogMessageBundle;
+};
+
+export type MfaDevicesSectionMessageBundle = {
+    title: string;
+    emptyStateLabel: string;
+    methodColumnLabel: string;
+    channelColumnLabel: string;
+    defaultColumnLabel: string;
+    actionsColumnLabel: string;
+    defaultChipLabel: string;
+    methodEmailLabel: string;
+    methodSmsLabel: string;
+    deleteActionLabel: string;
+    deleteDisabledTooltip: string;
+    addDeviceLabel: string;
+    setDefaultActionLabel: string;
+};
+
+/** Two-step MFA enrollment dialog: pick a method/channel, then confirm with the code sent to it. */
+export type EnrollMfaDeviceDialogMessageBundle = {
+    title: string;
+    methodStepTitle: string;
+    emailMethodLabel: string;
+    smsMethodLabel: string;
+    noMethodsAvailableLabel: string;
+    nextButtonLabel: string;
+    codeStepTitle: string;
+    codeStepDescription: string;
+    codeInputLabel: string;
+    confirmButtonLabel: string;
+    cancelButtonLabel: string;
+    genericErrorMessage: string;
 };
