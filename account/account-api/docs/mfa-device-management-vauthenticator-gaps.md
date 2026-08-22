@@ -38,7 +38,17 @@ The second part is an admin/ops action against vauthenticator's client-app regis
 
 `GET /api/mfa/enrollment` (`MfaMethodsEnrollment.getEnrollmentsFor`) calls `findAll(userName)` with no filter on `associated`, and the response DTO (`MfaDeviceRepresentation`) doesn't carry an `associated` field at all — it's dropped between the domain type and the wire response. So an abandoned, never-associated enrollment attempt is indistinguishable from a real device once it comes back from the list endpoint, and account-api has no information available to filter it out itself. This means **starting** enrollment, not just failing to finish it, is what creates the permanent, unfilterable row — a cancel button on our side changes nothing about this.
 
-Related, same method: `getEnrollmentsFor` returns an empty list whenever `getDefaultDevice(userName)` is null — i.e. before any device has ever been explicitly set default. Since the REST association endpoint never auto-sets a default (#342), a user's first successfully-associated device is invisible in the list until something separately calls `PUT /api/mfa/device` for it. For us this means tickets #39 (enroll) and #40 (set-default) should not go to production independently of each other — deploying #39 alone would make a first enrollment look like it silently failed.
+Related, same method: `getEnrollmentsFor` returns an empty list whenever `getDefaultDevice(userName)` is null — i.e. before any device has ever been explicitly set default. Since the REST association endpoint never auto-sets a default (#342), a user's first successfully-associated device is invisible in the list until something separately calls `PUT /api/mfa/device` for it.
+
+**This turned out to be unfixable from our side — see #8.** The plan was for #40 to close this gap by auto-calling set-default right after a user's first successful association. That's not implementable: see #8.
+
+## 8. No way to learn a newly-associated device's ID, so nothing can auto-set it default ([vauthenticator#344](https://github.com/mrFlick72/vauthenticator/issues/344))
+
+`POST /api/mfa/associate` returns `204` with no body at all (`ResponseEntity<Unit>` → `noContent().build()`). `POST /api/mfa/enrollment`'s response (`MfaEnrollmentResponse`) only carries `ticket`. The device's `mfaDeviceId` is generated server-side and only ever embedded in the ticket's internal `TicketContext` — never returned to any caller.
+
+The obvious workaround — re-fetch `GET /api/mfa/enrollment` after associating and find the new device — doesn't work for exactly the case that matters: per #7, that list is empty until a default already exists. Circular: no ID without a default, no default without the ID.
+
+**Consequence: a user's very first enrolled MFA device is not just delayed in appearing — it is permanently invisible, with no first-party workaround, until vauthenticator returns a device representation from `associate`.** #40 ships only the manual "set as default" action; the automatic first-device case is dropped from that ticket entirely, not deferred — there is nothing to defer to. Deploying #39 and #40 together no longer closes this gap the way originally planned; it only adds the manual action, which a first-time user has no way to reach (there's nothing in their list to click).
 
 ## Design notes for our own code (not vauthenticator's problem)
 
