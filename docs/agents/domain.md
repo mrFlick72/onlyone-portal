@@ -25,13 +25,26 @@ Multi-context layout (presence of `CONTEXT-MAP.md` at the root). Services live u
 │   │   ├── CONTEXT.md
 │   │   └── docs/adr/                  ← context-specific decisions
 │   └── analytic-api/
+│       └── CONTEXT.md
+├── tagging/
+│   └── tag-api/
 │       ├── CONTEXT.md
 │       └── docs/adr/
-└── account/
-    └── account-api/
-        ├── CONTEXT.md
-        └── docs/adr/
+├── plan/
+│   └── plan-api/
+│       └── CONTEXT.md
+├── account/
+│   └── account-api/
+│       └── CONTEXT.md
+├── portal/
+│   └── application-shell/
+│       └── CONTEXT.md
+└── core-services/
+    └── golang-web-framework/
+        └── CONTEXT.md
 ```
+
+Not every context has its own `docs/adr/` — that directory is created lazily too, only once a context has a decision worth recording.
 
 ## Use the glossary's vocabulary
 
