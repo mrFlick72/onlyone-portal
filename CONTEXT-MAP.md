@@ -7,6 +7,8 @@ This is a polyglot monorepo of independent services; domain documentation is spl
 - [golang-web-framework](./core-services/golang-web-framework/CONTEXT.md) — shared Go library providing cross-cutting concerns (HTTP bootstrap, JWT auth, caching, OTel, AWS/HTTP clients) consumed by every Gin-based service
 - [Tagging](./tagging/tag-api/CONTEXT.md) — per-user catalog of tags, each scoped to one domain (`expense` / `revenue`), used to categorize budget records
 - [Budget Expense](./budget/budget-api/CONTEXT.md) — tracks a user's budget expenses and revenue, each optionally categorized by tags
+- [Plan](./plan/plan-api/CONTEXT.md) — manages a user's titled, dated Plans and their Todos
+- [Account](./account/account-api/CONTEXT.md) — proxies the authenticated user's profile to/from the vauthenticator IDP
 
 ## Relationships
 
