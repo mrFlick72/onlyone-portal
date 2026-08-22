@@ -35,6 +35,7 @@ mfaDevices:
     default:
       label: "Default"
       chip: "Default"
+      setAction: "Set as default"
     actions:
       label: "Actions"
   method:

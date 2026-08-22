@@ -275,6 +275,7 @@ export type MfaDevicesSectionMessageBundle = {
     deleteActionLabel: string;
     deleteDisabledTooltip: string;
     addDeviceLabel: string;
+    setDefaultActionLabel: string;
 };
 
 /** Two-step MFA enrollment dialog: pick a method/channel, then confirm with the code sent to it. */

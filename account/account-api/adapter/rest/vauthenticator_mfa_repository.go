@@ -66,6 +66,10 @@ type associationRequest struct {
 	Code   string `json:"code"`
 }
 
+type setDefaultRequest struct {
+	MfaDeviceId string `json:"mfaDeviceId"`
+}
+
 func (r *VauthenticatorMfaRepository) StartEnrollment(ctx context.Context, mfaMethod string, mfaChannel string) (string, error) {
 	body, err := json.Marshal(enrollmentRequest{MfaChannel: mfaChannel, MfaMethod: mfaMethod})
 	if err != nil {
@@ -128,6 +132,33 @@ func (r *VauthenticatorMfaRepository) Associate(ctx context.Context, ticket stri
 
 	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
 		return r.unexpectedStatusError(resp, "mfa associate endpoint")
+	}
+
+	return nil
+}
+
+func (r *VauthenticatorMfaRepository) SetDefault(ctx context.Context, mfaDeviceId string) error {
+	body, err := json.Marshal(setDefaultRequest{MfaDeviceId: mfaDeviceId})
+	if err != nil {
+		r.Logger.LogErrorfFor("error while marshalling mfa set-default payload: %s", err)
+		return err
+	}
+
+	req, err := r.newAuthorizedRequest(ctx, http.MethodPut, fmt.Sprintf("%s/api/mfa/device", r.BaseUrl), body)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := r.Client.Do(req)
+	if err != nil {
+		r.Logger.LogErrorfFor("error while calling vauthenticator mfa device endpoint: %s", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return r.unexpectedStatusError(resp, "mfa set-default endpoint")
 	}
 
 	return nil

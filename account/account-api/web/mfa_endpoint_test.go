@@ -45,6 +45,11 @@ func (m *mockMfaRepository) Associate(ctx context.Context, ticket string, code s
 	return args.Error(0)
 }
 
+func (m *mockMfaRepository) SetDefault(ctx context.Context, mfaDeviceId string) error {
+	args := m.Called(ctx, mfaDeviceId)
+	return args.Error(0)
+}
+
 func TestFindAllMfaDevices(t *testing.T) {
 	aDevice := mfa.MfaDevice{
 		UserName:    "j***n@e***.com",
@@ -138,6 +143,32 @@ func TestAssociateMfaEnrollmentWhenRepositoryFails(t *testing.T) {
 	w := httptest.NewRecorder()
 	body := bytes.NewBufferString(`{"ticket":"a-ticket","code":"000000"}`)
 	req, _ := http.NewRequest(http.MethodPost, "/api/account/mfa/associate", body)
+	setupMfaRouter(repo).ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusInternalServerError, w.Code)
+	repo.AssertExpectations(t)
+}
+
+func TestSetDefaultMfaDevice(t *testing.T) {
+	repo := &mockMfaRepository{}
+	repo.On("SetDefault", mock.Anything, "a-device-id").Return(nil)
+
+	w := httptest.NewRecorder()
+	body := bytes.NewBufferString(`{"mfaDeviceId":"a-device-id"}`)
+	req, _ := http.NewRequest(http.MethodPut, "/api/account/mfa/device", body)
+	setupMfaRouter(repo).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	repo.AssertExpectations(t)
+}
+
+func TestSetDefaultMfaDeviceWhenRepositoryFails(t *testing.T) {
+	repo := &mockMfaRepository{}
+	repo.On("SetDefault", mock.Anything, "a-device-id").Return(assert.AnError)
+
+	w := httptest.NewRecorder()
+	body := bytes.NewBufferString(`{"mfaDeviceId":"a-device-id"}`)
+	req, _ := http.NewRequest(http.MethodPut, "/api/account/mfa/device", body)
 	setupMfaRouter(repo).ServeHTTP(w, req)
 
 	require.Equal(t, http.StatusInternalServerError, w.Code)

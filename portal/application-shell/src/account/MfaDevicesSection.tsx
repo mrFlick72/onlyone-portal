@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import {
     Button,
     Chip,
+    CircularProgress,
     IconButton,
     Paper,
     Table,
@@ -14,7 +15,7 @@ import {
     Typography
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
-import { getMfaDevices } from "./domain/repository/MfaRepository";
+import { getMfaDevices, setDefaultMfaDevice } from "./domain/repository/MfaRepository";
 import MfaDevice from "./domain/Mfa";
 import { AccountPageMessageBundle } from "../messages/MessageBundles";
 import EnrollMfaDeviceDialog from "./EnrollMfaDeviceDialog";
@@ -32,12 +33,20 @@ const methodLabelFor = (mfaMethod: MfaDevice["mfaMethod"], messages: MfaDevicesS
 const MfaDevicesSection: React.FC<MfaDevicesSectionProps> = ({ email, phone, messages, enrollDialogMessages }) => {
     const [devices, setDevices] = useState<MfaDevice[]>([])
     const [dialogOpen, setDialogOpen] = useState(false)
+    const [pendingDeviceId, setPendingDeviceId] = useState<string | null>(null)
 
     const loadDevices = useCallback(() => {
         getMfaDevices().then(setDevices)
     }, [])
 
     useEffect(() => { loadDevices() }, [loadDevices])
+
+    const handleSetDefault = (mfaDeviceId: string) => {
+        setPendingDeviceId(mfaDeviceId)
+        setDefaultMfaDevice(mfaDeviceId)
+            .then(loadDevices)
+            .finally(() => setPendingDeviceId(null))
+    }
 
     return <>
         <Typography variant="h6">{messages.title}</Typography>
@@ -60,7 +69,15 @@ const MfaDevicesSection: React.FC<MfaDevicesSectionProps> = ({ email, phone, mes
                                 <TableCell scope="row">{methodLabelFor(device.mfaMethod, messages)}</TableCell>
                                 <TableCell>{device.mfaChannel}</TableCell>
                                 <TableCell>
-                                    {device.default && <Chip label={messages.defaultChipLabel} color="primary" size="small" />}
+                                    {device.default
+                                        ? <Chip label={messages.defaultChipLabel} color="primary" size="small" />
+                                        : pendingDeviceId === device.mfaDeviceId
+                                            ? <CircularProgress size={20} />
+                                            : <Button size="small" disabled={pendingDeviceId !== null}
+                                                onClick={() => handleSetDefault(device.mfaDeviceId)}>
+                                                {messages.setDefaultActionLabel}
+                                            </Button>
+                                    }
                                 </TableCell>
                                 <TableCell>
                                     <Tooltip title={messages.deleteDisabledTooltip}>

@@ -56,3 +56,21 @@ export async function associateMfaEnrollment(request: MfaAssociationRequest): Pr
         throw new Error(`Failed to associate MFA enrollment: ${apiResult.status}`)
     }
 }
+
+export async function setDefaultMfaDevice(mfaDeviceId: string): Promise<void> {
+    const baseUrl = await getAccountApiBaseUrl()
+    const apiResult = await fetch(`${baseUrl}/api/account/mfa/device`, {
+        method: "PUT",
+        mode: "cors",
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${window.sessionStorage.getItem("ACCESS_TOKEN")}`,
+        },
+        body: JSON.stringify({ mfaDeviceId }),
+        credentials: 'include'
+    })
+
+    if (!apiResult.ok) {
+        throw new Error(`Failed to set default MFA device: ${apiResult.status}`)
+    }
+}

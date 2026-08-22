@@ -25,6 +25,10 @@ type mfaAssociationRequest struct {
 	Code   string `json:"code"`
 }
 
+type mfaSetDefaultRequest struct {
+	MfaDeviceId string `json:"mfaDeviceId"`
+}
+
 func RegisterMfaEndpoints(
 	r *gin.Engine,
 	MfaRepository mfa.MfaRepository,
@@ -74,6 +78,24 @@ func RegisterMfaEndpoints(
 
 		ctx := contextFactoryConverter.CreateContextFromGin(c)
 		if err := MfaRepository.Associate(ctx, request.Ticket, request.Code); err != nil {
+			logger.LogErrorFor(err)
+			c.JSON(http.StatusInternalServerError, nil)
+			return
+		}
+
+		c.JSON(http.StatusNoContent, nil)
+	})
+
+	r.PUT(MFA_ENDPOINT_PREFIX+"/device", func(c *gin.Context) {
+		var request mfaSetDefaultRequest
+		if err := c.ShouldBindJSON(&request); err != nil {
+			logger.LogErrorfFor("Error binding JSON: %v\n", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		ctx := contextFactoryConverter.CreateContextFromGin(c)
+		if err := MfaRepository.SetDefault(ctx, request.MfaDeviceId); err != nil {
 			logger.LogErrorFor(err)
 			c.JSON(http.StatusInternalServerError, nil)
 			return

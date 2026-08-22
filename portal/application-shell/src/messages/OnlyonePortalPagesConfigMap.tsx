@@ -371,6 +371,7 @@ export class OnlyonePortalPagesConfigMap {
                 deleteActionLabel: getMessageFor(bundle, "mfaDevices.delete.label"),
                 deleteDisabledTooltip: getMessageFor(bundle, "mfaDevices.delete.disabledTooltip"),
                 addDeviceLabel: getMessageFor(bundle, "mfaDevices.addDevice.label"),
+                setDefaultActionLabel: getMessageFor(bundle, "mfaDevices.table.default.setAction"),
             },
             enrollDialog: {
                 title: getMessageFor(bundle, "enrollDialog.title"),
