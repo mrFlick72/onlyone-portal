@@ -22,3 +22,24 @@ form:
     placeholder: "Telefono"
   save:
     value: "Salva modifiche"
+
+mfaDevices:
+  title: "Dispositivi MFA"
+  emptyState:
+    label: "Non hai ancora registrato nessun dispositivo MFA."
+  table:
+    method:
+      label: "Metodo"
+    channel:
+      label: "Destinazione"
+    default:
+      label: "Predefinito"
+      chip: "Predefinito"
+    actions:
+      label: "Azioni"
+  method:
+    email: "Email"
+    sms: "SMS"
+  delete:
+    label: "Elimina"
+    disabledTooltip: "La rimozione di un dispositivo non è ancora supportata."

@@ -357,6 +357,19 @@ export class OnlyonePortalPagesConfigMap {
                 phoneLabel: getMessageFor(bundle, "form.phone.value"),
                 saveButtonLabel: getMessageFor(bundle, "form.save.value"),
 
+            },
+            mfaDevices: {
+                title: getMessageFor(bundle, "mfaDevices.title"),
+                emptyStateLabel: getMessageFor(bundle, "mfaDevices.emptyState.label"),
+                methodColumnLabel: getMessageFor(bundle, "mfaDevices.table.method.label"),
+                channelColumnLabel: getMessageFor(bundle, "mfaDevices.table.channel.label"),
+                defaultColumnLabel: getMessageFor(bundle, "mfaDevices.table.default.label"),
+                actionsColumnLabel: getMessageFor(bundle, "mfaDevices.table.actions.label"),
+                defaultChipLabel: getMessageFor(bundle, "mfaDevices.table.default.chip"),
+                methodEmailLabel: getMessageFor(bundle, "mfaDevices.method.email"),
+                methodSmsLabel: getMessageFor(bundle, "mfaDevices.method.sms"),
+                deleteActionLabel: getMessageFor(bundle, "mfaDevices.delete.label"),
+                deleteDisabledTooltip: getMessageFor(bundle, "mfaDevices.delete.disabledTooltip"),
             }
         }
     }

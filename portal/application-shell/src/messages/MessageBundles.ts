@@ -258,4 +258,19 @@ export type AccountPageMessageBundle = {
         phoneLabel: string;
         saveButtonLabel: string;
     };
+    mfaDevices: MfaDevicesSectionMessageBundle;
+};
+
+export type MfaDevicesSectionMessageBundle = {
+    title: string;
+    emptyStateLabel: string;
+    methodColumnLabel: string;
+    channelColumnLabel: string;
+    defaultColumnLabel: string;
+    actionsColumnLabel: string;
+    defaultChipLabel: string;
+    methodEmailLabel: string;
+    methodSmsLabel: string;
+    deleteActionLabel: string;
+    deleteDisabledTooltip: string;
 };

@@ -12,6 +12,7 @@ import Menu from "../components/menu/Menu";
 import FormInputTextField from '../components/form/FormInputTextField';
 import FormDatePicker, { FormDateFormatPattern } from '../components/form/FormDatePicker';
 import Account from './domain/Account';
+import MfaDevicesSection from './MfaDevicesSection';
 
 const AccountDetailsPage = () => {
     const configMap = new OnlyonePortalPagesConfigMap();
@@ -143,6 +144,9 @@ const AccountDetailsPage = () => {
                     labelPrefix={<CheckIcon fontSize="large" />}
                     label={configMap.account(messageRegistry).form.saveButtonLabel} />
 
+                <Separator />
+
+                <MfaDevicesSection messages={configMap.account(messageRegistry).mfaDevices} />
 
             </Container>
         </Paper>

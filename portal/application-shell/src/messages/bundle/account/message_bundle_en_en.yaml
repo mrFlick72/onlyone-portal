@@ -22,3 +22,24 @@ form:
     placeholder: "Phone"
   save:
     value: "Save changes"
+
+mfaDevices:
+  title: "MFA Devices"
+  emptyState:
+    label: "You haven't enrolled any MFA devices yet."
+  table:
+    method:
+      label: "Method"
+    channel:
+      label: "Destination"
+    default:
+      label: "Default"
+      chip: "Default"
+    actions:
+      label: "Actions"
+  method:
+    email: "Email"
+    sms: "SMS"
+  delete:
+    label: "Delete"
+    disabledTooltip: "Removing a device isn't supported yet."
