@@ -370,6 +370,21 @@ export class OnlyonePortalPagesConfigMap {
                 methodSmsLabel: getMessageFor(bundle, "mfaDevices.method.sms"),
                 deleteActionLabel: getMessageFor(bundle, "mfaDevices.delete.label"),
                 deleteDisabledTooltip: getMessageFor(bundle, "mfaDevices.delete.disabledTooltip"),
+                addDeviceLabel: getMessageFor(bundle, "mfaDevices.addDevice.label"),
+            },
+            enrollDialog: {
+                title: getMessageFor(bundle, "enrollDialog.title"),
+                methodStepTitle: getMessageFor(bundle, "enrollDialog.step.method.title"),
+                emailMethodLabel: getMessageFor(bundle, "enrollDialog.step.method.emailLabel"),
+                smsMethodLabel: getMessageFor(bundle, "enrollDialog.step.method.smsLabel"),
+                noMethodsAvailableLabel: getMessageFor(bundle, "enrollDialog.step.method.noMethodsAvailable"),
+                nextButtonLabel: getMessageFor(bundle, "enrollDialog.step.method.nextButtonLabel"),
+                codeStepTitle: getMessageFor(bundle, "enrollDialog.step.code.title"),
+                codeStepDescription: getMessageFor(bundle, "enrollDialog.step.code.description"),
+                codeInputLabel: getMessageFor(bundle, "enrollDialog.step.code.inputLabel"),
+                confirmButtonLabel: getMessageFor(bundle, "enrollDialog.step.code.confirmButtonLabel"),
+                cancelButtonLabel: getMessageFor(bundle, "enrollDialog.cancelButtonLabel"),
+                genericErrorMessage: getMessageFor(bundle, "enrollDialog.genericErrorMessage"),
             }
         }
     }

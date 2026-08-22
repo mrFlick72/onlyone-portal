@@ -1,6 +1,7 @@
 package web
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -32,6 +33,16 @@ func (m *mockMfaRepository) FindAll(ctx context.Context) ([]mfa.MfaDevice, error
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]mfa.MfaDevice), args.Error(1)
+}
+
+func (m *mockMfaRepository) StartEnrollment(ctx context.Context, mfaMethod string, mfaChannel string) (string, error) {
+	args := m.Called(ctx, mfaMethod, mfaChannel)
+	return args.String(0), args.Error(1)
+}
+
+func (m *mockMfaRepository) Associate(ctx context.Context, ticket string, code string) error {
+	args := m.Called(ctx, ticket, code)
+	return args.Error(0)
 }
 
 func TestFindAllMfaDevices(t *testing.T) {
@@ -74,6 +85,59 @@ func TestFindAllMfaDevicesWhenRepositoryFails(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodGet, "/api/account/mfa", nil)
+	setupMfaRouter(repo).ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusInternalServerError, w.Code)
+	repo.AssertExpectations(t)
+}
+
+func TestStartMfaEnrollment(t *testing.T) {
+	repo := &mockMfaRepository{}
+	repo.On("StartEnrollment", mock.Anything, "EMAIL_MFA_METHOD", "jane@example.com").Return("a-ticket", nil)
+
+	w := httptest.NewRecorder()
+	body := bytes.NewBufferString(`{"mfaMethod":"EMAIL_MFA_METHOD","mfaChannel":"jane@example.com"}`)
+	req, _ := http.NewRequest(http.MethodPost, "/api/account/mfa/enrollment", body)
+	setupMfaRouter(repo).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+	assert.JSONEq(t, `{"ticket":"a-ticket"}`, w.Body.String())
+	repo.AssertExpectations(t)
+}
+
+func TestStartMfaEnrollmentWhenRepositoryFails(t *testing.T) {
+	repo := &mockMfaRepository{}
+	repo.On("StartEnrollment", mock.Anything, "EMAIL_MFA_METHOD", "jane@example.com").Return("", assert.AnError)
+
+	w := httptest.NewRecorder()
+	body := bytes.NewBufferString(`{"mfaMethod":"EMAIL_MFA_METHOD","mfaChannel":"jane@example.com"}`)
+	req, _ := http.NewRequest(http.MethodPost, "/api/account/mfa/enrollment", body)
+	setupMfaRouter(repo).ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusInternalServerError, w.Code)
+	repo.AssertExpectations(t)
+}
+
+func TestAssociateMfaEnrollment(t *testing.T) {
+	repo := &mockMfaRepository{}
+	repo.On("Associate", mock.Anything, "a-ticket", "123456").Return(nil)
+
+	w := httptest.NewRecorder()
+	body := bytes.NewBufferString(`{"ticket":"a-ticket","code":"123456"}`)
+	req, _ := http.NewRequest(http.MethodPost, "/api/account/mfa/associate", body)
+	setupMfaRouter(repo).ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	repo.AssertExpectations(t)
+}
+
+func TestAssociateMfaEnrollmentWhenRepositoryFails(t *testing.T) {
+	repo := &mockMfaRepository{}
+	repo.On("Associate", mock.Anything, "a-ticket", "000000").Return(assert.AnError)
+
+	w := httptest.NewRecorder()
+	body := bytes.NewBufferString(`{"ticket":"a-ticket","code":"000000"}`)
+	req, _ := http.NewRequest(http.MethodPost, "/api/account/mfa/associate", body)
 	setupMfaRouter(repo).ServeHTTP(w, req)
 
 	require.Equal(t, http.StatusInternalServerError, w.Code)

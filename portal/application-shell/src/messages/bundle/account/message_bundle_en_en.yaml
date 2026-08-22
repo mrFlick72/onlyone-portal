@@ -43,3 +43,22 @@ mfaDevices:
   delete:
     label: "Delete"
     disabledTooltip: "Removing a device isn't supported yet."
+  addDevice:
+    label: "Add Device"
+
+enrollDialog:
+  title: "Add MFA Device"
+  step:
+    method:
+      title: "Choose a method"
+      emailLabel: "Email"
+      smsLabel: "SMS"
+      noMethodsAvailable: "You've already enrolled every available method."
+      nextButtonLabel: "Send code"
+    code:
+      title: "Enter the code"
+      description: "Enter the code we sent you."
+      inputLabel: "Code"
+      confirmButtonLabel: "Confirm"
+  cancelButtonLabel: "Cancel"
+  genericErrorMessage: "Something went wrong. Check the code, or cancel and start again."

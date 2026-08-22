@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import {
+    Button,
     Chip,
     IconButton,
     Paper,
@@ -12,24 +13,31 @@ import {
     Tooltip,
     Typography
 } from "@mui/material";
-import { Delete } from "@mui/icons-material";
+import { Add, Delete } from "@mui/icons-material";
 import { getMfaDevices } from "./domain/repository/MfaRepository";
 import MfaDevice from "./domain/Mfa";
-import { MfaDevicesSectionMessageBundle } from "../messages/MessageBundles";
+import { AccountPageMessageBundle } from "../messages/MessageBundles";
+import EnrollMfaDeviceDialog from "./EnrollMfaDeviceDialog";
 
 type MfaDevicesSectionProps = {
-    messages: MfaDevicesSectionMessageBundle
+    email: string;
+    phone: string;
+    messages: AccountPageMessageBundle["mfaDevices"];
+    enrollDialogMessages: AccountPageMessageBundle["enrollDialog"];
 }
 
-const methodLabelFor = (mfaMethod: MfaDevice["mfaMethod"], messages: MfaDevicesSectionMessageBundle) =>
+const methodLabelFor = (mfaMethod: MfaDevice["mfaMethod"], messages: MfaDevicesSectionProps["messages"]) =>
     mfaMethod === "EMAIL_MFA_METHOD" ? messages.methodEmailLabel : messages.methodSmsLabel
 
-const MfaDevicesSection: React.FC<MfaDevicesSectionProps> = ({ messages }) => {
+const MfaDevicesSection: React.FC<MfaDevicesSectionProps> = ({ email, phone, messages, enrollDialogMessages }) => {
     const [devices, setDevices] = useState<MfaDevice[]>([])
+    const [dialogOpen, setDialogOpen] = useState(false)
 
-    useEffect(() => {
+    const loadDevices = useCallback(() => {
         getMfaDevices().then(setDevices)
     }, [])
+
+    useEffect(() => { loadDevices() }, [loadDevices])
 
     return <>
         <Typography variant="h6">{messages.title}</Typography>
@@ -69,6 +77,22 @@ const MfaDevicesSection: React.FC<MfaDevicesSectionProps> = ({ messages }) => {
                 </Table>
             </TableContainer>
         }
+
+        <Button variant="contained" startIcon={<Add />} onClick={() => setDialogOpen(true)} sx={{ marginTop: 2 }}>
+            {messages.addDeviceLabel}
+        </Button>
+
+        <EnrollMfaDeviceDialog
+            open={dialogOpen}
+            onClose={() => setDialogOpen(false)}
+            onEnrolled={() => {
+                setDialogOpen(false)
+                loadDevices()
+            }}
+            email={email}
+            phone={phone}
+            existingDevices={devices}
+            messages={enrollDialogMessages} />
     </>
 }
 

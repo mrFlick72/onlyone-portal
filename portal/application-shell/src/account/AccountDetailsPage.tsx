@@ -146,7 +146,11 @@ const AccountDetailsPage = () => {
 
                 <Separator />
 
-                <MfaDevicesSection messages={configMap.account(messageRegistry).mfaDevices} />
+                <MfaDevicesSection
+                    email={account.email || ""}
+                    phone={account.phone || ""}
+                    messages={configMap.account(messageRegistry).mfaDevices}
+                    enrollDialogMessages={configMap.account(messageRegistry).enrollDialog} />
 
             </Container>
         </Paper>
