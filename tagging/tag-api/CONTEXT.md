@@ -1,6 +1,6 @@
 # Tagging
 
-Owns the per-user catalog of tags used to categorize budget records. Each user has their own private set of tags, and each tag is scoped to the single domain it applies to (`expense` today; `revenue` catalog supported, with revenue record tagging forthcoming).
+Owns the per-user catalog of tags used to categorize budget records. Each user has their own private set of tags, and each tag is scoped to the single domain it applies to (`expense` and `revenue` both live — see [Budget Expense](../../budget/budget-api/CONTEXT.md)).
 
 ## Language
 
