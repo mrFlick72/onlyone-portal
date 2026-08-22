@@ -9,8 +9,11 @@ This is a polyglot monorepo of independent services; domain documentation is spl
 - [Budget Expense](./budget/budget-api/CONTEXT.md) — tracks a user's budget expenses and revenue, each optionally categorized by tags
 - [Plan](./plan/plan-api/CONTEXT.md) — manages a user's titled, dated Plans and their Todos
 - [Account](./account/account-api/CONTEXT.md) — proxies the authenticated user's profile to/from the vauthenticator IDP
+- [Analytics](./budget/analytic-api/CONTEXT.md) — serves budget-expense analytics from a Postgres Projection kept current by consuming Budget Expense's Kafka events
+- [Application Shell](./portal/application-shell/CONTEXT.md) — the frontend SPA consuming every backend context; documents where its own vocabulary drifts from the backend's
 
 ## Relationships
 
 - **golang-web-framework → consumers**: `budget-api`, `tag-api`, `account-api`, and `plan-api` each pull this module in via a local path `replace` directive (no version pinning), so any breaking change here breaks all four immediately.
 - **Tagging → Budget Expense**: Both Budget Expense *and* Budget Revenue records carry tags — expense tags from the `expense` Scope, revenue tags from the `revenue` Scope. Each record stores tag **keys** only and resolves each key to its current value from Tagging on read, via that aggregate's scoped query. Scoped reads are strict, so an aggregate sees only its own scope's tags plus the `UNKNOWN` sentinel. The `UNKNOWN` Sentinel Tag is a convention duplicated as a literal string in both services — there is no shared code enforcing it stays in sync (budget-api keeps a single `tags.UnknownSentinel` used by both aggregates). Tags are maintained per scope through the frontend tag-management UI (Expense / Revenue tabs). Revenue tagging covers storage, resolution and display only — revenue emits no events and has no by-tag totals, so Tagging does not yet flow into any revenue analytics.
+- **Budget Expense → Analytics**: `budget-api` publishes `CREATE`/`UPDATE`/`DELETE` expense events to the Kafka topic `budget-api.expense`; Analytics consumes them to build and maintain its own Projection, decoupled from Budget Expense's read path except for the explicit Reindex recovery action, which calls `budget-api` directly over REST.
