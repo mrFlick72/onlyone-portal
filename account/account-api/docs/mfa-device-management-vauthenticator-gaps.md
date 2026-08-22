@@ -32,6 +32,14 @@ The second part is an admin/ops action against vauthenticator's client-app regis
 - Describes `mfaChannel` as "your mfa channel: mail sms and so on", implying a channel-type label. The code proves it's actually the destination address itself (an email address or phone number) that the code is sent to — confirmed via `MfaFixture` and `MfaMethodsEnrollmentTest` (e.g. `mfaChannel = email`).
 - Says SMS support is "soon"; it's fully wired today (`SnsSmsSenderService` via SNS, configured in `MfaConfig`).
 
+## 7. List cannot distinguish real devices from abandoned enrollment attempts ([vauthenticator#343](https://github.com/mrFlick72/vauthenticator/issues/343))
+
+`POST /api/mfa/enrollment` persists an `MfaAccountMethod` row immediately, with `associated=false`, before the caller ever submits a code — this is not just the short-lived ticket, it's a permanent row in the same table real devices live in. If the caller never completes `POST /api/mfa/associate` (cancels, walks away, the ticket expires), that row is never cleaned up — same root cause as #338, no delete anywhere.
+
+`GET /api/mfa/enrollment` (`MfaMethodsEnrollment.getEnrollmentsFor`) calls `findAll(userName)` with no filter on `associated`, and the response DTO (`MfaDeviceRepresentation`) doesn't carry an `associated` field at all — it's dropped between the domain type and the wire response. So an abandoned, never-associated enrollment attempt is indistinguishable from a real device once it comes back from the list endpoint, and account-api has no information available to filter it out itself. This means **starting** enrollment, not just failing to finish it, is what creates the permanent, unfilterable row — a cancel button on our side changes nothing about this.
+
+Related, same method: `getEnrollmentsFor` returns an empty list whenever `getDefaultDevice(userName)` is null — i.e. before any device has ever been explicitly set default. Since the REST association endpoint never auto-sets a default (#342), a user's first successfully-associated device is invisible in the list until something separately calls `PUT /api/mfa/device` for it. For us this means tickets #39 (enroll) and #40 (set-default) should not go to production independently of each other — deploying #39 alone would make a first enrollment look like it silently failed.
+
 ## Design notes for our own code (not vauthenticator's problem)
 
 - Since `GET /api/mfa/enrollment` returns `userName`/`mfaChannel` **masked** (`getEnrollmentsFor(userName, withMaskedSensibleInformation = true)`), any "is this method already enrolled" check in account-api or the frontend must key off `mfaMethod` (and/or `mfaDeviceId`) — comparing the masked channel string against `Account.email`/`Account.phone` will not match.
