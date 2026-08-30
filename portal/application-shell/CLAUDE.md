@@ -74,7 +74,7 @@ Vite builds **separate bundles** per page, each with its own HTML file. Entries 
 
 Each entry point independently calls `authenticationChecker()` for token auto-refresh and mounts its own React tree into `<div id="app">`. Navigation between pages is full page navigation (HTML links), not client-side routing.
 
-The three `budget*` entries all share `budget/index.tsx`, which mounts `SpentBudgetApp`. That component uses `createBrowserRouter` (react-router v7) to render the right sub-page (`BudgetExpensePage`, `BudgetRevenuePage`, `SearchTagsPage`) based on the URL path of the HTML that loaded it (`/budget/expense/index`, `/budget/revenue/index`, `/budget/search-tags`).
+The three `budget*` entries all share `budget/index.tsx`, which mounts `SpentBudgetApp`. That component uses `createBrowserRouter` (react-router v7) to render the right sub-page (`BudgetExpensePage`, `BudgetRevenuePage`, `SearchTagsPage`) based on the URL path of the HTML that loaded it (`/budget/expense/index`, `/budget/revenue/index`, `/budget/search-tags/index`).
 
 The two `plan*` entries share `plan/index.tsx`, which mounts `PlanApp`. `PlanApp` routes `/plan/index` to the plan list and `/plan/detail?id=<planId>` to the todo detail page.
 
