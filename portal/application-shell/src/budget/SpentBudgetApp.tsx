@@ -15,9 +15,9 @@ const SpentBudgetApp: React.FC = () => {
     }, []);
 
     const router = useMemo(() => createBrowserRouter([
-        { path: "/budget/expense/index",  element: <BudgetExpensePage messageRegistry={messageRegistry} /> },
-        { path: "/budget/revenue/index",  element: <BudgetRevenuePage messageRegistry={messageRegistry} /> },
-        { path: "/budget/search-tags",    element: <SearchTagsPage messageRegistry={messageRegistry} /> },
+        { path: "/budget/expense/index",     element: <BudgetExpensePage messageRegistry={messageRegistry} /> },
+        { path: "/budget/revenue/index",     element: <BudgetRevenuePage messageRegistry={messageRegistry} /> },
+        { path: "/budget/search-tags/index", element: <SearchTagsPage messageRegistry={messageRegistry} /> },
     ]), [messageRegistry]);
 
     return <RouterProvider router={router} />;

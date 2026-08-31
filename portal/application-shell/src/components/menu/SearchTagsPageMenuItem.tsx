@@ -12,7 +12,7 @@ type SearchTagsPageMenuItemProps = MenuItemProps & {
 }
 
 const SearchTagsPageMenuItem: React.FC<SearchTagsPageMenuItemProps> = ({ text, scope }) => {
-    const link = scope ? `/budget/search-tags?scope=${scope}` : "/budget/search-tags"
+    const link = scope ? `/budget/search-tags/index?scope=${scope}` : "/budget/search-tags/index"
     return <MenuItem
         icon={<LocalOffer />}
         link={link}
