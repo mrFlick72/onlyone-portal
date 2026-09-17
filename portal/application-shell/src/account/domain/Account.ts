@@ -3,7 +3,8 @@ type Account = {
     lastName: string,
     phone: string,
     birthDate: string,
-    email: string
+    email: string,
+    locale: string
 }
 
 export default Account

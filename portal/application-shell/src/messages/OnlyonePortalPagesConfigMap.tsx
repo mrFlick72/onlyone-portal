@@ -355,6 +355,11 @@ export class OnlyonePortalPagesConfigMap {
                 birthDateLabel: getMessageFor(bundle, "form.birthDate.label"),
                 emailLabel: getMessageFor(bundle, "form.email.value"),
                 phoneLabel: getMessageFor(bundle, "form.phone.value"),
+                localeLabel: getMessageFor(bundle, "form.locale.label"),
+                localeOptions: [
+                    { value: "it", label: getMessageFor(bundle, "form.locale.options.it") },
+                    { value: "en", label: getMessageFor(bundle, "form.locale.options.en") },
+                ],
                 saveButtonLabel: getMessageFor(bundle, "form.save.value"),
 
             },

@@ -7,10 +7,12 @@ import Separator from "../components/form/Separator";
 import FormButton from "../components/form/FormButton";
 import { OnlyonePortalPagesConfigMap } from "../messages/OnlyonePortalPagesConfigMap";
 import { getAllMessageRegistry, MessageBundle } from "../messages/MessageRepository";
+import { setCachedLocale } from "../messages/LocalePreference";
 import { isAuthenticated } from "../auth/Authenticator";
 import Menu from "../components/menu/Menu";
 import FormInputTextField from '../components/form/FormInputTextField';
 import FormDatePicker, { FormDateFormatPattern } from '../components/form/FormDatePicker';
+import FormSelect, { SelectOption } from '../components/form/FormSelect';
 import Account from './domain/Account';
 import MfaDevicesSection from './MfaDevicesSection';
 
@@ -22,7 +24,8 @@ const AccountDetailsPage = () => {
             firstName: "",
             lastName: "",
             phone: "",
-            birthDate: ""
+            birthDate: "",
+            locale: ""
         }
     )
 
@@ -37,7 +40,8 @@ const AccountDetailsPage = () => {
                     firstName: data.firstName,
                     lastName: data.lastName,
                     phone: data.phone,
-                    birthDate: data.birthDate
+                    birthDate: data.birthDate,
+                    locale: data.locale
                 }
             )
         })
@@ -116,6 +120,19 @@ const AccountDetailsPage = () => {
                     }}
                     value={account.phone || ""} />
 
+                <FormSelect id="locale"
+                    label={configMap.account(messageRegistry).form.localeLabel}
+                    multi={false}
+                    options={configMap.account(messageRegistry).form.localeOptions}
+                    value={configMap.account(messageRegistry).form.localeOptions.find(option => option.value === account.locale)}
+                    onChangeHandler={(selectedOption: SelectOption | null) => {
+                        setAccount((account: Account) => {
+                            let copiedAccount = Object.assign({}, account)
+                            copiedAccount.locale = selectedOption?.value ?? ""
+                            return copiedAccount
+                        })
+                    }} />
+
                 <FormInputTextField id="email"
                     label={configMap.account(messageRegistry).form.emailLabel}
                     required={true}
@@ -138,7 +155,12 @@ const AccountDetailsPage = () => {
                             "firstName": account.firstName,
                             "lastName": account.lastName,
                             "phone": account.phone,
-                            "birthDate": account.birthDate
+                            "birthDate": account.birthDate,
+                            "locale": account.locale
+                        }).then(() => {
+                            if (account.locale) {
+                                setCachedLocale(account.locale)
+                            }
                         })
                     }}
                     labelPrefix={<CheckIcon fontSize="large" />}

@@ -1,4 +1,5 @@
 import { TodoStatus } from "../plan/domain/Plan";
+import { SelectOption } from "../components/form/FormSelect";
 
 /**
  * Dedicated types for every i18n label object passed around the app.
@@ -256,6 +257,8 @@ export type AccountPageMessageBundle = {
         birthDateLabel: string;
         emailLabel: string;
         phoneLabel: string;
+        localeLabel: string;
+        localeOptions: SelectOption[];
         saveButtonLabel: string;
     };
     mfaDevices: MfaDevicesSectionMessageBundle;
