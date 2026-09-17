@@ -25,6 +25,7 @@ type vauthenticatorUserInfoResponse struct {
 	Birthdate  string `json:"birthdate"`
 	Email      string `json:"email"`
 	Phone      string `json:"phone_number"`
+	Locale     string `json:"locale"`
 }
 
 func (r *VauthenticatorAccountRepository) FindAnAccount(ctx context.Context) (*account.Account, error) {
@@ -66,6 +67,7 @@ func (r *VauthenticatorAccountRepository) FindAnAccount(ctx context.Context) (*a
 		BirthDate: userInfo.Birthdate,
 		Email:     userInfo.Email,
 		Phone:     userInfo.Phone,
+		Locale:    userInfo.Locale,
 	}, nil
 }
 

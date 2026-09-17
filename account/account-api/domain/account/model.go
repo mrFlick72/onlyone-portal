@@ -6,4 +6,5 @@ type Account struct {
 	BirthDate string `json:"birthDate"`
 	Email     string `json:"email"`
 	Phone     string `json:"phone"`
+	Locale    string `json:"locale"`
 }

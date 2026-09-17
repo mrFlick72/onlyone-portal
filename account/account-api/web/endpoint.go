@@ -37,6 +37,7 @@ func RegisterEndpoints(
 			BirthDate: formattedDate,
 			Email:     userAccount.Email,
 			Phone:     userAccount.Phone,
+			Locale:    userAccount.Locale,
 		})
 
 	})
@@ -58,6 +59,7 @@ func RegisterEndpoints(
 			BirthDate: formattedIsoDate,
 			Email:     userAccount.Email,
 			Phone:     userAccount.Phone,
+			Locale:    userAccount.Locale,
 		}
 		AccountRepository.Save(ctx, userAccountToBeStored)
 		c.JSON(http.StatusNoContent, nil)
