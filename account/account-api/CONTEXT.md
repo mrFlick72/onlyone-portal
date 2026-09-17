@@ -5,8 +5,12 @@ Proxies the authenticated user's profile to and from the vauthenticator IDP; acc
 ## Language
 
 **Account**:
-The user's profile as held by vauthenticator (first name, last name, birth date, email, phone). Never persisted or cached locally — every read/update round-trips to the IDP.
+The user's profile as held by vauthenticator (first name, last name, birth date, email, phone, locale). Never persisted or cached locally — every read/update round-trips to the IDP.
 _Avoid_: User, Profile
+
+**Locale**:
+The account's preferred UI language, stored and returned by vauthenticator as a BCP-47 language tag via the standard OIDC `locale` claim (e.g. `it`, `en`). account-api passes it through unvalidated, exactly like every other Account field — it does not constrain which values are accepted. The Application Shell's edit UI is what narrows this to the languages it actually ships; see that context's `CONTEXT.md` for the drift.
+_Avoid_: Language (reserve for describing the Application Shell's narrower, UI-facing concept if it needs its own term)
 
 ### MFA
 
