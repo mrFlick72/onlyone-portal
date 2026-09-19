@@ -1,3 +1,5 @@
+import { resolveBundleLocale } from "./LocalePreference";
+
 export type MessageBundle = {
     [name: string]: string
 }
@@ -38,11 +40,11 @@ export function flattenMessages(nested: NestedMessages, prefix = ""): MessageBun
 /**
  * Loads every message bundle for the given language from `./bundle` and returns
  * a single flat `MessageBundle` keyed by dot-separated paths. The bundles are
- * merged together, so callers receive one registry covering every page. The
- * language is fixed to `en_en` for now but can be overridden once more locales
- * are wired up.
+ * merged together, so callers receive one registry covering every page. When no
+ * language is passed, it resolves from the account's locale cached at login (see
+ * `LocalePreference.ts`), falling back to browser detection and finally `it_it`.
  */
-export function getAllMessageRegistry(language: string = "it_it"): MessageBundle {
+export function getAllMessageRegistry(language: string = resolveBundleLocale()): MessageBundle {
     const suffix = `message_bundle_${language}.yaml`;
     return Object.entries(bundleFiles)
         .filter(([path]) => path.endsWith(suffix))

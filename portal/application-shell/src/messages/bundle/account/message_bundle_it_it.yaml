@@ -20,6 +20,11 @@ form:
   phone:
     label: "Telefono:"
     placeholder: "Telefono"
+  locale:
+    label: "Lingua:"
+    options:
+      it: "Italiano"
+      en: "English"
   save:
     value: "Salva modifiche"
 
