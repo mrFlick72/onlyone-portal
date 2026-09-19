@@ -20,6 +20,10 @@ export function setCachedLocale(locale: string): void {
     }
 }
 
+export function toBundleLocale(locale: string): string {
+    return `${locale}_${locale}`;
+}
+
 function detectBrowserLocale(): string | null {
     const languages = (typeof navigator !== "undefined" && navigator.languages) || [];
     for (const language of languages) {
@@ -39,12 +43,12 @@ function detectBrowserLocale(): string | null {
 export function resolveBundleLocale(): string {
     const cached = getCachedLocale();
     if (cached && SUPPORTED_LOCALES.includes(cached)) {
-        return `${cached}_${cached}`;
+        return toBundleLocale(cached);
     }
 
     const detected = detectBrowserLocale();
     if (detected) {
-        return `${detected}_${detected}`;
+        return toBundleLocale(detected);
     }
 
     return DEFAULT_BUNDLE_LOCALE;

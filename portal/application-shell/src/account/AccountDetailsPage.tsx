@@ -7,7 +7,7 @@ import Separator from "../components/form/Separator";
 import FormButton from "../components/form/FormButton";
 import { OnlyonePortalPagesConfigMap } from "../messages/OnlyonePortalPagesConfigMap";
 import { getAllMessageRegistry, MessageBundle } from "../messages/MessageRepository";
-import { setCachedLocale } from "../messages/LocalePreference";
+import { setCachedLocale, toBundleLocale } from "../messages/LocalePreference";
 import { isAuthenticated } from "../auth/Authenticator";
 import Menu from "../components/menu/Menu";
 import FormInputTextField from '../components/form/FormInputTextField';
@@ -160,6 +160,7 @@ const AccountDetailsPage = () => {
                         }).then(() => {
                             if (account.locale) {
                                 setCachedLocale(account.locale)
+                                setMessageRegistry(getAllMessageRegistry(toBundleLocale(account.locale)))
                             }
                         })
                     }}

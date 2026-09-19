@@ -20,7 +20,7 @@ Resolve the language once per login, not once per page:
 
 - `auth/Callback.tsx` — which every login already flows through, after token exchange and before the redirect into the app — fetches the account from account-api once and writes the resolved `locale` into `localStorage`.
 - `getAllMessageRegistry()` reads that cached value instead of the hardcoded `it_it` default. No other page calls account-api for this purpose.
-- `AccountDetailsPage` write-throughs the cache immediately on save, so a change is visible on the next page load without waiting for another login.
+- `AccountDetailsPage` write-throughs the cache immediately on save, and also recomputes its own message registry with the just-saved locale in the same handler — so the change is visible on the page that made it, not just on the next page load or another login.
 - If the cache is cold (cleared storage, or a page reached without a fresh login in this browser) **and** vauthenticator has no `locale` for the account (a new or legacy user), the app falls back to a browser-detected language: walk `navigator.languages` in order, match each entry's primary subtag against the supported set (`it`, `en`), and fall back further to the existing hardcoded `it_it` if nothing matches. This detected value is never written back to vauthenticator — it's recomputed on demand, not treated as a real user choice.
 
 ## Considered Options
