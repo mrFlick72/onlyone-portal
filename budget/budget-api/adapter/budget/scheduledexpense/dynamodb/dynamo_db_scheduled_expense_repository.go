@@ -50,6 +50,20 @@ func (repository *DynamoDbScheduledExpenseRepository) Save(ctx context.Context, 
 		se.Id = repository.ScheduledExpenseIdProvider.GenerateIdFor(se)
 	}
 
+	// UserName is the partition key — it must come from the authenticated
+	// caller, never trusted from the struct (see revenue's Save for the same
+	// enforcement, and budget-api/CLAUDE.md "Ownership enforced in two
+	// layers"). CreateScheduledExpense.Execute already sets it correctly
+	// before calling Save; this re-derivation is the backstop for callers
+	// that don't (e.g. an Update action built from a representation that
+	// never carries UserName on the wire).
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		repository.logger.LogErrorfFor("Error getting current user: %v", err)
+		return err
+	}
+	se.UserName = *user.UserName
+
 	tagKeys := make([]string, 0, len(se.Tags))
 	for _, tag := range se.Tags {
 		tagKeys = append(tagKeys, tag.Key)
@@ -75,7 +89,7 @@ func (repository *DynamoDbScheduledExpenseRepository) Save(ctx context.Context, 
 		item["last_evaluated_date"] = &types.AttributeValueMemberS{Value: se.LastEvaluatedDate.GetIsoFormattedDate()}
 	}
 
-	_, err := repository.Client.PutItem(ctx, &dynamodb.PutItemInput{
+	_, err = repository.Client.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String(repository.TableName),
 		Item:      item,
 	})

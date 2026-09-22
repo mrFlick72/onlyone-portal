@@ -170,6 +170,41 @@ func TestSaveWithoutOptionalFieldsLeavesThemNil(t *testing.T) {
 	assert.Equal(t, true, found.LastEvaluatedDate == nil)
 }
 
+// TestSaveDerivesUserNameFromContextNotFromTheStruct guards the ownership
+// boundary Save enforces: the partition key must come from the authenticated
+// caller (ctx), never from a caller-supplied struct field, the same
+// enforcement revenue's Save has (see budget-api/CLAUDE.md "Ownership
+// enforced in two layers — keep both"). Without this, a struct built from an
+// unpopulated representation (UserName == "") would write into a phantom
+// partition instead of failing or scoping correctly.
+func TestSaveDerivesUserNameFromContextNotFromTheStruct(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+	userCtx := testutils.NewStubbedContextWith("user-ctx-wins")
+
+	input := scheduledexpense.ScheduledExpense{
+		UserName:    "SOMEONE_ELSE",
+		Description: "Rent",
+		Amount:      testutils.SafeMoneyFor("1.00"),
+		Day:         1,
+		Status:      scheduledexpense.StatusActive,
+	}
+	idProviderMock.On("GenerateIdFor", &input).Return("CTX_ID")
+
+	if err := repo.Save(userCtx, &input); err != nil {
+		t.Fatalf("Expected nil error on save, got %v", err)
+	}
+
+	assert.Equal(t, "user-ctx-wins", input.UserName)
+
+	result, err := repo.FindAll(userCtx)
+	if err != nil {
+		t.Fatalf("Error finding scheduled expenses: %v", err)
+	}
+	assert.Equal(t, 1, len(result))
+	assert.Equal(t, "user-ctx-wins", result[0].UserName)
+}
+
 func TestFindAllOnlyReturnsTheCurrentUsersScheduledExpenses(t *testing.T) {
 	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
 	repo := newScheduledExpenseRepository(idProviderMock)

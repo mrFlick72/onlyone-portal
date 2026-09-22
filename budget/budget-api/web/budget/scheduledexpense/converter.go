@@ -1,6 +1,8 @@
 package scheduledexpense
 
 import (
+	"errors"
+
 	domainscheduledexpense "github.com/mrflick72/budget/budget-api/domain/budget/scheduledexpense"
 	"github.com/mrflick72/budget/budget-api/domain/money"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
@@ -9,6 +11,16 @@ import (
 )
 
 func ScheduledExpenseRepresentationToDomainModel(rep ScheduledExpenseRepresentation) (*domainscheduledexpense.ScheduledExpense, error) {
+	if rep.Description == "" {
+		return nil, errors.New("description is required")
+	}
+	if rep.Day < 1 || rep.Day > 31 {
+		return nil, errors.New("day must be between 1 and 31")
+	}
+	if rep.Month != nil && (*rep.Month < 1 || *rep.Month > 12) {
+		return nil, errors.New("month must be between 1 and 12")
+	}
+
 	m, err := money.MoneyFor(rep.Amount)
 	if err != nil {
 		return nil, err

@@ -67,6 +67,68 @@ func TestScheduledExpenseRepresentationToDomainModelWithBadEndDateReturnsError(t
 	assert.NotEqual(t, nil, err)
 }
 
+func TestScheduledExpenseRepresentationToDomainModelWithEmptyDescriptionReturnsError(t *testing.T) {
+	rep := ScheduledExpenseRepresentation{
+		Description: "",
+		Amount:      "100.00",
+		Day:         5,
+	}
+
+	_, err := ScheduledExpenseRepresentationToDomainModel(rep)
+
+	assert.NotEqual(t, nil, err)
+}
+
+func TestScheduledExpenseRepresentationToDomainModelWithDayOutOfRangeReturnsError(t *testing.T) {
+	for _, day := range []int{0, -1, 32, 99} {
+		rep := ScheduledExpenseRepresentation{Description: "Rent", Amount: "100.00", Day: day}
+
+		_, err := ScheduledExpenseRepresentationToDomainModel(rep)
+
+		if err == nil {
+			t.Fatalf("Expected error for day %d, got nil", day)
+		}
+	}
+}
+
+func TestScheduledExpenseRepresentationToDomainModelWithDayInRangeSucceeds(t *testing.T) {
+	for _, day := range []int{1, 15, 31} {
+		rep := ScheduledExpenseRepresentation{Description: "Rent", Amount: "100.00", Day: day}
+
+		_, err := ScheduledExpenseRepresentationToDomainModel(rep)
+
+		if err != nil {
+			t.Fatalf("Expected no error for day %d, got %v", day, err)
+		}
+	}
+}
+
+func TestScheduledExpenseRepresentationToDomainModelWithMonthOutOfRangeReturnsError(t *testing.T) {
+	for _, month := range []int{0, -1, 13, 99} {
+		m := month
+		rep := ScheduledExpenseRepresentation{Description: "Insurance", Amount: "100.00", Day: 5, Month: &m}
+
+		_, err := ScheduledExpenseRepresentationToDomainModel(rep)
+
+		if err == nil {
+			t.Fatalf("Expected error for month %d, got nil", month)
+		}
+	}
+}
+
+func TestScheduledExpenseRepresentationToDomainModelWithMonthInRangeSucceeds(t *testing.T) {
+	for _, month := range []int{1, 6, 12} {
+		m := month
+		rep := ScheduledExpenseRepresentation{Description: "Insurance", Amount: "100.00", Day: 5, Month: &m}
+
+		_, err := ScheduledExpenseRepresentationToDomainModel(rep)
+
+		if err != nil {
+			t.Fatalf("Expected no error for month %d, got %v", month, err)
+		}
+	}
+}
+
 func TestScheduledExpenseRepresentationToDomainModelWithBadAmountReturnsError(t *testing.T) {
 	rep := ScheduledExpenseRepresentation{
 		Description: "Rent",
