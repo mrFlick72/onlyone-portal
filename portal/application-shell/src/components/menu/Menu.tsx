@@ -75,6 +75,7 @@ const Menu: React.FC<MenuProps> = ({messages, children, navBarItems, showGlobalN
                                 <GlobalPageNavigation messages={{
                                     budget: messages.budgetPageLabel,
                                     revenue: messages.revenuePageLabel,
+                                    scheduledExpense: messages.scheduledExpensePageLabel,
                                     plans: messages.planPageLabel,
                                     account: messages.accountPageLabel,
                                     analytics: messages.analyticsPageLabel

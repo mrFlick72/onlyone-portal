@@ -1,0 +1,22 @@
+scheduledExpensePage:
+  menu:
+    newScheduledExpense: "Nuova spesa pianificata"
+  heading: "Spese pianificate"
+  table:
+    day: "Giorno"
+    month: "Mese"
+    monthly: "Mensile"
+  status:
+    active: "Attiva"
+    paused: "In pausa"
+
+scheduledExpenseDetailPage:
+  menu:
+    backToList: "Torna all'elenco"
+  heading: "Nuova spesa pianificata"
+  form:
+    description: "Descrizione:"
+    day: "Giorno (1-31):"
+    month: "Mese (lascia vuoto per mensile):"
+    setEndDate: "Imposta una data di fine"
+    endDate: "Data di fine:"

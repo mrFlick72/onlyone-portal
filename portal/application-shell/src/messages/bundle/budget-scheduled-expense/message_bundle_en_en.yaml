@@ -1,0 +1,22 @@
+scheduledExpensePage:
+  menu:
+    newScheduledExpense: "New Scheduled Expense"
+  heading: "Scheduled Expenses"
+  table:
+    day: "Day"
+    month: "Month"
+    monthly: "Monthly"
+  status:
+    active: "Active"
+    paused: "Paused"
+
+scheduledExpenseDetailPage:
+  menu:
+    backToList: "Back to List"
+  heading: "New Scheduled Expense"
+  form:
+    description: "Description:"
+    day: "Day (1-31):"
+    month: "Month (leave empty for monthly):"
+    setEndDate: "Set an end date"
+    endDate: "End Date:"
