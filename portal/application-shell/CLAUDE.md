@@ -129,9 +129,11 @@ a budget-api aggregate, unlike revenue's frontend repository which still points 
   "New Scheduled Expense" in the menu bar links straight to the details page with no `?id=`, unlike Plan's
   create-via-popup pattern.
 - `ScheduledExpenseDetailPage` is create-mode only in #51 — it does not yet read `?id=` or load/update an existing
-  definition (#52 adds that once budget-api has an Update action and a single-item lookup). The Save action lives in
-  the menu bar (`OpenPopUpMenuItem`, despite the name — it's a generic clickable menu item, not necessarily a popup),
-  not a modal, since the form is a full page.
+  definition (#52 adds that once budget-api has an Update action and a single-item lookup). Save and a "back to list"
+  button sit below a `Divider` at the bottom of the form (not the menu bar, and not a modal — the form is a full
+  page); Save stays on the page and confirms via a `Snackbar`/`Alert` toast, the same pattern
+  `AnalyticsDashboardPage`'s reindex action uses, rather than navigating away. The menu bar carries only the "back to
+  list" link.
 - `domain/ScheduledExpense.ts` defines the wire type. Its tag shape is `{tagKey, tagValue}` — matching
   `web/tags.SearchTagRepresentation`'s JSON tags in budget-api, **not** the `{key, value}` shape of the internal Go
   domain type or of `search-tags/domain/SearchTag.ts`. `month` and `endDate` are optional fields the backend omits

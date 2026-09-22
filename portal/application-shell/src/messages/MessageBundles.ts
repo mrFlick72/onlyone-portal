@@ -261,6 +261,8 @@ export type ScheduledExpenseDetailPageMessageBundle = {
     heading: string;
     form: ScheduledExpenseFormMessageBundle;
     saveButtonLabel: string;
+    backButtonLabel: string;
+    feedback: { success: string; error: string };
 };
 
 export type AnalyticsPageMessageBundle = {

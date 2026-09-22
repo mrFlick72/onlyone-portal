@@ -20,3 +20,6 @@ scheduledExpenseDetailPage:
     month: "Month (leave empty for monthly):"
     setEndDate: "Set an end date"
     endDate: "End Date:"
+  feedback:
+    success: "Scheduled expense saved"
+    error: "Could not save the scheduled expense"

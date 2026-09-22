@@ -20,3 +20,6 @@ scheduledExpenseDetailPage:
     month: "Mese (lascia vuoto per mensile):"
     setEndDate: "Imposta una data di fine"
     endDate: "Data di fine:"
+  feedback:
+    success: "Spesa pianificata salvata"
+    error: "Impossibile salvare la spesa pianificata"

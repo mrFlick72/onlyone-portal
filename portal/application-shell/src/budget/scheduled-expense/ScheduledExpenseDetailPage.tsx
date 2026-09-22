@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react"
 import moment from "moment";
-import { Container, Paper, ThemeProvider } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Container, Divider, Paper, Snackbar, ThemeProvider } from "@mui/material";
 import { ArrowBack, Save } from "@mui/icons-material";
 import themeProvider from "../../theme/ThemeProvider";
 import Menu from "../../components/menu/Menu";
 import MenuItem from "../../components/menu/MenuItem";
-import OpenPopUpMenuItem from "../../components/menu/OpenPopUpMenuItem";
 import { ApiDateFormatPattern, FormDateFormatPattern } from "../../components/form/FormDatePicker";
 import { SelectOption } from "../../components/form/FormSelect";
 import { OnlyonePortalPagesConfigMap } from "../../messages/OnlyonePortalPagesConfigMap";
@@ -35,11 +34,20 @@ const ScheduledExpenseDetailPage: React.FC<ScheduledExpenseDetailPageProps> = ({
     const [hasEndDate, setHasEndDate] = useState(false)
     const [endDate, setEndDate] = useState(moment().format(FormDateFormatPattern))
 
+    const [saving, setSaving] = useState(false)
+    const [feedback, setFeedback] = useState<{ severity: 'success' | 'error'; message: string } | null>(null)
+
     useEffect(() => {
         getSearchTagRegistry("expense").then(setSearchTagRegistry)
     }, [])
 
+    const detailMessages = configMap.scheduledExpenseDetail(messageRegistry)
+
+    // Stays on the page and confirms via toast, rather than navigating back to
+    // the list — the list link is a separate, explicit action (menu and the
+    // bottom "back" button), not an implicit side effect of saving.
     const save = useCallback(() => {
+        setSaving(true)
         createScheduledExpense({
             description,
             amount,
@@ -50,12 +58,16 @@ const ScheduledExpenseDetailPage: React.FC<ScheduledExpenseDetailPageProps> = ({
             endDate: hasEndDate ? moment(endDate, FormDateFormatPattern).format(ApiDateFormatPattern) : undefined,
         }).then(response => {
             if (response.status === 201) {
-                window.location.href = "/budget/scheduled-expense/index"
+                setFeedback({ severity: 'success', message: detailMessages.feedback.success })
+            } else {
+                setFeedback({ severity: 'error', message: detailMessages.feedback.error })
             }
+        }).catch(() => {
+            setFeedback({ severity: 'error', message: detailMessages.feedback.error })
+        }).finally(() => {
+            setSaving(false)
         })
-    }, [description, amount, note, searchTags, day, month, hasEndDate, endDate])
-
-    const detailMessages = configMap.scheduledExpenseDetail(messageRegistry)
+    }, [description, amount, note, searchTags, day, month, hasEndDate, endDate, detailMessages.feedback])
 
     return <ThemeProvider theme={themeProvider}>
         <Paper variant="outlined">
@@ -64,10 +76,6 @@ const ScheduledExpenseDetailPage: React.FC<ScheduledExpenseDetailPageProps> = ({
                     icon={<ArrowBack />}
                     text={detailMessages.menuMessages.backToList}
                     link="/budget/scheduled-expense/index" />
-                <OpenPopUpMenuItem
-                    icon={<Save />}
-                    openPopupHandler={save}
-                    text={detailMessages.saveButtonLabel} />
             </Menu>
             <Container>
                 <ScheduledExpenseForm
@@ -93,7 +101,36 @@ const ScheduledExpenseDetailPage: React.FC<ScheduledExpenseDetailPageProps> = ({
                     }}
                     searchTagRegistry={selectUiAdapterFor(searchTagRegistry)}
                     messages={detailMessages.form} />
+
+                <Divider sx={{ my: 2 }} />
+
+                <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+                    <Button
+                        variant="contained"
+                        color="success"
+                        onClick={save}
+                        disabled={saving}
+                        startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <Save />}>
+                        {detailMessages.saveButtonLabel}
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        href="/budget/scheduled-expense/index"
+                        startIcon={<ArrowBack />}>
+                        {detailMessages.backButtonLabel}
+                    </Button>
+                </Box>
             </Container>
+
+            <Snackbar
+                open={feedback !== null}
+                autoHideDuration={6000}
+                onClose={() => setFeedback(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+                {feedback
+                    ? <Alert severity={feedback.severity} onClose={() => setFeedback(null)} sx={{ width: '100%' }}>{feedback.message}</Alert>
+                    : undefined}
+            </Snackbar>
         </Paper>
     </ThemeProvider>
 }

@@ -318,6 +318,11 @@ export class OnlyonePortalPagesConfigMap {
                 endDate: getMessageFor(bundle, "scheduledExpenseDetailPage.form.endDate"),
             },
             saveButtonLabel: getMessageFor(bundle, "common.button.save.label"),
+            backButtonLabel: getMessageFor(bundle, "scheduledExpenseDetailPage.menu.backToList"),
+            feedback: {
+                success: getMessageFor(bundle, "scheduledExpenseDetailPage.feedback.success"),
+                error: getMessageFor(bundle, "scheduledExpenseDetailPage.feedback.error"),
+            },
         }
     }
 
