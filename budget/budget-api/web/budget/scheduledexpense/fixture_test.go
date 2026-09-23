@@ -37,3 +37,16 @@ func (m *ScheduledExpenseActionsMock) FindScheduledExpenses(ctx context.Context)
 	}
 	return args.Get(0).([]domainscheduledexpense.ScheduledExpense), args.Error(1)
 }
+
+func (m *ScheduledExpenseActionsMock) FindScheduledExpense(ctx context.Context, id domainscheduledexpense.ScheduledExpenseId) (*domainscheduledexpense.ScheduledExpense, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*domainscheduledexpense.ScheduledExpense), args.Error(1)
+}
+
+func (m *ScheduledExpenseActionsMock) UpdateScheduledExpense(ctx context.Context, se *domainscheduledexpense.ScheduledExpense) error {
+	args := m.Called(ctx, se)
+	return args.Error(0)
+}

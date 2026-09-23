@@ -96,6 +96,38 @@ func (repository *DynamoDbScheduledExpenseRepository) Save(ctx context.Context, 
 	return err
 }
 
+// FindFor is a point lookup on the full primary key (PK=user_name from ctx,
+// SK=id), so it uses GetItem rather than Query — unlike FindAll, which
+// necessarily queries (PK only). Returns (nil, nil) on a miss: no item at
+// that key under this user's own partition, whether because the id doesn't
+// exist at all or because it belongs to a different user — the two are
+// indistinguishable by construction and neither is an error condition (see
+// the ScheduledExpenseRepository port doc).
+func (repository *DynamoDbScheduledExpenseRepository) FindFor(ctx context.Context, id scheduledexpense.ScheduledExpenseId) (*scheduledexpense.ScheduledExpense, error) {
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		repository.logger.LogErrorfFor("Error getting current user: %v", err)
+		return nil, err
+	}
+
+	result, err := repository.Client.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: aws.String(repository.TableName),
+		Key: map[string]types.AttributeValue{
+			"user_name": &types.AttributeValueMemberS{Value: *user.UserName},
+			"id":        &types.AttributeValueMemberS{Value: id},
+		},
+	})
+	if err != nil {
+		repository.logger.LogErrorfFor("Error getting item from DynamoDB: %v", err)
+		return nil, err
+	}
+	if result.Item == nil {
+		return nil, nil
+	}
+
+	return repository.fromDynamo(ctx, result.Item)
+}
+
 func (repository *DynamoDbScheduledExpenseRepository) FindAll(ctx context.Context) ([]scheduledexpense.ScheduledExpense, error) {
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
