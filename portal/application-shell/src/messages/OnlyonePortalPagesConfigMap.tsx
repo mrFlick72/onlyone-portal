@@ -307,6 +307,7 @@ export class OnlyonePortalPagesConfigMap {
                 backToList: getMessageFor(bundle, "scheduledExpenseDetailPage.menu.backToList"),
             },
             heading: getMessageFor(bundle, "scheduledExpenseDetailPage.heading"),
+            headingEdit: getMessageFor(bundle, "scheduledExpenseDetailPage.headingEdit"),
             form: {
                 description: getMessageFor(bundle, "scheduledExpenseDetailPage.form.description"),
                 amount: getMessageFor(bundle, "common.form.amount"),
@@ -322,6 +323,7 @@ export class OnlyonePortalPagesConfigMap {
             feedback: {
                 success: getMessageFor(bundle, "scheduledExpenseDetailPage.feedback.success"),
                 error: getMessageFor(bundle, "scheduledExpenseDetailPage.feedback.error"),
+                loadError: getMessageFor(bundle, "scheduledExpenseDetailPage.feedback.loadError"),
             },
         }
     }

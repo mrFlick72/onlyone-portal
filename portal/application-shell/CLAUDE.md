@@ -125,15 +125,17 @@ a budget-api aggregate, unlike revenue's frontend repository which still points 
   `ScheduledExpenseListPage`, `/budget/scheduled-expense/detail` → `ScheduledExpenseDetailPage`.
 - `ScheduledExpenseListPage` lists the authenticated user's scheduled expenses (`getAllScheduledExpenses`) and links
   each row to the details page via `window.location.href` (full-page navigation, like every other section). Delete
-  and pause/resume row actions are intentionally omitted — #51 ships list + create only; they land in #53/#54.
-  "New Scheduled Expense" in the menu bar links straight to the details page with no `?id=`, unlike Plan's
-  create-via-popup pattern.
-- `ScheduledExpenseDetailPage` is create-mode only in #51 — it does not yet read `?id=` or load/update an existing
-  definition (#52 adds that once budget-api has an Update action and a single-item lookup). Save and a "back to list"
-  button sit below a `Divider` at the bottom of the form (not the menu bar, and not a modal — the form is a full
-  page); Save stays on the page and confirms via a `Snackbar`/`Alert` toast, the same pattern
-  `AnalyticsDashboardPage`'s reindex action uses, rather than navigating away. The menu bar carries only the "back to
-  list" link.
+  and pause/resume row actions are intentionally omitted — they land in #53/#54. "New Scheduled Expense" in the menu
+  bar links straight to the details page with no `?id=`, unlike Plan's create-via-popup pattern.
+- `ScheduledExpenseDetailPage` serves both create (no `?id=`) and edit (`?id=<id>`) in one form (#51 shipped
+  create-mode only; #52 added edit). With an `?id=`, a `useEffect` calls `getScheduledExpense(id)` and populates every
+  field except `Status` (never loaded, never submitted — it stays a list-row pause/resume action, per ADR 0005); a
+  failed load shows the `feedback.loadError` toast and leaves the form at its defaults. The heading switches between
+  `heading` (create) and `headingEdit` (edit) based on whether `id` is set. Save calls `createScheduledExpense` or
+  `updateScheduledExpense(id, …)` accordingly, accepting `201` or `204` as success. Save and a "back to list" button
+  sit below a `Divider` at the bottom of the form (not the menu bar, and not a modal — the form is a full page); Save
+  stays on the page and confirms via a `Snackbar`/`Alert` toast, the same pattern `AnalyticsDashboardPage`'s reindex
+  action uses, rather than navigating away. The menu bar carries only the "back to list" link.
 - `domain/ScheduledExpense.ts` defines the wire type. Its tag shape is `{tagKey, tagValue}` — matching
   `web/tags.SearchTagRepresentation`'s JSON tags in budget-api, **not** the `{key, value}` shape of the internal Go
   domain type or of `search-tags/domain/SearchTag.ts`. `month` and `endDate` are optional fields the backend omits

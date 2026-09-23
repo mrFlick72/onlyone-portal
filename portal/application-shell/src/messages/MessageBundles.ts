@@ -259,10 +259,11 @@ export type ScheduledExpenseFormMessageBundle = {
 export type ScheduledExpenseDetailPageMessageBundle = {
     menuMessages: MenuMessageBundle & { backToList: string };
     heading: string;
+    headingEdit: string;
     form: ScheduledExpenseFormMessageBundle;
     saveButtonLabel: string;
     backButtonLabel: string;
-    feedback: { success: string; error: string };
+    feedback: { success: string; error: string; loadError: string };
 };
 
 export type AnalyticsPageMessageBundle = {
