@@ -44,7 +44,11 @@ func RegisterScheduledExpenseEndpoints(
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		facade.CreateScheduledExpense(ctx, domainModel)
+		if err := facade.CreateScheduledExpense(ctx, domainModel); err != nil {
+			logger.LogErrorfFor("Error creating scheduled expense: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 		c.Status(http.StatusCreated)
 	})
 

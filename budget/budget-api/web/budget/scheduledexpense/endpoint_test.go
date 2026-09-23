@@ -50,6 +50,46 @@ func TestCreateANewScheduledExpense(t *testing.T) {
 	facade.AssertCalled(t, "CreateScheduledExpense", ctx, &domainModel)
 }
 
+// TestCreateANewScheduledExpenseWhenFacadeFailsReturns500 guards against the
+// handler discarding Execute's error and reporting success regardless — the
+// exact bug a misconfigured/missing DynamoDB table name triggers (Save fails,
+// the client is told 201 anyway). See web/budget/expense and
+// web/budget/revenue's Create/Update/Delete handlers for the same
+// pre-existing shape; not fixed here (out of #51's scope).
+func TestCreateANewScheduledExpenseWhenFacadeFailsReturns500(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(ScheduledExpenseActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterScheduledExpenseEndpoints(r, contextFactoryConverter, facade)
+
+	domainModel := domainscheduledexpense.ScheduledExpense{
+		Description: "Rent",
+		Amount:      testutils.SafeMoneyFor("1200.00"),
+		Notes:       "Monthly rent",
+		Tags:        []tags.SearchTag{},
+		Day:         5,
+	}
+
+	rep := ScheduledExpenseRepresentation{
+		Description: "Rent",
+		Amount:      "1200.00",
+		Notes:       "Monthly rent",
+		Day:         5,
+	}
+	jsonValue, _ := json.Marshal(rep)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	facade.On("CreateScheduledExpense", ctx, &domainModel).Return(errors.New("ResourceNotFoundException: table not found"))
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+
+	req, _ := http.NewRequest("POST", "/api/budget/scheduled-expense", bytes.NewBuffer(jsonValue))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
 func TestCreateANewScheduledExpenseWithBadAmountReturns400(t *testing.T) {
 	r := SetUpRouter()
 	facade := new(ScheduledExpenseActionsMock)
