@@ -22,6 +22,8 @@ budget-api:
   dynamo-db:
     attachment-metadata:
       table-name: BUDGET_ATTACHMENT_METADATA
+    scheduled-expense:
+      table-name: BUDGET_SCHEDULED_EXPENSE
   s3:
     attachment:
       bucket-name: budget-attachment-staging

@@ -37,6 +37,10 @@ domain/
   budget/attachment/ # Attachment + AttachmentMetadata models, SaveAttachment,
                      # GetAttachment, DeleteAttachment, AttachmentActionsFacade,
                      # AttachmentRepository port
+  budget/scheduledexpense/ # ScheduledExpense model, CreateScheduledExpense,
+                     # FindScheduledExpenses, ScheduledExpenseActionsFacade,
+                     # ScheduledExpenseRepository port (additive — #51 ships
+                     # Save+FindAll only; #52-#54 add Update/Delete/Pause/Resume)
   tags/              # SearchTagRepository port + SearchTag value object
   money/, time/      # value objects (Money, Date, Month, Year)
 adapter/
@@ -45,20 +49,24 @@ adapter/
   budget/attachment/            # AwsCompositeAttachmentRepository — orchestrates dynamo + s3
   budget/attachment/dynamodb/   # DynamoDbAttachmentMetadataRepository + DynamoDbAttachmentIdProvider
   budget/attachment/s3/         # S3AttachmentContentRepository (file bytes)
+  budget/scheduledexpense/dynamodb/ # DynamoDbScheduledExpenseRepository + DynamoDbScheduledExpenseIdProvider
   tags/rest/                    # RestSearchTagRepository + RistrettoCachedSearchTagRepository decorator
 web/
   budget/expense/    # package expense    — RegisterExpenseEndpoints, representations, converters
   budget/revenue/    # package revenue    — RegisterRevenueEndpoints, representations, converters
   budget/attachment/ # package attachment — RegisterAttachmentEndpoints, representation, converter
+  budget/scheduledexpense/ # package scheduledexpense — RegisterScheduledExpenseEndpoints, representation, converter
 config/              # composition root — NewBudgetExpenseActionsFacade,
-                     # NewRevenueActionsFacade, NewAttachmentActionsFacade
+                     # NewRevenueActionsFacade, NewAttachmentActionsFacade,
+                     # NewScheduledExpenseActionsFacade
 main.go              # wires everything via WebServerProvisioner (shared framework)
 ```
 
 Keep changes inside the right layer. Domain must not import adapter or web packages.
 
 `web/budget/expense` imports domain expense as `domainexpense "...domain/budget/expense"` to avoid the package-name
-clash with the web package itself. Same pattern in `web/budget/revenue` with `domainrevenue`.
+clash with the web package itself. Same pattern in `web/budget/revenue` with `domainrevenue`, and in
+`web/budget/scheduledexpense` with `domainscheduledexpense`.
 
 ### DynamoDB tables and config keys
 
@@ -67,6 +75,7 @@ clash with the web package itself. Same pattern in `web/budget/revenue` with `do
 | `BUDGET_EXPENSES`              | `budget-api.dynamo-db.budget-expense.table-name`        |
 | `BUDGET_REVENUE`               | `budget-api.dynamo-db.revenue.table-name`               |
 | `BUDGET_ATTACHMENT_METADATA`   | `budget-api.dynamo-db.attachment-metadata.table-name`   |
+| `BUDGET_SCHEDULED_EXPENSE`     | `budget-api.dynamo-db.scheduled-expense.table-name`     |
 
 S3 bucket holding attachment file bytes:
 
@@ -75,8 +84,8 @@ S3 bucket holding attachment file bytes:
 | `<attachment bucket>` | `budget-api.s3.attachment.bucket-name`    |
 
 AWS region is hardcoded to `eu-central-1` in `config/configurations.go` (`NewBudgetExpenseRepository`,
-`NewRevenueRepository`, `NewAttachmentRepository`). LocalStack tests override the endpoint in their fixture, not in the
-constructor.
+`NewRevenueRepository`, `NewAttachmentRepository`, `NewScheduledExpenseRepository`). LocalStack tests override the
+endpoint in their fixture, not in the constructor.
 
 ### DynamoDB key schemes — do not change without a data migration
 
@@ -96,6 +105,15 @@ constructor.
 - Revenue range queries are therefore one Query per year.
 - This layout preserves the Python `revenue-api` composite key format so existing `BUDGET_REVENUE` records remain
   readable without migration.
+
+**Scheduled Expense** (`adapter/budget/scheduledexpense/dynamodb/dynamo_db_scheduled_expense_id_provider.go`):
+
+- PK: `user_name` — stored verbatim (not derived/encoded, unlike expense/revenue)
+- SK: `id` — a plain UUID
+- `FindAll`'s per-user scoping is therefore structural (the partition key itself), not a filter expression.
+- The daily generation engine (#55) does a plain table Scan across all users' definitions — no derived-key
+  bookkeeping needed, at the accepted cost of a full scan (fine at this feature's expected low volume; see
+  `docs/adr/0005-scheduled-expense-recurrence-and-generation-engine.md`).
 
 **Attachment metadata** (`adapter/budget/attachment/dynamodb/dynamo_db_attachment_id_provider.go`):
 
@@ -225,6 +243,34 @@ The `?q=year=YYYY` query param format preserves the Python revenue-api wire form
   "note": "string"
 }
 ```
+
+### Scheduled Expense — `web/budget/scheduledexpense/endpoint.go`
+
+Create + list only (#51). Update, Delete and Pause/Resume (`PUT`/`DELETE`/`PATCH /api/budget/scheduled-expense/:id`)
+land in #52-#54 — see the parent issue and `docs/adr/0005-scheduled-expense-recurrence-and-generation-engine.md`.
+
+| Method | Path                            | Purpose | Request body                     | Response                                  |
+|--------|----------------------------------|---------|-----------------------------------|--------------------------------------------|
+| `GET`  | `/api/budget/scheduled-expense` | List (current user only) | —                   | `ScheduledExpenseListRepresentation` `200` |
+| `POST` | `/api/budget/scheduled-expense` | Create  | `ScheduledExpenseRepresentation`  | `201 No Content`                           |
+
+**`ScheduledExpenseRepresentation`** (create body; `id`/`status` are server-set and ignored/empty on create):
+
+```json
+{
+  "description": "Rent",
+  "amount": "1200.00",
+  "notes": "string",
+  "tags": [{"key": "housing", "value": "Housing"}],
+  "day": 5,
+  "month": 3,
+  "endDate": "DD/MM/YYYY"
+}
+```
+
+`month` and `endDate` are omitted (not `null`) when unset — a definition with no `month` recurs monthly, one with a
+`month` recurs yearly on that day/month, and a definition with no `endDate` recurs forever. `status` on read is
+`"ACTIVE"` or `"PAUSED"`.
 
 ### Attachment — `web/budget/attachment/endpoint.go`
 

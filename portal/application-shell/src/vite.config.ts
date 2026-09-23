@@ -11,6 +11,8 @@ const pages: Record<string, { html: string; entry: string }> = {
   budgetExpense: { html: 'budget/expense/index.html',     entry: '/budget/index.tsx' },
   budgetRevenue: { html: 'budget/revenue/index.html',     entry: '/budget/index.tsx' },
   budgetTags:    { html: 'budget/search-tags/index.html', entry: '/budget/index.tsx' },
+  scheduledExpense:       { html: 'budget/scheduled-expense/index.html',  entry: '/budget/index.tsx' },
+  scheduledExpenseDetail: { html: 'budget/scheduled-expense/detail.html', entry: '/budget/index.tsx' },
   account:       { html: 'account/index.html',            entry: '/account/index.tsx' },
   analytics:     { html: 'analytics/index.html',          entry: '/analytics/index.tsx' },
   plan:          { html: 'plan/index.html',               entry: '/plan/index.tsx' },

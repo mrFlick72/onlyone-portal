@@ -67,6 +67,8 @@ Vite builds **separate bundles** per page, each with its own HTML file. Entries 
 | `budgetExpense` | `budget/index.tsx`        | `budget/expense/index.html`    | Budget expenses                |
 | `budgetRevenue` | `budget/index.tsx`        | `budget/revenue/index.html`    | Budget revenue                 |
 | `budgetTags`    | `budget/index.tsx`        | `budget/search-tags/index.html`| Budget tag search              |
+| `scheduledExpense`       | `budget/index.tsx` | `budget/scheduled-expense/index.html`  | Scheduled expense list  |
+| `scheduledExpenseDetail` | `budget/index.tsx` | `budget/scheduled-expense/detail.html` | Scheduled expense create (edit lands in #52) |
 | `account`       | `account/index.tsx`       | `account/index.html`           | User profile management        |
 | `plan`          | `plan/index.tsx`          | `plan/index.html`              | Plan list                      |
 | `planDetail`    | `plan/index.tsx`          | `plan/detail.html`             | Plan todo detail               |
@@ -74,7 +76,7 @@ Vite builds **separate bundles** per page, each with its own HTML file. Entries 
 
 Each entry point independently calls `authenticationChecker()` for token auto-refresh and mounts its own React tree into `<div id="app">`. Navigation between pages is full page navigation (HTML links), not client-side routing.
 
-The three `budget*` entries all share `budget/index.tsx`, which mounts `SpentBudgetApp`. That component uses `createBrowserRouter` (react-router v7) to render the right sub-page (`BudgetExpensePage`, `BudgetRevenuePage`, `SearchTagsPage`) based on the URL path of the HTML that loaded it (`/budget/expense/index`, `/budget/revenue/index`, `/budget/search-tags/index`).
+The five `budget*` entries all share `budget/index.tsx`, which mounts `SpentBudgetApp`. That component uses `createBrowserRouter` (react-router v7) to render the right sub-page (`BudgetExpensePage`, `BudgetRevenuePage`, `SearchTagsPage`, `ScheduledExpenseListPage`, `ScheduledExpenseDetailPage`) based on the URL path of the HTML that loaded it (`/budget/expense/index`, `/budget/revenue/index`, `/budget/search-tags/index`, `/budget/scheduled-expense/index`, `/budget/scheduled-expense/detail`). All five resolve through the same nginx `/budget` location block (`local/conf.d/default.conf`) — no nginx change was needed for the new pair.
 
 The two `plan*` entries share `plan/index.tsx`, which mounts `PlanApp`. `PlanApp` routes `/plan/index` to the plan list and `/plan/detail?id=<planId>` to the todo detail page.
 
@@ -90,6 +92,7 @@ src/
     revenue/        # Revenue tracking sub-feature
     search-tags/    # Tag management sub-feature
     attachment/     # File attachments shared by expense + revenue
+    scheduled-expense/ # Recurring-expense templates: list + create page (edit/delete/pause land in #52-#54)
   plan/             # Plan and todo management, including todo status transitions
   analytics/        # Budget expense analytics dashboard (charts + reindex)
   components/       # Shared UI: Menu, form inputs, layout helpers
@@ -111,6 +114,35 @@ Each feature follows a `domain/` pattern: type definitions in `domain/*.ts`, API
 - `deleteAttachment(attachmentId)` → `DELETE /api/attachment/:attachmentId`.
 
 All four go through `getBudgetApiBaseUrl()` and the standard bearer-token / `credentials: include` envelope used by every other repository. Tooltip / aria-label strings are sourced from `messages/MessageRepository.ts` under the `attachment.popup.*` keys and wired through `OnlyonePortalPagesConfigMap.tsx` for both the expense and revenue page configs.
+
+### Scheduled Expenses
+
+The scheduled-expense feature lives in `src/budget/scheduled-expense/` and calls budget-api through
+`domain/ScheduledExpenseRepository.ts` using `BUDGET_API_BASE_URL` (not `REVENUE_API_BASE_URL` — Scheduled Expense is
+a budget-api aggregate, unlike revenue's frontend repository which still points at the legacy base URL name).
+
+- Routed from `SpentBudgetApp`'s router (not a separate micro-app like `PlanApp`): `/budget/scheduled-expense/index` →
+  `ScheduledExpenseListPage`, `/budget/scheduled-expense/detail` → `ScheduledExpenseDetailPage`.
+- `ScheduledExpenseListPage` lists the authenticated user's scheduled expenses (`getAllScheduledExpenses`) and links
+  each row to the details page via `window.location.href` (full-page navigation, like every other section). Delete
+  and pause/resume row actions are intentionally omitted — #51 ships list + create only; they land in #53/#54.
+  "New Scheduled Expense" in the menu bar links straight to the details page with no `?id=`, unlike Plan's
+  create-via-popup pattern.
+- `ScheduledExpenseDetailPage` is create-mode only in #51 — it does not yet read `?id=` or load/update an existing
+  definition (#52 adds that once budget-api has an Update action and a single-item lookup). Save and a "back to list"
+  button sit below a `Divider` at the bottom of the form (not the menu bar, and not a modal — the form is a full
+  page); Save stays on the page and confirms via a `Snackbar`/`Alert` toast, the same pattern
+  `AnalyticsDashboardPage`'s reindex action uses, rather than navigating away. The menu bar carries only the "back to
+  list" link.
+- `domain/ScheduledExpense.ts` defines the wire type. Its tag shape is `{tagKey, tagValue}` — matching
+  `web/tags.SearchTagRepresentation`'s JSON tags in budget-api, **not** the `{key, value}` shape of the internal Go
+  domain type or of `search-tags/domain/SearchTag.ts`. `month` and `endDate` are optional fields the backend omits
+  (never sends `null`) when unset — sending `undefined` (not `null`) on create is required to match.
+- Tag selection reuses `getSearchTagRegistry("expense")` — Scheduled Expense tags share expense's tag-api scope, not
+  a separate one (see budget-api's `NewExpenseSearchTagRepository` wiring).
+- Reachable from every page via the global navigation drawer (`components/menu/GlobalPageNavigation.tsx`), added
+  alongside Budget/Revenue/Plans/Account/Analytics. No home-page tile was added (unlike Plan/Analytics) — a
+  reasonable follow-up if full parity with those sections is wanted.
 
 ### Plans and Todos
 

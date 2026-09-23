@@ -16,10 +16,12 @@ import (
 	"github.com/mrflick72/budget/budget-api/adapter/budget/expense/dynamodb"
 	"github.com/mrflick72/budget/budget-api/adapter/budget/expense/kafka"
 	revenuedynamo "github.com/mrflick72/budget/budget-api/adapter/budget/revenue/dynamodb"
+	scheduledexpensedynamo "github.com/mrflick72/budget/budget-api/adapter/budget/scheduledexpense/dynamodb"
 	"github.com/mrflick72/budget/budget-api/adapter/tags/rest"
 	"github.com/mrflick72/budget/budget-api/domain/budget/attachment"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
 	"github.com/mrflick72/budget/budget-api/domain/budget/revenue"
+	"github.com/mrflick72/budget/budget-api/domain/budget/scheduledexpense"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/awsclient"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
@@ -173,6 +175,37 @@ func NewRevenueActionsFacade() revenue.RevenueActions {
 		UpdateRevenueAction: &revenue.UpdateRevenue{Repository: revenueRepository},
 		FindRevenueAction:   &revenue.FindRevenue{Repository: revenueRepository},
 		DeleteRevenueAction: &revenue.DeleteRevenue{Repository: revenueRepository},
+	}
+}
+
+func NewScheduledExpenseRepository() scheduledexpense.ScheduledExpenseRepository {
+	cfg, err := awsclient.LoadDefaultConfig(
+		context.Background(),
+		aws_config.WithRegion("eu-central-1"),
+	)
+
+	if err != nil {
+		logger.LogErrorfFor("unable to load SDK config: %s", err.Error())
+		panic("unable to load SDK config, " + err.Error())
+	}
+
+	return scheduledexpensedynamo.NewDynamoDbScheduledExpenseRepository(
+		configurationManager.GetConfigFor("budget-api.dynamo-db.scheduled-expense.table-name"),
+		aws_dynamodb.NewFromConfig(cfg),
+		&scheduledexpensedynamo.DynamoDbScheduledExpenseIdProvider{
+			UuidGenerator: func() string { return uuid.New().String() },
+		},
+		// Scheduled Expense tags share expense's scope (see CONTEXT.md: "a tag
+		// list (tag keys, as on BudgetExpense)") — not a separate scope.
+		NewExpenseSearchTagRepository(),
+	)
+}
+
+func NewScheduledExpenseActionsFacade() scheduledexpense.ScheduledExpenseActions {
+	scheduledExpenseRepository := NewScheduledExpenseRepository()
+	return &scheduledexpense.ScheduledExpenseActionsFacade{
+		CreateScheduledExpenseAction: &scheduledexpense.CreateScheduledExpense{Repository: scheduledExpenseRepository},
+		FindScheduledExpensesAction:  &scheduledexpense.FindScheduledExpenses{Repository: scheduledExpenseRepository},
 	}
 }
 

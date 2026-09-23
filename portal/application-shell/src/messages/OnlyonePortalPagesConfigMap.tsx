@@ -9,6 +9,8 @@ import {
     MenuMessageBundle,
     PlanDetailPageMessageBundle,
     PlanPageMessageBundle,
+    ScheduledExpenseDetailPageMessageBundle,
+    ScheduledExpenseListPageMessageBundle,
     SearchTagsPageMessageBundle,
 } from "./MessageBundles";
 
@@ -22,6 +24,7 @@ function globalNavLabels(bundle: MessageBundle) {
     return {
         budgetPageLabel: getMessageFor(bundle, "menu.budgetPage.label"),
         revenuePageLabel: getMessageFor(bundle, "menu.revenuePage.label"),
+        scheduledExpensePageLabel: getMessageFor(bundle, "menu.scheduledExpensePage.label"),
         planPageLabel: getMessageFor(bundle, "menu.planPage.label"),
         accountPageLabel: getMessageFor(bundle, "menu.accountPage.label"),
         analyticsPageLabel: getMessageFor(bundle, "menu.analyticsPage.label"),
@@ -266,6 +269,60 @@ export class OnlyonePortalPagesConfigMap {
                 yesLabel: getMessageFor(bundle, "common.confirm.yesLabel"),
                 noLabel: getMessageFor(bundle, "common.confirm.noLabel")
             }
+        }
+    }
+
+    scheduledExpense(bundle: MessageBundle): ScheduledExpenseListPageMessageBundle {
+        return {
+            menuMessages: {
+                ...baseMenuMessages(bundle),
+                newScheduledExpense: getMessageFor(bundle, "scheduledExpensePage.menu.newScheduledExpense"),
+            },
+            heading: getMessageFor(bundle, "scheduledExpensePage.heading"),
+            content: {
+                headers: {
+                    description: getMessageFor(bundle, "common.table.description"),
+                    day: getMessageFor(bundle, "scheduledExpensePage.table.day"),
+                    month: getMessageFor(bundle, "scheduledExpensePage.table.month"),
+                    amount: getMessageFor(bundle, "common.table.amount"),
+                    status: getMessageFor(bundle, "common.table.status"),
+                    options: getMessageFor(bundle, "common.table.options"),
+                },
+                monthlyLabel: getMessageFor(bundle, "scheduledExpensePage.table.monthly"),
+                actions: {
+                    open: getMessageFor(bundle, "common.action.open"),
+                },
+                status: {
+                    ACTIVE: getMessageFor(bundle, "scheduledExpensePage.status.active"),
+                    PAUSED: getMessageFor(bundle, "scheduledExpensePage.status.paused"),
+                },
+            },
+        }
+    }
+
+    scheduledExpenseDetail(bundle: MessageBundle): ScheduledExpenseDetailPageMessageBundle {
+        return {
+            menuMessages: {
+                ...baseMenuMessages(bundle),
+                backToList: getMessageFor(bundle, "scheduledExpenseDetailPage.menu.backToList"),
+            },
+            heading: getMessageFor(bundle, "scheduledExpenseDetailPage.heading"),
+            form: {
+                description: getMessageFor(bundle, "scheduledExpenseDetailPage.form.description"),
+                amount: getMessageFor(bundle, "common.form.amount"),
+                note: getMessageFor(bundle, "common.form.note"),
+                searchTags: getMessageFor(bundle, "common.form.searchTags"),
+                day: getMessageFor(bundle, "scheduledExpenseDetailPage.form.day"),
+                month: getMessageFor(bundle, "scheduledExpenseDetailPage.form.month"),
+                setEndDate: getMessageFor(bundle, "scheduledExpenseDetailPage.form.setEndDate"),
+                endDate: getMessageFor(bundle, "scheduledExpenseDetailPage.form.endDate"),
+            },
+            saveButtonLabel: getMessageFor(bundle, "common.button.save.label"),
+            backButtonLabel: getMessageFor(bundle, "scheduledExpenseDetailPage.menu.backToList"),
+            feedback: {
+                success: getMessageFor(bundle, "scheduledExpenseDetailPage.feedback.success"),
+                error: getMessageFor(bundle, "scheduledExpenseDetailPage.feedback.error"),
+            },
         }
     }
 

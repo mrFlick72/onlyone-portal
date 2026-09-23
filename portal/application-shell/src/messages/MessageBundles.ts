@@ -1,4 +1,5 @@
 import { TodoStatus } from "../plan/domain/Plan";
+import { ScheduledExpenseStatus } from "../budget/scheduled-expense/domain/ScheduledExpense";
 import { SelectOption } from "../components/form/FormSelect";
 
 /**
@@ -26,6 +27,7 @@ export type MenuMessageBundle = {
     logOutLabel: string;
     budgetPageLabel: string;
     revenuePageLabel: string;
+    scheduledExpensePageLabel: string;
     planPageLabel: string;
     accountPageLabel: string;
     analyticsPageLabel: string;
@@ -36,6 +38,7 @@ export type MenuMessageBundle = {
 export type GlobalNavMessageBundle = {
     budget: string;
     revenue: string;
+    scheduledExpense: string;
     plans: string;
     account: string;
     analytics: string;
@@ -222,6 +225,44 @@ export type PlanDetailPageMessageBundle = {
     updateTodoModal: WithId<SaveModalMessageBundle>;
     deleteTodoModal: WithId<DeleteModalMessageBundle>;
     changeStatusModal: WithId<ChangeTodoStatusModalMessageBundle>;
+};
+
+/** Localized label per scheduled-expense status, keyed by {@link ScheduledExpenseStatus}. */
+export type ScheduledExpenseStatusMessageBundle = Record<ScheduledExpenseStatus, string>;
+
+export type ScheduledExpenseListRowActionsMessageBundle = { open: string };
+
+export type ScheduledExpenseListContentMessageBundle = {
+    headers: { description: string; day: string; month: string; amount: string; status: string; options: string };
+    monthlyLabel: string;
+    actions: ScheduledExpenseListRowActionsMessageBundle;
+    status: ScheduledExpenseStatusMessageBundle;
+};
+
+export type ScheduledExpenseListPageMessageBundle = {
+    menuMessages: MenuMessageBundle & { newScheduledExpense: string };
+    heading: string;
+    content: ScheduledExpenseListContentMessageBundle;
+};
+
+export type ScheduledExpenseFormMessageBundle = {
+    description: string;
+    amount: string;
+    note: string;
+    searchTags: string;
+    day: string;
+    month: string;
+    setEndDate: string;
+    endDate: string;
+};
+
+export type ScheduledExpenseDetailPageMessageBundle = {
+    menuMessages: MenuMessageBundle & { backToList: string };
+    heading: string;
+    form: ScheduledExpenseFormMessageBundle;
+    saveButtonLabel: string;
+    backButtonLabel: string;
+    feedback: { success: string; error: string };
 };
 
 export type AnalyticsPageMessageBundle = {
