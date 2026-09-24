@@ -243,6 +243,7 @@ export type ScheduledExpenseListPageMessageBundle = {
     menuMessages: MenuMessageBundle & { newScheduledExpense: string };
     heading: string;
     deleteModal: DeleteModalMessageBundle;
+    feedback: { deleteError: string };
     content: ScheduledExpenseListContentMessageBundle;
 };
 

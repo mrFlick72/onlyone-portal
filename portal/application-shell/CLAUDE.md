@@ -126,7 +126,8 @@ a budget-api aggregate, unlike revenue's frontend repository which still points 
 - `ScheduledExpenseListPage` lists the authenticated user's scheduled expenses (`getAllScheduledExpenses`) and links
   each row to the details page via `window.location.href` (full-page navigation, like every other section). Each row
   also has a Delete action (#53) that opens `DeleteScheduledExpenseConfirmationPopUp` (mirroring
-  `DeletePlanConfirmationPopUp`) and refreshes the list on `204` — or `404`, since "already gone" is the same end state.
+  `DeletePlanConfirmationPopUp`) and refreshes the list on `204` — or `404`, since "already gone" is the same end state; any other failure (non-2xx or a
+  rejected fetch) keeps the popup open and shows an error toast.
   The pause/resume row action lands in #54. "New Scheduled Expense" in the menu
   bar links straight to the details page with no `?id=`, unlike Plan's create-via-popup pattern.
 - `ScheduledExpenseDetailPage` serves both create (no `?id=`) and edit (`?id=<id>`) in one form (#51 shipped

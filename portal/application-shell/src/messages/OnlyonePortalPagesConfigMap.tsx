@@ -285,6 +285,9 @@ export class OnlyonePortalPagesConfigMap {
                 yesLabel: getMessageFor(bundle, "common.confirm.yesLabel"),
                 noLabel: getMessageFor(bundle, "common.confirm.noLabel")
             },
+            feedback: {
+                deleteError: getMessageFor(bundle, "scheduledExpensePage.feedback.deleteError"),
+            },
             content: {
                 headers: {
                     description: getMessageFor(bundle, "common.table.description"),

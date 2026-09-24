@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react"
-import { Container, Paper, ThemeProvider } from "@mui/material";
+import { Alert, Container, Paper, Snackbar, ThemeProvider } from "@mui/material";
 import { EventRepeat } from "@mui/icons-material";
 import themeProvider from "../../theme/ThemeProvider";
 import Menu from "../../components/menu/Menu";
@@ -23,6 +23,7 @@ const ScheduledExpenseListPage: React.FC<ScheduledExpenseListPageProps> = ({ mes
 
     const [deletable, setDeletable] = useState<ScheduledExpense | null>(null)
     const [openDeletePopUp, setOpenDeletePopUp] = useState(false)
+    const [deleteError, setDeleteError] = useState(false)
 
     const refresh = useCallback(() => {
         getAllScheduledExpenses().then(setScheduledExpenses)
@@ -51,7 +52,11 @@ const ScheduledExpenseListPage: React.FC<ScheduledExpenseListPageProps> = ({ mes
             if (response.status === 204 || response.status === 404) {
                 setOpenDeletePopUp(false)
                 refresh()
+            } else {
+                setDeleteError(true)
             }
+        }).catch(() => {
+            setDeleteError(true)
         })
     }, [deletable, refresh])
 
@@ -78,6 +83,15 @@ const ScheduledExpenseListPage: React.FC<ScheduledExpenseListPageProps> = ({ mes
                     openDelete={openDelete}
                     messages={listMessages.content} />
             </Container>
+            <Snackbar
+                open={deleteError}
+                autoHideDuration={6000}
+                onClose={() => setDeleteError(false)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+                <Alert severity="error" onClose={() => setDeleteError(false)} sx={{ width: '100%' }}>
+                    {listMessages.feedback.deleteError}
+                </Alert>
+            </Snackbar>
         </Paper>
     </ThemeProvider>
 }
