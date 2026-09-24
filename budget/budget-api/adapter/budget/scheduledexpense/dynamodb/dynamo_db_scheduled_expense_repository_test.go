@@ -299,3 +299,71 @@ func TestFindAllOnlyReturnsTheCurrentUsersScheduledExpenses(t *testing.T) {
 	assert.Equal(t, 1, len(result))
 	assert.Equal(t, "MINE_ID", result[0].Id)
 }
+
+func TestDeleteRemovesTheScheduledExpense(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+	userCtx := testutils.NewStubbedContextWith("user-delete")
+
+	input := scheduledexpense.ScheduledExpense{
+		UserName:    "user-delete",
+		Description: "Rent",
+		Amount:      testutils.SafeMoneyFor("1200.00"),
+		Day:         5,
+		Status:      scheduledexpense.StatusActive,
+	}
+	idProviderMock.On("GenerateIdFor", &input).Return("DELETE_ID")
+	if err := repo.Save(userCtx, &input); err != nil {
+		t.Fatalf("Expected nil error on save, got %v", err)
+	}
+
+	err := repo.Delete(userCtx, "DELETE_ID")
+
+	assert.Equal(t, nil, err)
+	found, err := repo.FindFor(userCtx, "DELETE_ID")
+	assert.Equal(t, nil, err)
+	if found != nil {
+		t.Fatalf("Expected the scheduled expense to be gone, got %+v", found)
+	}
+}
+
+// The attribute_exists(id) condition turns a delete of a row that isn't
+// there (e.g. removed between the action's FindFor and this call) into a
+// not-found, instead of DynamoDB's silent no-op success.
+func TestDeleteReturnsNotFoundWhenTheScheduledExpenseDoesNotExist(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+	userCtx := testutils.NewStubbedContextWith("user-delete-missing")
+
+	err := repo.Delete(userCtx, "DOES_NOT_EXIST")
+
+	assert.Equal(t, scheduledexpense.ErrScheduledExpenseNotFound, err)
+}
+
+func TestDeleteUnderAnotherUsersContextLeavesTheOwnersScheduledExpense(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+	ownerCtx := testutils.NewStubbedContextWith("user-delete-owner")
+	otherCtx := testutils.NewStubbedContextWith("user-delete-other")
+
+	input := scheduledexpense.ScheduledExpense{
+		UserName:    "user-delete-owner",
+		Description: "Rent",
+		Amount:      testutils.SafeMoneyFor("1200.00"),
+		Day:         5,
+		Status:      scheduledexpense.StatusActive,
+	}
+	idProviderMock.On("GenerateIdFor", &input).Return("OWNER_DELETE_ID")
+	if err := repo.Save(ownerCtx, &input); err != nil {
+		t.Fatalf("Expected nil error on save, got %v", err)
+	}
+
+	err := repo.Delete(otherCtx, "OWNER_DELETE_ID")
+
+	assert.Equal(t, scheduledexpense.ErrScheduledExpenseNotFound, err)
+	found, err := repo.FindFor(ownerCtx, "OWNER_DELETE_ID")
+	assert.Equal(t, nil, err)
+	if found == nil {
+		t.Fatalf("Expected the owner's scheduled expense to survive another user's delete")
+	}
+}

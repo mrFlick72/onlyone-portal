@@ -128,6 +128,36 @@ func (repository *DynamoDbScheduledExpenseRepository) FindFor(ctx context.Contex
 	return repository.fromDynamo(ctx, result.Item)
 }
 
+// Delete removes the item at (PK=user_name from ctx, SK=id). Since the owner
+// is part of the key, another user's row is unreachable by construction; the
+// attribute_exists(id) condition makes a missing row a
+// ErrScheduledExpenseNotFound rather than DynamoDB's silent no-op success.
+func (repository *DynamoDbScheduledExpenseRepository) Delete(ctx context.Context, id scheduledexpense.ScheduledExpenseId) error {
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		repository.logger.LogErrorfFor("Error getting current user: %v", err)
+		return err
+	}
+
+	_, err = repository.Client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
+		TableName: aws.String(repository.TableName),
+		Key: map[string]types.AttributeValue{
+			"user_name": &types.AttributeValueMemberS{Value: *user.UserName},
+			"id":        &types.AttributeValueMemberS{Value: id},
+		},
+		ConditionExpression: aws.String("attribute_exists(id)"),
+	})
+	if err != nil {
+		var conditionalCheckFailedException *types.ConditionalCheckFailedException
+		if errors.As(err, &conditionalCheckFailedException) {
+			return scheduledexpense.ErrScheduledExpenseNotFound
+		}
+		repository.logger.LogErrorfFor("Error deleting item from DynamoDB: %v", err)
+		return err
+	}
+	return nil
+}
+
 func (repository *DynamoDbScheduledExpenseRepository) FindAll(ctx context.Context) ([]scheduledexpense.ScheduledExpense, error) {
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {

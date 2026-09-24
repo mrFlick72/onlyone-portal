@@ -22,7 +22,7 @@ domain/
   budget/expense/    # CreateBudgetExpense, UpdateBudgetExpense, FindSpentBudget, DeleteBudgetExpense + BudgetExpenseActionsFacade
   budget/revenue/    # CreateRevenue, UpdateRevenue, FindRevenue, DeleteRevenue + RevenueActionsFacade
   budget/attachment/ # SaveAttachment, GetAttachment, DeleteAttachment + AttachmentActionsFacade
-  budget/scheduledexpense/ # CreateScheduledExpense, FindScheduledExpenses + ScheduledExpenseActionsFacade (#51; port is additive — Update/Delete/Pause/Resume land in #52-#54)
+  budget/scheduledexpense/ # Create/Find/Update/DeleteScheduledExpense + ScheduledExpenseActionsFacade (#51-#53; port is additive — Pause/Resume land in #54)
   tags/              # SearchTagRepository port
   money/, time/      # value objects
 adapter/
@@ -80,7 +80,7 @@ This makes `FindAll`'s per-user scoping structural (the partition key itself), a
 | Expense    | POST/PUT/DELETE | `/api/budget/expense`, `/api/budget/expense/:id`                                    |
 | Revenue    | GET             | `/api/budget/revenue?q=year=YYYY`                                                   |
 | Revenue    | POST/PUT/DELETE | `/api/budget/revenue`, `/api/budget/revenue/:id`                                    |
-| Scheduled Expense | GET/POST/PUT | `/api/budget/scheduled-expense`, `/api/budget/scheduled-expense/:id` (list/create/get/update — #51-#52; Delete/Pause-Resume land in #53-#54) |
+| Scheduled Expense | GET/POST/PUT/DELETE | `/api/budget/scheduled-expense`, `/api/budget/scheduled-expense/:id` (list/create/get/update/delete — #51-#53; Pause-Resume lands in #54) |
 | Attachment | POST            | `/api/attachment` (multipart: `file`, `budgetId`, `budgetType`, `date`, optional `attachmentId`) |
 | Attachment | GET             | `/api/attachment/metadata/:budgetType/:budgetId`                                    |
 | Attachment | GET             | `/api/attachment/:attachmentId/content` (raw bytes + `Content-Disposition`)         |

@@ -359,3 +359,55 @@ func TestFindAllScheduledExpensesWhenFacadeFailsReturns500(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
+
+func TestDeleteAScheduledExpense(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(ScheduledExpenseActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterScheduledExpenseEndpoints(r, contextFactoryConverter, facade)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+	facade.On("DeleteScheduledExpense", ctx, domainscheduledexpense.ScheduledExpenseId("123-456")).Return(nil)
+
+	req, _ := http.NewRequest("DELETE", "/api/budget/scheduled-expense/123-456", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	facade.AssertExpectations(t)
+}
+
+func TestDeleteAScheduledExpenseWhenNotFoundReturns404(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(ScheduledExpenseActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterScheduledExpenseEndpoints(r, contextFactoryConverter, facade)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+	facade.On("DeleteScheduledExpense", ctx, domainscheduledexpense.ScheduledExpenseId("MISSING")).Return(domainscheduledexpense.ErrScheduledExpenseNotFound)
+
+	req, _ := http.NewRequest("DELETE", "/api/budget/scheduled-expense/MISSING", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestDeleteAScheduledExpenseWhenFacadeFailsReturns500(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(ScheduledExpenseActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterScheduledExpenseEndpoints(r, contextFactoryConverter, facade)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+	facade.On("DeleteScheduledExpense", ctx, domainscheduledexpense.ScheduledExpenseId("123-456")).Return(errors.New("ResourceNotFoundException: table not found"))
+
+	req, _ := http.NewRequest("DELETE", "/api/budget/scheduled-expense/123-456", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}

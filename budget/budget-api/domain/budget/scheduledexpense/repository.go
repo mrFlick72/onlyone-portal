@@ -3,9 +3,9 @@ package scheduledexpense
 import "context"
 
 // ScheduledExpenseRepository grows additively as tickets need more of it
-// (#51 shipped Save+FindAll; #52 adds FindFor here; Delete/status-transition
-// methods land in #53/#54), so this port never forces an unrelated ticket's
-// implementation to exist first.
+// (#51 shipped Save+FindAll; #52 added FindFor; #53 adds Delete here;
+// status-transition methods land in #54), so this port never forces an
+// unrelated ticket's implementation to exist first.
 type ScheduledExpenseRepository interface {
 	// Save persists scheduledExpense, generating its Id when empty.
 	Save(ctx context.Context, scheduledExpense *ScheduledExpense) error
@@ -26,4 +26,10 @@ type ScheduledExpenseRepository interface {
 	// action's ownership check, a GET-by-id endpoint choosing 404 vs 500)
 	// need to tell "not found" apart from a genuine failure.
 	FindFor(ctx context.Context, id ScheduledExpenseId) (*ScheduledExpense, error)
+
+	// Delete hard-deletes the definition row with the given id from the
+	// current user's own partition. Returns ErrScheduledExpenseNotFound when
+	// no such row exists there — including a row removed between a caller's
+	// FindFor and this call.
+	Delete(ctx context.Context, id ScheduledExpenseId) error
 }
