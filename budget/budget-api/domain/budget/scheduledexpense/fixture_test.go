@@ -31,3 +31,8 @@ func (m *ScheduledExpenseRepositoryMock) FindFor(ctx context.Context, id Schedul
 	}
 	return args.Get(0).(*ScheduledExpense), args.Error(1)
 }
+
+func (m *ScheduledExpenseRepositoryMock) Delete(ctx context.Context, id ScheduledExpenseId) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}

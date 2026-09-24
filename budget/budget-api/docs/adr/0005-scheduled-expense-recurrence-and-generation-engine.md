@@ -86,6 +86,15 @@ the context — it does not call tag-api (Scheduled Expense tags are stored as k
 resolve on read) and the Kafka publisher never touches `AccessToken` either. If `CreateBudgetExpense.Execute` or the
 event publisher ever start requiring a real access token, this path breaks silently unless re-verified.
 
+### Delete is a hard delete of the definition only
+
+Deleting a Scheduled Expense (#53) removes only its definition row; `BudgetExpense`s it already generated stay exactly
+as they are. This follows from the decision above: generated expenses carry no structured link back to their
+definition, so there is nothing to cascade to, and they are ordinary expenses the user can delete individually. No
+soft-delete/tombstone either — pausing already covers "stop generating but keep the definition". Ownership is checked in
+the domain (`FindFor` in the caller's own partition, as for Update), with a DynamoDB `attribute_exists(id)` condition on
+`DeleteItem` as the backstop for a row that disappears between the check and the delete.
+
 ## Consequences
 
 - Scheduled Expenses cannot express sub-monthly recurrence (weekly, biweekly); revisit the Day/Month model if that's

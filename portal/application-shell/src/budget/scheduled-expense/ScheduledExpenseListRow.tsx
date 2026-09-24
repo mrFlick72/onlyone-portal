@@ -1,6 +1,6 @@
 import React from "react"
 import { Button, ButtonGroup, Chip, TableCell, TableRow } from "@mui/material";
-import { Edit } from "@mui/icons-material";
+import { Delete, Edit } from "@mui/icons-material";
 import ScheduledExpense from "./domain/ScheduledExpense";
 import { colorFor } from "./domain/ScheduledExpenseStatusStyle";
 import { ScheduledExpenseListContentMessageBundle } from "../../messages/MessageBundles";
@@ -8,10 +8,11 @@ import { ScheduledExpenseListContentMessageBundle } from "../../messages/Message
 type ScheduledExpenseListRowProps = {
     scheduledExpense: ScheduledExpense;
     openDetail: () => void;
+    openDelete: () => void;
     messages: ScheduledExpenseListContentMessageBundle;
 }
 
-const ScheduledExpenseListRow: React.FC<ScheduledExpenseListRowProps> = ({ scheduledExpense, openDetail, messages }) => (
+const ScheduledExpenseListRow: React.FC<ScheduledExpenseListRowProps> = ({ scheduledExpense, openDetail, openDelete, messages }) => (
     <TableRow key={scheduledExpense.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
         <TableCell>{scheduledExpense.description}</TableCell>
         <TableCell>{scheduledExpense.day}</TableCell>
@@ -26,6 +27,7 @@ const ScheduledExpenseListRow: React.FC<ScheduledExpenseListRowProps> = ({ sched
         <TableCell>
             <ButtonGroup variant="contained" aria-label="scheduled expense row actions">
                 <Button onClick={openDetail}><Edit /> {messages.actions.open}</Button>
+                <Button onClick={openDelete}><Delete /> {messages.actions.delete}</Button>
             </ButtonGroup>
         </TableCell>
     </TableRow>

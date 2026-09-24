@@ -57,8 +57,8 @@ func (action *FindScheduledExpenses) Execute(ctx context.Context) ([]ScheduledEx
 	return scheduledExpenses, nil
 }
 
-// ErrScheduledExpenseNotFound is returned by UpdateScheduledExpense when the
-// id doesn't exist in the current user's partition — which, by construction,
+// ErrScheduledExpenseNotFound is returned by Update/DeleteScheduledExpense
+// when the id doesn't exist in the current user's partition — which, by construction,
 // also covers an id owned by someone else. The web layer maps it to 404.
 var ErrScheduledExpenseNotFound = errors.New("scheduled expense not found")
 
@@ -92,4 +92,28 @@ func (action *UpdateScheduledExpense) Execute(ctx context.Context, scheduledExpe
 	scheduledExpense.Status = existing.Status
 	scheduledExpense.LastEvaluatedDate = existing.LastEvaluatedDate
 	return action.Repository.Save(ctx, scheduledExpense)
+}
+
+type DeleteScheduledExpense struct {
+	Repository ScheduledExpenseRepository
+}
+
+// Execute hard-deletes only the definition row. BudgetExpenses it already
+// generated are left untouched: they carry no reference back to their
+// definition (ADR 0005 — traceability lives in Notes only), so there is
+// nothing to cascade to.
+//
+// Ownership is checked at the domain level via FindFor (current user's
+// partition only, as in UpdateScheduledExpense); the adapter's
+// attribute_exists(id) condition is the backstop for a row that disappears
+// between the two calls.
+func (action *DeleteScheduledExpense) Execute(ctx context.Context, id ScheduledExpenseId) error {
+	existing, err := action.Repository.FindFor(ctx, id)
+	if err != nil {
+		return err
+	}
+	if existing == nil {
+		return ErrScheduledExpenseNotFound
+	}
+	return action.Repository.Delete(ctx, id)
 }

@@ -7,10 +7,11 @@ import { ScheduledExpenseListContentMessageBundle } from "../../messages/Message
 type ScheduledExpenseListContentProps = {
     scheduledExpenses: ScheduledExpense[];
     openDetail: (scheduledExpense: ScheduledExpense) => void;
+    openDelete: (scheduledExpense: ScheduledExpense) => void;
     messages: ScheduledExpenseListContentMessageBundle;
 }
 
-const ScheduledExpenseListContent: React.FC<ScheduledExpenseListContentProps> = ({ scheduledExpenses, openDetail, messages }) => (
+const ScheduledExpenseListContent: React.FC<ScheduledExpenseListContentProps> = ({ scheduledExpenses, openDetail, openDelete, messages }) => (
     <TableContainer component={Paper}>
         <Table>
             <TableHead>
@@ -29,6 +30,7 @@ const ScheduledExpenseListContent: React.FC<ScheduledExpenseListContentProps> = 
                         key={scheduledExpense.id}
                         scheduledExpense={scheduledExpense}
                         openDetail={() => openDetail(scheduledExpense)}
+                        openDelete={() => openDelete(scheduledExpense)}
                         messages={messages} />)}
             </TableBody>
         </Table>

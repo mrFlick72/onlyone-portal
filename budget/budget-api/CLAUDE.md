@@ -37,10 +37,10 @@ domain/
   budget/attachment/ # Attachment + AttachmentMetadata models, SaveAttachment,
                      # GetAttachment, DeleteAttachment, AttachmentActionsFacade,
                      # AttachmentRepository port
-  budget/scheduledexpense/ # ScheduledExpense model, CreateScheduledExpense,
-                     # FindScheduledExpenses, ScheduledExpenseActionsFacade,
-                     # ScheduledExpenseRepository port (additive — #51 ships
-                     # Save+FindAll only; #52-#54 add Update/Delete/Pause/Resume)
+  budget/scheduledexpense/ # ScheduledExpense model, Create/Find(s)/Update/
+                     # DeleteScheduledExpense, ScheduledExpenseActionsFacade,
+                     # ScheduledExpenseRepository port (additive — Save+FindAll
+                     # in #51, FindFor in #52, Delete in #53; Pause/Resume in #54)
   tags/              # SearchTagRepository port + SearchTag value object
   money/, time/      # value objects (Money, Date, Month, Year)
 adapter/
@@ -246,8 +246,8 @@ The `?q=year=YYYY` query param format preserves the Python revenue-api wire form
 
 ### Scheduled Expense — `web/budget/scheduledexpense/endpoint.go`
 
-Create, list, get-by-id and update (#51-#52). Delete and Pause/Resume (`DELETE`/`PATCH /api/budget/scheduled-expense/:id`)
-land in #53/#54 — see the parent issue and `docs/adr/0005-scheduled-expense-recurrence-and-generation-engine.md`.
+Create, list, get-by-id, update and delete (#51-#53). Pause/Resume (`PATCH /api/budget/scheduled-expense/:id`)
+lands in #54 — see the parent issue and `docs/adr/0005-scheduled-expense-recurrence-and-generation-engine.md`.
 
 | Method | Path                                | Purpose                   | Request body                    | Response                                   |
 |--------|--------------------------------------|----------------------------|----------------------------------|---------------------------------------------|
@@ -255,15 +255,21 @@ land in #53/#54 — see the parent issue and `docs/adr/0005-scheduled-expense-re
 | `GET`  | `/api/budget/scheduled-expense/:id`  | Get one (current user only) | —                              | `ScheduledExpenseRepresentation` `200`, `404` if not found/not owned |
 | `POST` | `/api/budget/scheduled-expense`      | Create                    | `ScheduledExpenseRepresentation` | `201 No Content`                           |
 | `PUT`  | `/api/budget/scheduled-expense/:id`  | Update                    | `ScheduledExpenseRepresentation` | `204 No Content`, `404` if not found/not owned |
+| `DELETE` | `/api/budget/scheduled-expense/:id` | Delete (definition only)  | —                                | `204 No Content`, `404` if not found/not owned |
 
 Update preserves `Status` and the generation engine's internal `LastEvaluatedDate` from the existing record — neither
 travels on the wire representation, and the DynamoDB adapter's `Save` replaces the whole item (see
 `domain/budget/scheduledexpense/actions.go`'s `UpdateScheduledExpense.Execute`).
 
-Ownership on both `GET /:id` and `PUT /:id` is enforced structurally, not by an explicit `UserName` comparison:
-`FindFor` only ever looks inside the current user's own DynamoDB partition (`PK = user_name` from ctx), so an `:id`
-belonging to another user is simply not found — `GET` returns `404`, `PUT`'s `UpdateScheduledExpense` returns
-`ErrScheduledExpenseNotFound`, which the endpoint maps to `404`. See the Scheduled Expense DynamoDB key scheme note above.
+Delete hard-deletes only the definition row; `BudgetExpense`s it already generated are left untouched (they carry no
+reference back to it — see ADR 0005's "Delete" section).
+
+Ownership on `GET /:id`, `PUT /:id` and `DELETE /:id` is enforced structurally, not by an explicit `UserName`
+comparison: `FindFor` only ever looks inside the current user's own DynamoDB partition (`PK = user_name` from ctx), so
+an `:id` belonging to another user is simply not found — `GET` returns `404`; `UpdateScheduledExpense` and
+`DeleteScheduledExpense` return `ErrScheduledExpenseNotFound`, which the endpoints map to `404`. The adapter's
+`DeleteItem` adds an `attribute_exists(id)` condition as a backstop, so a row removed between the action's `FindFor`
+and the delete also surfaces as `ErrScheduledExpenseNotFound` rather than DynamoDB's silent no-op success. See the Scheduled Expense DynamoDB key scheme note above.
 
 **`ScheduledExpenseRepresentation`** (create/update body; `id`/`status` are server-set and ignored on write — tag
 shape is `{tagKey, tagValue}`, not `{key, value}`):

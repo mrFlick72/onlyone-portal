@@ -9,6 +9,12 @@ scheduledExpensePage:
   status:
     active: "Active"
     paused: "Paused"
+  delete:
+    popup:
+      title: "Delete Scheduled Expense"
+      message: "Are you sure you want to delete this scheduled expense? Expenses it already generated are kept."
+  feedback:
+    deleteError: "Could not delete the scheduled expense"
 
 scheduledExpenseDetailPage:
   menu:

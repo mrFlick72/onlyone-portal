@@ -62,3 +62,12 @@ export async function updateScheduledExpense(id: string, scheduledExpense: Sched
         body: JSON.stringify(scheduledExpense),
     });
 }
+
+export async function deleteScheduledExpense(id: string) {
+    const baseUrl = await getBudgetApiBaseUrl();
+    return fetch(SCHEDULED_EXPENSE_URI(baseUrl, id), {
+        method: "DELETE",
+        credentials: "include",
+        headers: authHeaders(),
+    });
+}

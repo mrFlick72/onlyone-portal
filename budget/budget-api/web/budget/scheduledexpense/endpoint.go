@@ -73,6 +73,20 @@ func RegisterScheduledExpenseEndpoints(
 		c.Status(http.StatusNoContent)
 	})
 
+	r.DELETE("/api/budget/scheduled-expense/:id", func(c *gin.Context) {
+		ctx := ContextFactoryConverter.CreateContextFromGin(c)
+		if err := facade.DeleteScheduledExpense(ctx, c.Param("id")); err != nil {
+			if errors.Is(err, scheduledexpense.ErrScheduledExpenseNotFound) {
+				c.Status(http.StatusNotFound)
+				return
+			}
+			logger.LogErrorfFor("Error deleting scheduled expense: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.Status(http.StatusNoContent)
+	})
+
 	r.POST("/api/budget/scheduled-expense", func(c *gin.Context) {
 		var representation ScheduledExpenseRepresentation
 

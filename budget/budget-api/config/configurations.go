@@ -208,6 +208,7 @@ func NewScheduledExpenseActionsFacade() scheduledexpense.ScheduledExpenseActions
 		FindScheduledExpensesAction:  &scheduledexpense.FindScheduledExpenses{Repository: scheduledExpenseRepository},
 		FindScheduledExpenseAction:   &scheduledexpense.FindScheduledExpense{Repository: scheduledExpenseRepository},
 		UpdateScheduledExpenseAction: &scheduledexpense.UpdateScheduledExpense{Repository: scheduledExpenseRepository},
+		DeleteScheduledExpenseAction: &scheduledexpense.DeleteScheduledExpense{Repository: scheduledExpenseRepository},
 	}
 }
 

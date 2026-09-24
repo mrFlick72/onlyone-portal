@@ -50,3 +50,8 @@ func (m *ScheduledExpenseActionsMock) UpdateScheduledExpense(ctx context.Context
 	args := m.Called(ctx, se)
 	return args.Error(0)
 }
+
+func (m *ScheduledExpenseActionsMock) DeleteScheduledExpense(ctx context.Context, id domainscheduledexpense.ScheduledExpenseId) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}

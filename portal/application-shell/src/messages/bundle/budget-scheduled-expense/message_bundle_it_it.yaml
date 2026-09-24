@@ -9,6 +9,12 @@ scheduledExpensePage:
   status:
     active: "Attiva"
     paused: "In pausa"
+  delete:
+    popup:
+      title: "Elimina spesa pianificata"
+      message: "Sei sicuro di voler eliminare questa spesa pianificata? Le spese già generate verranno mantenute."
+  feedback:
+    deleteError: "Impossibile eliminare la spesa pianificata"
 
 scheduledExpenseDetailPage:
   menu:
