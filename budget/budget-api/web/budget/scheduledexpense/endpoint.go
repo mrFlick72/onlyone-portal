@@ -87,6 +87,40 @@ func RegisterScheduledExpenseEndpoints(
 		c.Status(http.StatusNoContent)
 	})
 
+	// First PATCH in budget-api: a partial update of Status only, kept apart
+	// from PUT /:id (which never carries Status — it's a list-row action).
+	r.PATCH("/api/budget/scheduled-expense/:id", func(c *gin.Context) {
+		var representation ScheduledExpenseStatusRepresentation
+
+		ctx := ContextFactoryConverter.CreateContextFromGin(c)
+		if err := c.ShouldBindJSON(&representation); err != nil {
+			logger.LogErrorfFor("Error binding JSON: %v\n", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		var err error
+		switch scheduledexpense.Status(representation.Status) {
+		case scheduledexpense.StatusPaused:
+			err = facade.PauseScheduledExpense(ctx, c.Param("id"))
+		case scheduledexpense.StatusActive:
+			err = facade.ResumeScheduledExpense(ctx, c.Param("id"))
+		default:
+			c.JSON(http.StatusBadRequest, gin.H{"error": "status must be ACTIVE or PAUSED"})
+			return
+		}
+		if err != nil {
+			if errors.Is(err, scheduledexpense.ErrScheduledExpenseNotFound) {
+				c.Status(http.StatusNotFound)
+				return
+			}
+			logger.LogErrorfFor("Error changing scheduled expense status: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.Status(http.StatusNoContent)
+	})
+
 	r.POST("/api/budget/scheduled-expense", func(c *gin.Context) {
 		var representation ScheduledExpenseRepresentation
 

@@ -287,6 +287,7 @@ export class OnlyonePortalPagesConfigMap {
             },
             feedback: {
                 deleteError: getMessageFor(bundle, "scheduledExpensePage.feedback.deleteError"),
+                statusError: getMessageFor(bundle, "scheduledExpensePage.feedback.statusError"),
             },
             content: {
                 headers: {
@@ -301,6 +302,8 @@ export class OnlyonePortalPagesConfigMap {
                 actions: {
                     open: getMessageFor(bundle, "common.action.open"),
                     delete: getMessageFor(bundle, "common.action.delete"),
+                    pause: getMessageFor(bundle, "scheduledExpensePage.action.pause"),
+                    resume: getMessageFor(bundle, "scheduledExpensePage.action.resume"),
                 },
                 status: {
                     ACTIVE: getMessageFor(bundle, "scheduledExpensePage.status.active"),

@@ -2,6 +2,7 @@ package date
 
 import (
 	"testing"
+	"time"
 
 	"github.com/go-playground/assert/v2"
 )
@@ -70,4 +71,16 @@ func TestLastDateOfTheMouthWhenTheDataAreInvalid(t *testing.T) {
 
 	_, err := LastDateOfMonth(month, year)
 	assert.NotEqual(t, nil, err)
+}
+
+// DateOf truncates to the calendar day in UTC, whatever the input's zone —
+// the single notion of "today" shared by pause/resume stamping and the daily
+// generation engine (ADR 0005).
+func TestDateOfTruncatesToTheUTCCalendarDay(t *testing.T) {
+	cest := time.FixedZone("CEST", 2*60*60)
+
+	d := DateOf(time.Date(2026, 9, 25, 0, 30, 0, 0, cest))
+
+	assert.Equal(t, "2026-09-24", d.GetIsoFormattedDate())
+	assert.Equal(t, time.Date(2026, 9, 24, 0, 0, 0, 0, time.UTC), d.GetTime())
 }

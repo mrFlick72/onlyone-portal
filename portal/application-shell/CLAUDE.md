@@ -92,7 +92,7 @@ src/
     revenue/        # Revenue tracking sub-feature
     search-tags/    # Tag management sub-feature
     attachment/     # File attachments shared by expense + revenue
-    scheduled-expense/ # Recurring-expense templates: list (open/delete) + create/edit page (pause lands in #54)
+    scheduled-expense/ # Recurring-expense templates: list (open/pause-resume/delete) + create/edit page
   plan/             # Plan and todo management, including todo status transitions
   analytics/        # Budget expense analytics dashboard (charts + reindex)
   components/       # Shared UI: Menu, form inputs, layout helpers
@@ -128,7 +128,9 @@ a budget-api aggregate, unlike revenue's frontend repository which still points 
   also has a Delete action (#53) that opens `DeleteScheduledExpenseConfirmationPopUp` (mirroring
   `DeletePlanConfirmationPopUp`) and refreshes the list on `204` — or `404`, since "already gone" is the same end state; any other failure (non-2xx or a
   rejected fetch) keeps the popup open and shows an error toast.
-  The pause/resume row action lands in #54. "New Scheduled Expense" in the menu
+  Each row also has a single pause/resume toggle (#54) that flips with the row's status (Pause icon+label when
+  `ACTIVE`, PlayArrow+"Resume" when `PAUSED`), sends the opposite status via `PATCH` (`changeScheduledExpenseStatus`),
+  and refreshes on `204`/`404`; other failures share the page's one error toast with Delete. "New Scheduled Expense" in the menu
   bar links straight to the details page with no `?id=`, unlike Plan's create-via-popup pattern.
 - `ScheduledExpenseDetailPage` serves both create (no `?id=`) and edit (`?id=<id>`) in one form (#51 shipped
   create-mode only; #52 added edit). With an `?id=`, a `useEffect` calls `getScheduledExpense(id)` and populates every

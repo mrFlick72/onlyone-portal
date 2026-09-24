@@ -15,6 +15,10 @@ scheduledExpensePage:
       message: "Sei sicuro di voler eliminare questa spesa pianificata? Le spese già generate verranno mantenute."
   feedback:
     deleteError: "Impossibile eliminare la spesa pianificata"
+    statusError: "Impossibile cambiare lo stato della spesa pianificata"
+  action:
+    pause: "Metti in pausa"
+    resume: "Riprendi"
 
 scheduledExpenseDetailPage:
   menu:

@@ -3,6 +3,8 @@ package scheduledexpense
 import (
 	"context"
 
+	"github.com/mrflick72/budget/budget-api/domain/time/date"
+
 	"github.com/stretchr/testify/mock"
 )
 
@@ -34,5 +36,10 @@ func (m *ScheduledExpenseRepositoryMock) FindFor(ctx context.Context, id Schedul
 
 func (m *ScheduledExpenseRepositoryMock) Delete(ctx context.Context, id ScheduledExpenseId) error {
 	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *ScheduledExpenseRepositoryMock) UpdateStatus(ctx context.Context, id ScheduledExpenseId, status Status, lastEvaluatedDate date.Date) error {
+	args := m.Called(ctx, id, status, lastEvaluatedDate)
 	return args.Error(0)
 }

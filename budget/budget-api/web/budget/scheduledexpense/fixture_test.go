@@ -55,3 +55,13 @@ func (m *ScheduledExpenseActionsMock) DeleteScheduledExpense(ctx context.Context
 	args := m.Called(ctx, id)
 	return args.Error(0)
 }
+
+func (m *ScheduledExpenseActionsMock) PauseScheduledExpense(ctx context.Context, id domainscheduledexpense.ScheduledExpenseId) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *ScheduledExpenseActionsMock) ResumeScheduledExpense(ctx context.Context, id domainscheduledexpense.ScheduledExpenseId) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}

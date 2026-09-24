@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/mrflick72/budget/budget-api/domain/tags"
+	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
 
@@ -57,7 +58,7 @@ func (action *FindScheduledExpenses) Execute(ctx context.Context) ([]ScheduledEx
 	return scheduledExpenses, nil
 }
 
-// ErrScheduledExpenseNotFound is returned by Update/DeleteScheduledExpense
+// ErrScheduledExpenseNotFound is returned by Update/Delete/Pause/ResumeScheduledExpense
 // when the id doesn't exist in the current user's partition — which, by construction,
 // also covers an id owned by someone else. The web layer maps it to 404.
 var ErrScheduledExpenseNotFound = errors.New("scheduled expense not found")
@@ -116,4 +117,46 @@ func (action *DeleteScheduledExpense) Execute(ctx context.Context, id ScheduledE
 		return ErrScheduledExpenseNotFound
 	}
 	return action.Repository.Delete(ctx, id)
+}
+
+type PauseScheduledExpense struct {
+	Repository ScheduledExpenseRepository
+	Today      func() date.Date
+}
+
+func (action *PauseScheduledExpense) Execute(ctx context.Context, id ScheduledExpenseId) error {
+	return transitionStatus(ctx, action.Repository, action.Today, id, StatusPaused)
+}
+
+type ResumeScheduledExpense struct {
+	Repository ScheduledExpenseRepository
+	Today      func() date.Date
+}
+
+func (action *ResumeScheduledExpense) Execute(ctx context.Context, id ScheduledExpenseId) error {
+	return transitionStatus(ctx, action.Repository, action.Today, id, StatusActive)
+}
+
+// transitionStatus moves a definition to target, stamping LastEvaluatedDate
+// with today on both pause and resume so no generation gap accumulates across
+// a paused span and resuming triggers no backfill (ADR 0005).
+//
+// Requesting the state a definition is already in is a no-op — no write and,
+// crucially, no stamp: re-stamping an already-ACTIVE definition (say, from a
+// stale second tab) would silently wipe a pending downtime backfill.
+//
+// Ownership is checked via FindFor (current user's partition only), as for
+// Update/Delete; the adapter's attribute_exists(id) condition is the backstop.
+func transitionStatus(ctx context.Context, repository ScheduledExpenseRepository, today func() date.Date, id ScheduledExpenseId, target Status) error {
+	existing, err := repository.FindFor(ctx, id)
+	if err != nil {
+		return err
+	}
+	if existing == nil {
+		return ErrScheduledExpenseNotFound
+	}
+	if existing.Status == target {
+		return nil
+	}
+	return repository.UpdateStatus(ctx, id, target, today())
 }

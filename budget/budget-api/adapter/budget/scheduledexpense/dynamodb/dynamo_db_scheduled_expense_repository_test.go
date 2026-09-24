@@ -367,3 +367,95 @@ func TestDeleteUnderAnotherUsersContextLeavesTheOwnersScheduledExpense(t *testin
 		t.Fatalf("Expected the owner's scheduled expense to survive another user's delete")
 	}
 }
+
+// UpdateStatus touches only status + last_evaluated_date: description, amount
+// and the stored tag keys must survive untouched (a full-item Save of a
+// FindFor-resolved record could rewrite tag keys, e.g. to UNKNOWN).
+func TestUpdateStatusSetsOnlyStatusAndLastEvaluatedDate(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	tagRepositoryMock := new(tags.SearchTagRepositoryMock)
+	repo := newScheduledExpenseRepositoryWith(idProviderMock, tagRepositoryMock)
+	userCtx := testutils.NewStubbedContextWith("user-update-status")
+
+	housing := tags.SearchTag{Key: "housing", Value: "Housing"}
+	tagRepositoryMock.On("GetTagBy", userCtx, "housing").Return(&housing, nil)
+
+	input := scheduledexpense.ScheduledExpense{
+		UserName:    "user-update-status",
+		Description: "Rent",
+		Amount:      testutils.SafeMoneyFor("1200.00"),
+		Notes:       "Monthly rent",
+		Tags:        []tags.SearchTag{housing},
+		Day:         5,
+		Status:      scheduledexpense.StatusActive,
+	}
+	idProviderMock.On("GenerateIdFor", &input).Return("UPDATE_STATUS_ID")
+	if err := repo.Save(userCtx, &input); err != nil {
+		t.Fatalf("Expected nil error on save, got %v", err)
+	}
+
+	today := testutils.SafeDateFor("24/09/2026")
+	err := repo.UpdateStatus(userCtx, "UPDATE_STATUS_ID", scheduledexpense.StatusPaused, today)
+
+	assert.Equal(t, nil, err)
+	found, err := repo.FindFor(userCtx, "UPDATE_STATUS_ID")
+	if err != nil || found == nil {
+		t.Fatalf("Expected the scheduled expense, got %+v / %v", found, err)
+	}
+	assert.Equal(t, scheduledexpense.StatusPaused, found.Status)
+	if found.LastEvaluatedDate == nil {
+		t.Fatalf("Expected LastEvaluatedDate to be stamped")
+	}
+	assert.Equal(t, "2026-09-24", found.LastEvaluatedDate.GetIsoFormattedDate())
+	assert.Equal(t, "Rent", found.Description)
+	assert.Equal(t, "1200.00", found.Amount.StringifyAmount())
+	assert.Equal(t, "Monthly rent", found.Notes)
+	assert.Equal(t, []tags.SearchTag{housing}, found.Tags)
+}
+
+func TestUpdateStatusReturnsNotFoundWhenTheScheduledExpenseDoesNotExist(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+	userCtx := testutils.NewStubbedContextWith("user-update-status-missing")
+
+	err := repo.UpdateStatus(userCtx, "DOES_NOT_EXIST", scheduledexpense.StatusPaused, testutils.SafeDateFor("24/09/2026"))
+
+	assert.Equal(t, scheduledexpense.ErrScheduledExpenseNotFound, err)
+	// ...and the condition stops UpdateItem's upsert from creating a stub row.
+	found, err := repo.FindFor(userCtx, "DOES_NOT_EXIST")
+	assert.Equal(t, nil, err)
+	if found != nil {
+		t.Fatalf("Expected no row to be created, got %+v", found)
+	}
+}
+
+func TestUpdateStatusUnderAnotherUsersContextLeavesTheOwnersScheduledExpense(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+	ownerCtx := testutils.NewStubbedContextWith("user-update-status-owner")
+	otherCtx := testutils.NewStubbedContextWith("user-update-status-other")
+
+	input := scheduledexpense.ScheduledExpense{
+		UserName:    "user-update-status-owner",
+		Description: "Rent",
+		Amount:      testutils.SafeMoneyFor("1200.00"),
+		Day:         5,
+		Status:      scheduledexpense.StatusActive,
+	}
+	idProviderMock.On("GenerateIdFor", &input).Return("OWNER_STATUS_ID")
+	if err := repo.Save(ownerCtx, &input); err != nil {
+		t.Fatalf("Expected nil error on save, got %v", err)
+	}
+
+	err := repo.UpdateStatus(otherCtx, "OWNER_STATUS_ID", scheduledexpense.StatusPaused, testutils.SafeDateFor("24/09/2026"))
+
+	assert.Equal(t, scheduledexpense.ErrScheduledExpenseNotFound, err)
+	found, err := repo.FindFor(ownerCtx, "OWNER_STATUS_ID")
+	if err != nil || found == nil {
+		t.Fatalf("Expected the owner's scheduled expense, got %+v / %v", found, err)
+	}
+	assert.Equal(t, scheduledexpense.StatusActive, found.Status)
+	if found.LastEvaluatedDate != nil {
+		t.Fatalf("Expected the owner's LastEvaluatedDate untouched, got %v", found.LastEvaluatedDate)
+	}
+}

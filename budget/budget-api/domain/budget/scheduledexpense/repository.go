@@ -1,11 +1,15 @@
 package scheduledexpense
 
-import "context"
+import (
+	"context"
+
+	"github.com/mrflick72/budget/budget-api/domain/time/date"
+)
 
 // ScheduledExpenseRepository grows additively as tickets need more of it
-// (#51 shipped Save+FindAll; #52 added FindFor; #53 adds Delete here;
-// status-transition methods land in #54), so this port never forces an
-// unrelated ticket's implementation to exist first.
+// (#51 shipped Save+FindAll; #52 added FindFor; #53 added Delete; #54 adds
+// UpdateStatus here), so this port never forces an unrelated ticket's
+// implementation to exist first.
 type ScheduledExpenseRepository interface {
 	// Save persists scheduledExpense, generating its Id when empty.
 	Save(ctx context.Context, scheduledExpense *ScheduledExpense) error
@@ -32,4 +36,10 @@ type ScheduledExpenseRepository interface {
 	// no such row exists there — including a row removed between a caller's
 	// FindFor and this call.
 	Delete(ctx context.Context, id ScheduledExpenseId) error
+
+	// UpdateStatus sets only Status and LastEvaluatedDate on the row with the
+	// given id in the current user's own partition, leaving every other field
+	// as stored. Returns ErrScheduledExpenseNotFound when no such row exists
+	// there.
+	UpdateStatus(ctx context.Context, id ScheduledExpenseId, status Status, lastEvaluatedDate date.Date) error
 }

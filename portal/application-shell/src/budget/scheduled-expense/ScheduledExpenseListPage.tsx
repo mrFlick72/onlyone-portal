@@ -7,7 +7,7 @@ import MenuItem from "../../components/menu/MenuItem";
 import { OnlyonePortalPagesConfigMap } from "../../messages/OnlyonePortalPagesConfigMap";
 import { MessageBundle } from "../../messages/MessageRepository";
 import ScheduledExpense from "./domain/ScheduledExpense";
-import { deleteScheduledExpense, getAllScheduledExpenses } from "./domain/ScheduledExpenseRepository";
+import { changeScheduledExpenseStatus, deleteScheduledExpense, getAllScheduledExpenses } from "./domain/ScheduledExpenseRepository";
 import ScheduledExpenseListContent from "./ScheduledExpenseListContent";
 import DeleteScheduledExpenseConfirmationPopUp from "./DeleteScheduledExpenseConfirmationPopUp";
 
@@ -15,15 +15,16 @@ type ScheduledExpenseListPageProps = {
     messageRegistry: MessageBundle;
 }
 
-// Row actions: open (#51/#52) and delete (#53). Pause/resume lands in #54 —
+// Row actions: open (#51/#52), pause/resume toggle (#54) and delete (#53) —
 // see the parent issue and ADR 0005.
 const ScheduledExpenseListPage: React.FC<ScheduledExpenseListPageProps> = ({ messageRegistry }) => {
     const configMap = new OnlyonePortalPagesConfigMap()
+    const listMessages = configMap.scheduledExpense(messageRegistry)
     const [scheduledExpenses, setScheduledExpenses] = useState<ScheduledExpense[]>([])
 
     const [deletable, setDeletable] = useState<ScheduledExpense | null>(null)
     const [openDeletePopUp, setOpenDeletePopUp] = useState(false)
-    const [deleteError, setDeleteError] = useState(false)
+    const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
     const refresh = useCallback(() => {
         getAllScheduledExpenses().then(setScheduledExpenses)
@@ -53,14 +54,30 @@ const ScheduledExpenseListPage: React.FC<ScheduledExpenseListPageProps> = ({ mes
                 setOpenDeletePopUp(false)
                 refresh()
             } else {
-                setDeleteError(true)
+                setErrorMessage(listMessages.feedback.deleteError)
             }
         }).catch(() => {
-            setDeleteError(true)
+            setErrorMessage(listMessages.feedback.deleteError)
         })
-    }, [deletable, refresh])
+    }, [deletable, refresh, listMessages.feedback])
 
-    const listMessages = configMap.scheduledExpense(messageRegistry)
+    // Sends the opposite of the row's current status. 404 means the row is
+    // gone (deleted from another tab) — refresh drops it, no error needed.
+    const toggleStatus = useCallback((scheduledExpense: ScheduledExpense) => {
+        if (!scheduledExpense.id) {
+            return
+        }
+        const target = scheduledExpense.status === "PAUSED" ? "ACTIVE" : "PAUSED"
+        changeScheduledExpenseStatus(scheduledExpense.id, target).then(response => {
+            if (response.status === 204 || response.status === 404) {
+                refresh()
+            } else {
+                setErrorMessage(listMessages.feedback.statusError)
+            }
+        }).catch(() => {
+            setErrorMessage(listMessages.feedback.statusError)
+        })
+    }, [refresh, listMessages.feedback])
 
     return <ThemeProvider theme={themeProvider}>
         <Paper variant="outlined">
@@ -81,15 +98,16 @@ const ScheduledExpenseListPage: React.FC<ScheduledExpenseListPageProps> = ({ mes
                     scheduledExpenses={scheduledExpenses}
                     openDetail={openDetail}
                     openDelete={openDelete}
+                    toggleStatus={toggleStatus}
                     messages={listMessages.content} />
             </Container>
             <Snackbar
-                open={deleteError}
+                open={errorMessage !== null}
                 autoHideDuration={6000}
-                onClose={() => setDeleteError(false)}
+                onClose={() => setErrorMessage(null)}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-                <Alert severity="error" onClose={() => setDeleteError(false)} sx={{ width: '100%' }}>
-                    {listMessages.feedback.deleteError}
+                <Alert severity="error" onClose={() => setErrorMessage(null)} sx={{ width: '100%' }}>
+                    {errorMessage}
                 </Alert>
             </Snackbar>
         </Paper>

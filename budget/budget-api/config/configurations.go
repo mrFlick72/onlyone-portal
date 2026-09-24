@@ -23,6 +23,7 @@ import (
 	"github.com/mrflick72/budget/budget-api/domain/budget/revenue"
 	"github.com/mrflick72/budget/budget-api/domain/budget/scheduledexpense"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
+	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/awsclient"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/httpclient"
@@ -209,6 +210,8 @@ func NewScheduledExpenseActionsFacade() scheduledexpense.ScheduledExpenseActions
 		FindScheduledExpenseAction:   &scheduledexpense.FindScheduledExpense{Repository: scheduledExpenseRepository},
 		UpdateScheduledExpenseAction: &scheduledexpense.UpdateScheduledExpense{Repository: scheduledExpenseRepository},
 		DeleteScheduledExpenseAction: &scheduledexpense.DeleteScheduledExpense{Repository: scheduledExpenseRepository},
+		PauseScheduledExpenseAction:  &scheduledexpense.PauseScheduledExpense{Repository: scheduledExpenseRepository, Today: date.Today},
+		ResumeScheduledExpenseAction: &scheduledexpense.ResumeScheduledExpense{Repository: scheduledExpenseRepository, Today: date.Today},
 	}
 }
 

@@ -17,3 +17,10 @@ type ScheduledExpenseRepresentation struct {
 type ScheduledExpenseListRepresentation struct {
 	ScheduledExpenses []ScheduledExpenseRepresentation `json:"scheduledExpenses"`
 }
+
+// ScheduledExpenseStatusRepresentation is the PATCH /:id body. Status is
+// validated against ACTIVE/PAUSED by the handler, not by a binding tag, so an
+// unknown value and a missing one both get the same 400.
+type ScheduledExpenseStatusRepresentation struct {
+	Status string `json:"status"`
+}
