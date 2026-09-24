@@ -45,6 +45,11 @@ both stamp `LastEvaluatedDate` with the current date, so no gap accumulates whil
 retroactively generated for the paused span when resumed. This is a deliberate difference from the downtime-backfill
 behavior below: pausing is a deliberate user action to skip a span, not unplanned downtime, so it gets no catch-up.
 
+The stamp happens only on an actual transition (#54): pausing an already-paused or resuming an already-active definition
+is a no-op, with no write. Re-stamping an active definition (e.g. from a stale second tab) would otherwise silently wipe
+a pending downtime backfill. "Today" is the UTC calendar day (`date.Today()` in `domain/time/date`) — the generation
+engine (#55) must use the same definition, or stamps and evaluations drift by a day around midnight UTC vs local time.
+
 ### Downtime backfill via `LastEvaluatedDate`, generate-then-advance ordering
 
 Each definition stores a `LastEvaluatedDate`, updated every time the job evaluates it. If the job didn't run for one

@@ -158,6 +158,46 @@ func (repository *DynamoDbScheduledExpenseRepository) Delete(ctx context.Context
 	return nil
 }
 
+// UpdateStatus is a targeted UpdateItem on status + last_evaluated_date only —
+// not a Save of a FindFor-resolved record, which would rewrite every attribute
+// (tag keys included) and clobber a concurrent edit. attribute_exists(id)
+// both maps a missing row to ErrScheduledExpenseNotFound and stops UpdateItem
+// from upserting a stub row. "status" is a DynamoDB reserved word, hence the
+// #status alias.
+func (repository *DynamoDbScheduledExpenseRepository) UpdateStatus(ctx context.Context, id scheduledexpense.ScheduledExpenseId, status scheduledexpense.Status, lastEvaluatedDate date.Date) error {
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		repository.logger.LogErrorfFor("Error getting current user: %v", err)
+		return err
+	}
+
+	_, err = repository.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+		TableName: aws.String(repository.TableName),
+		Key: map[string]types.AttributeValue{
+			"user_name": &types.AttributeValueMemberS{Value: *user.UserName},
+			"id":        &types.AttributeValueMemberS{Value: id},
+		},
+		UpdateExpression:    aws.String("SET #status = :status, last_evaluated_date = :last_evaluated_date"),
+		ConditionExpression: aws.String("attribute_exists(id)"),
+		ExpressionAttributeNames: map[string]string{
+			"#status": "status",
+		},
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":status":              &types.AttributeValueMemberS{Value: string(status)},
+			":last_evaluated_date": &types.AttributeValueMemberS{Value: lastEvaluatedDate.GetIsoFormattedDate()},
+		},
+	})
+	if err != nil {
+		var conditionalCheckFailedException *types.ConditionalCheckFailedException
+		if errors.As(err, &conditionalCheckFailedException) {
+			return scheduledexpense.ErrScheduledExpenseNotFound
+		}
+		repository.logger.LogErrorfFor("Error updating scheduled expense status in DynamoDB: %v", err)
+		return err
+	}
+	return nil
+}
+
 func (repository *DynamoDbScheduledExpenseRepository) FindAll(ctx context.Context) ([]scheduledexpense.ScheduledExpense, error) {
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {

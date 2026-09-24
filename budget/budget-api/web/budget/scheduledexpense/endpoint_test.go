@@ -2,6 +2,7 @@ package scheduledexpense
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -408,6 +409,82 @@ func TestDeleteAScheduledExpenseWhenFacadeFailsReturns500(t *testing.T) {
 	req, _ := http.NewRequest("DELETE", "/api/budget/scheduled-expense/123-456", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func patchStatus(t *testing.T, body string, facadeSetup func(ctx context.Context, facade *ScheduledExpenseActionsMock)) (*httptest.ResponseRecorder, *ScheduledExpenseActionsMock) {
+	t.Helper()
+	r := SetUpRouter()
+	facade := new(ScheduledExpenseActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterScheduledExpenseEndpoints(r, contextFactoryConverter, facade)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+	if facadeSetup != nil {
+		facadeSetup(ctx, facade)
+	}
+
+	req, _ := http.NewRequest("PATCH", "/api/budget/scheduled-expense/123-456", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	return w, facade
+}
+
+func TestPatchScheduledExpenseStatusToPausedPausesIt(t *testing.T) {
+	w, facade := patchStatus(t, `{"status":"PAUSED"}`, func(ctx context.Context, facade *ScheduledExpenseActionsMock) {
+		facade.On("PauseScheduledExpense", ctx, domainscheduledexpense.ScheduledExpenseId("123-456")).Return(nil)
+	})
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	facade.AssertExpectations(t)
+	facade.AssertNotCalled(t, "ResumeScheduledExpense")
+}
+
+func TestPatchScheduledExpenseStatusToActiveResumesIt(t *testing.T) {
+	w, facade := patchStatus(t, `{"status":"ACTIVE"}`, func(ctx context.Context, facade *ScheduledExpenseActionsMock) {
+		facade.On("ResumeScheduledExpense", ctx, domainscheduledexpense.ScheduledExpenseId("123-456")).Return(nil)
+	})
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	facade.AssertExpectations(t)
+	facade.AssertNotCalled(t, "PauseScheduledExpense")
+}
+
+func TestPatchScheduledExpenseStatusWithAnUnknownStatusReturns400(t *testing.T) {
+	w, facade := patchStatus(t, `{"status":"DELETED"}`, nil)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	facade.AssertNotCalled(t, "PauseScheduledExpense")
+	facade.AssertNotCalled(t, "ResumeScheduledExpense")
+}
+
+func TestPatchScheduledExpenseStatusWithoutAStatusReturns400(t *testing.T) {
+	w, _ := patchStatus(t, `{}`, nil)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestPatchScheduledExpenseStatusWithAMalformedBodyReturns400(t *testing.T) {
+	w, _ := patchStatus(t, `not json`, nil)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestPatchScheduledExpenseStatusWhenNotFoundReturns404(t *testing.T) {
+	w, _ := patchStatus(t, `{"status":"PAUSED"}`, func(ctx context.Context, facade *ScheduledExpenseActionsMock) {
+		facade.On("PauseScheduledExpense", ctx, domainscheduledexpense.ScheduledExpenseId("123-456")).Return(domainscheduledexpense.ErrScheduledExpenseNotFound)
+	})
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestPatchScheduledExpenseStatusWhenFacadeFailsReturns500(t *testing.T) {
+	w, _ := patchStatus(t, `{"status":"ACTIVE"}`, func(ctx context.Context, facade *ScheduledExpenseActionsMock) {
+		facade.On("ResumeScheduledExpense", ctx, domainscheduledexpense.ScheduledExpenseId("123-456")).Return(errors.New("ResourceNotFoundException: table not found"))
+	})
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
