@@ -108,6 +108,8 @@ github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../
 
 `management.RegisterEndpoints` then mounts `GET /management/health` → `{"status": "UP"}` (no auth).
 
+**Service-owned configurers:** `provisioner.RegisterConfigurer(c)` adds a service's own `WebServerConfigurer` (e.g. a background scheduler) to the same lifecycle. Call it **after** `ConfigureEngine()` (it panics otherwise); `Configure` runs immediately — a failure shuts the provisioner down and panics, like the built-ins — and `Dispose` runs on `Shutdown` after the built-ins, within the same `server.shutdown-timeout` budget. See `core-services/golang-web-framework/docs/adr/0006-services-register-own-configurers-after-configure-engine.md`.
+
 **Lifecycle / graceful shutdown:**
 - `StartEngine()` listens on `server.port` and blocks on SIGINT/SIGTERM. On signal it calls `srv.Shutdown(ctx)` to drain in-flight requests, then `provisioner.Shutdown(ctx)` which iterates `Dispose` on every configurer (cancels JWKS refresh, flushes OTel exporters).
 - A `defer` in `StartEngine()` is the safety net for early returns (e.g. `ListenAndServe` failure) — same `Shutdown` path.

@@ -77,6 +77,31 @@ func (wsp *WebServerProvisioner) ConfigureEngine() *gin.Engine {
 	return engine
 }
 
+// RegisterConfigurer adds a service-owned configurer — e.g. a background
+// scheduler whose dependencies are only built after ConfigureEngine — to the
+// provisioner's lifecycle. Configure runs immediately; Dispose runs on
+// Shutdown, in registration order (so after the built-ins), within the same
+// server.shutdown-timeout budget.
+//
+// It must be called after ConfigureEngine, and panics otherwise. A Configure
+// failure is treated like a built-in's at boot: the provisioner is shut down
+// (disposing every registered configurer, c included) and it panics.
+func (wsp *WebServerProvisioner) RegisterConfigurer(c WebServerConfigurer) {
+	if wsp.engine == nil {
+		panic(fmt.Errorf("register %s: RegisterConfigurer must be called after ConfigureEngine", c.Name()))
+	}
+
+	wsp.configurers = append(wsp.configurers, c)
+	webServerLogger.LogInfofFor("configuring %s", c.Name())
+	if err := c.Configure(); err != nil {
+		webServerLogger.LogErrorfFor("%s configure failed: %v", c.Name(), err)
+		ctx, cancel := newShutdownContext()
+		wsp.Shutdown(ctx)
+		cancel()
+		panic(fmt.Errorf("%s configure: %w", c.Name(), err))
+	}
+}
+
 // newShutdownContext returns a deadline-bounded context for any path that
 // triggers Shutdown — graceful (SIGTERM), the ConfigureEngine panic path, and
 // the StartEngine safety-net defer. Centralising it keeps server.shutdown-timeout

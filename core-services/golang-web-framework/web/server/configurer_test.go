@@ -206,3 +206,51 @@ func TestConfigureEngine_ReturnsCachedEngineOnSecondCall(t *testing.T) {
 	assert.Same(t, existing, got,
 		"second call should return the cached engine without rebuilding the middleware stack")
 }
+
+// A service-owned configurer registered after ConfigureEngine is configured
+// on the spot — its dependencies exist only once the engine does.
+func TestRegisterConfigurer_ConfiguresImmediately(t *testing.T) {
+	rec := &callRecorder{}
+	wsp := withFakes(&fakeConfigurer{name: "builtin", rec: rec})
+
+	wsp.RegisterConfigurer(&fakeConfigurer{name: "service", rec: rec})
+
+	assert.Equal(t, []string{"configure:service"}, rec.snapshot())
+}
+
+// Registered configurers join the same Shutdown path as the built-ins,
+// disposed in registration order — i.e. after them.
+func TestRegisterConfigurer_DisposedOnShutdownAfterBuiltIns(t *testing.T) {
+	rec := &callRecorder{}
+	wsp := withFakes(&fakeConfigurer{name: "builtin", rec: rec})
+	wsp.RegisterConfigurer(&fakeConfigurer{name: "service", rec: rec})
+
+	require.NoError(t, wsp.Shutdown(context.Background()))
+
+	assert.Equal(t, []string{"configure:service", "dispose:builtin", "dispose:service"}, rec.snapshot())
+}
+
+// Mirrors ConfigureEngine's boot-failure semantics: shut everything down
+// (the failing configurer included, like the built-ins) and panic.
+func TestRegisterConfigurer_ConfigureFailureShutsDownAndPanics(t *testing.T) {
+	rec := &callRecorder{}
+	wsp := withFakes(&fakeConfigurer{name: "builtin", rec: rec})
+
+	assert.Panics(t, func() {
+		wsp.RegisterConfigurer(&fakeConfigurer{name: "service", rec: rec, configureErr: errors.New("boom")})
+	})
+
+	assert.Equal(t, []string{"configure:service", "dispose:builtin", "dispose:service"}, rec.snapshot())
+	assert.Nil(t, wsp.engine)
+	assert.Empty(t, wsp.configurers)
+}
+
+func TestRegisterConfigurer_BeforeConfigureEnginePanics(t *testing.T) {
+	rec := &callRecorder{}
+	wsp := &WebServerProvisioner{}
+
+	assert.Panics(t, func() {
+		wsp.RegisterConfigurer(&fakeConfigurer{name: "service", rec: rec})
+	})
+	assert.Empty(t, rec.snapshot())
+}
