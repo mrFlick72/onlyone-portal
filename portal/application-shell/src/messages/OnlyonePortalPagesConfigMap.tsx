@@ -279,6 +279,12 @@ export class OnlyonePortalPagesConfigMap {
                 newScheduledExpense: getMessageFor(bundle, "scheduledExpensePage.menu.newScheduledExpense"),
             },
             heading: getMessageFor(bundle, "scheduledExpensePage.heading"),
+            deleteModal: {
+                title: getMessageFor(bundle, "scheduledExpensePage.delete.popup.title"),
+                message: getMessageFor(bundle, "scheduledExpensePage.delete.popup.message"),
+                yesLabel: getMessageFor(bundle, "common.confirm.yesLabel"),
+                noLabel: getMessageFor(bundle, "common.confirm.noLabel")
+            },
             content: {
                 headers: {
                     description: getMessageFor(bundle, "common.table.description"),
@@ -291,6 +297,7 @@ export class OnlyonePortalPagesConfigMap {
                 monthlyLabel: getMessageFor(bundle, "scheduledExpensePage.table.monthly"),
                 actions: {
                     open: getMessageFor(bundle, "common.action.open"),
+                    delete: getMessageFor(bundle, "common.action.delete"),
                 },
                 status: {
                     ACTIVE: getMessageFor(bundle, "scheduledExpensePage.status.active"),

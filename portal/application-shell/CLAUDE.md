@@ -68,7 +68,7 @@ Vite builds **separate bundles** per page, each with its own HTML file. Entries 
 | `budgetRevenue` | `budget/index.tsx`        | `budget/revenue/index.html`    | Budget revenue                 |
 | `budgetTags`    | `budget/index.tsx`        | `budget/search-tags/index.html`| Budget tag search              |
 | `scheduledExpense`       | `budget/index.tsx` | `budget/scheduled-expense/index.html`  | Scheduled expense list  |
-| `scheduledExpenseDetail` | `budget/index.tsx` | `budget/scheduled-expense/detail.html` | Scheduled expense create (edit lands in #52) |
+| `scheduledExpenseDetail` | `budget/index.tsx` | `budget/scheduled-expense/detail.html` | Scheduled expense create + edit |
 | `account`       | `account/index.tsx`       | `account/index.html`           | User profile management        |
 | `plan`          | `plan/index.tsx`          | `plan/index.html`              | Plan list                      |
 | `planDetail`    | `plan/index.tsx`          | `plan/detail.html`             | Plan todo detail               |
@@ -92,7 +92,7 @@ src/
     revenue/        # Revenue tracking sub-feature
     search-tags/    # Tag management sub-feature
     attachment/     # File attachments shared by expense + revenue
-    scheduled-expense/ # Recurring-expense templates: list + create page (edit/delete/pause land in #52-#54)
+    scheduled-expense/ # Recurring-expense templates: list (open/delete) + create/edit page (pause lands in #54)
   plan/             # Plan and todo management, including todo status transitions
   analytics/        # Budget expense analytics dashboard (charts + reindex)
   components/       # Shared UI: Menu, form inputs, layout helpers
@@ -124,8 +124,10 @@ a budget-api aggregate, unlike revenue's frontend repository which still points 
 - Routed from `SpentBudgetApp`'s router (not a separate micro-app like `PlanApp`): `/budget/scheduled-expense/index` →
   `ScheduledExpenseListPage`, `/budget/scheduled-expense/detail` → `ScheduledExpenseDetailPage`.
 - `ScheduledExpenseListPage` lists the authenticated user's scheduled expenses (`getAllScheduledExpenses`) and links
-  each row to the details page via `window.location.href` (full-page navigation, like every other section). Delete
-  and pause/resume row actions are intentionally omitted — they land in #53/#54. "New Scheduled Expense" in the menu
+  each row to the details page via `window.location.href` (full-page navigation, like every other section). Each row
+  also has a Delete action (#53) that opens `DeleteScheduledExpenseConfirmationPopUp` (mirroring
+  `DeletePlanConfirmationPopUp`) and refreshes the list on `204` — or `404`, since "already gone" is the same end state.
+  The pause/resume row action lands in #54. "New Scheduled Expense" in the menu
   bar links straight to the details page with no `?id=`, unlike Plan's create-via-popup pattern.
 - `ScheduledExpenseDetailPage` serves both create (no `?id=`) and edit (`?id=<id>`) in one form (#51 shipped
   create-mode only; #52 added edit). With an `?id=`, a `useEffect` calls `getScheduledExpense(id)` and populates every
