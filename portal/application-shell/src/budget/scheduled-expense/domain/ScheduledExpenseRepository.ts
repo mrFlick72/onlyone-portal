@@ -1,5 +1,5 @@
 import { getBudgetApiBaseUrl } from "../../../config/ConfigLoader";
-import ScheduledExpense, { ScheduledExpenseList } from "./ScheduledExpense";
+import ScheduledExpense, { ScheduledExpenseList, ScheduledExpenseStatus } from "./ScheduledExpense";
 
 // Scheduled Expense lives in budget-api (not revenue-api, despite revenue's
 // own frontend repository still pointing at REVENUE_API_BASE_URL) — see
@@ -69,5 +69,17 @@ export async function deleteScheduledExpense(id: string) {
         method: "DELETE",
         credentials: "include",
         headers: authHeaders(),
+    });
+}
+
+// PATCH carries only the target status — pause/resume is a partial update,
+// separate from the full-body PUT used by the details form.
+export async function changeScheduledExpenseStatus(id: string, status: ScheduledExpenseStatus) {
+    const baseUrl = await getBudgetApiBaseUrl();
+    return fetch(SCHEDULED_EXPENSE_URI(baseUrl, id), {
+        method: "PATCH",
+        credentials: "include",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ status }),
     });
 }

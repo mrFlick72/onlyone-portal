@@ -8,10 +8,11 @@ type ScheduledExpenseListContentProps = {
     scheduledExpenses: ScheduledExpense[];
     openDetail: (scheduledExpense: ScheduledExpense) => void;
     openDelete: (scheduledExpense: ScheduledExpense) => void;
+    toggleStatus: (scheduledExpense: ScheduledExpense) => void;
     messages: ScheduledExpenseListContentMessageBundle;
 }
 
-const ScheduledExpenseListContent: React.FC<ScheduledExpenseListContentProps> = ({ scheduledExpenses, openDetail, openDelete, messages }) => (
+const ScheduledExpenseListContent: React.FC<ScheduledExpenseListContentProps> = ({ scheduledExpenses, openDetail, openDelete, toggleStatus, messages }) => (
     <TableContainer component={Paper}>
         <Table>
             <TableHead>
@@ -31,6 +32,7 @@ const ScheduledExpenseListContent: React.FC<ScheduledExpenseListContentProps> = 
                         scheduledExpense={scheduledExpense}
                         openDetail={() => openDetail(scheduledExpense)}
                         openDelete={() => openDelete(scheduledExpense)}
+                        toggleStatus={() => toggleStatus(scheduledExpense)}
                         messages={messages} />)}
             </TableBody>
         </Table>

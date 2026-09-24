@@ -230,7 +230,7 @@ export type PlanDetailPageMessageBundle = {
 /** Localized label per scheduled-expense status, keyed by {@link ScheduledExpenseStatus}. */
 export type ScheduledExpenseStatusMessageBundle = Record<ScheduledExpenseStatus, string>;
 
-export type ScheduledExpenseListRowActionsMessageBundle = { open: string; delete: string };
+export type ScheduledExpenseListRowActionsMessageBundle = { open: string; delete: string; pause: string; resume: string };
 
 export type ScheduledExpenseListContentMessageBundle = {
     headers: { description: string; day: string; month: string; amount: string; status: string; options: string };
@@ -243,7 +243,7 @@ export type ScheduledExpenseListPageMessageBundle = {
     menuMessages: MenuMessageBundle & { newScheduledExpense: string };
     heading: string;
     deleteModal: DeleteModalMessageBundle;
-    feedback: { deleteError: string };
+    feedback: { deleteError: string; statusError: string };
     content: ScheduledExpenseListContentMessageBundle;
 };
 
