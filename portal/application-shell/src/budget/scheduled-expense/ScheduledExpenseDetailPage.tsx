@@ -5,7 +5,7 @@ import { ArrowBack, Save } from "@mui/icons-material";
 import themeProvider from "../../theme/ThemeProvider";
 import Menu from "../../components/menu/Menu";
 import MenuItem from "../../components/menu/MenuItem";
-import { ApiDateFormatPattern, FormDateFormatPattern } from "../../components/form/FormDatePicker";
+import { FormDateFormatPattern } from "../../components/form/FormDatePicker";
 import { SelectOption } from "../../components/form/FormSelect";
 import { OnlyonePortalPagesConfigMap } from "../../messages/OnlyonePortalPagesConfigMap";
 import { MessageBundle } from "../../messages/MessageRepository";
@@ -60,8 +60,10 @@ const ScheduledExpenseDetailPage: React.FC<ScheduledExpenseDetailPageProps> = ({
             setDay(String(scheduledExpense.day))
             setMonth(scheduledExpense.month !== undefined ? String(scheduledExpense.month) : "")
             setHasEndDate(scheduledExpense.endDate !== undefined)
+            // endDate travels as DD/MM/YYYY — the same FormDateFormatPattern the
+            // form state uses (budget-api's date.DateFor), so no conversion.
             if (scheduledExpense.endDate) {
-                setEndDate(moment(scheduledExpense.endDate, ApiDateFormatPattern).format(FormDateFormatPattern))
+                setEndDate(scheduledExpense.endDate)
             }
         }).catch(() => {
             setFeedback({ severity: 'error', message: detailMessages.feedback.loadError })
@@ -79,7 +81,7 @@ const ScheduledExpenseDetailPage: React.FC<ScheduledExpenseDetailPageProps> = ({
             tags: searchTags.map(tag => ({ tagKey: tag.value, tagValue: tag.label })),
             day: Number(day),
             month: month === "" ? undefined : Number(month),
-            endDate: hasEndDate ? moment(endDate, FormDateFormatPattern).format(ApiDateFormatPattern) : undefined,
+            endDate: hasEndDate ? endDate : undefined,
         }
         const action = id ? updateScheduledExpense(id, payload) : createScheduledExpense(payload)
         action.then(response => {

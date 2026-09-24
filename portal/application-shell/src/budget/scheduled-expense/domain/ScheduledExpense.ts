@@ -19,6 +19,8 @@ type ScheduledExpense = {
     tags: ScheduledExpenseTag[];
     day: number;
     month?: number;
+    // DD/MM/YYYY on the wire (FormDateFormatPattern), not ISO — budget-api
+    // parses it with date.DateFor, like expense/revenue dates.
     endDate?: string;
     status?: ScheduledExpenseStatus;
 };
