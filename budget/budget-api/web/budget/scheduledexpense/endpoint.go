@@ -1,6 +1,7 @@
 package scheduledexpense
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,50 @@ func RegisterScheduledExpenseEndpoints(
 			return
 		}
 		c.JSON(http.StatusOK, ScheduledExpenseListDomainToRepresentationModel(scheduledExpenses))
+	})
+
+	r.GET("/api/budget/scheduled-expense/:id", func(c *gin.Context) {
+		ctx := ContextFactoryConverter.CreateContextFromGin(c)
+		scheduledExpense, err := facade.FindScheduledExpense(ctx, c.Param("id"))
+		if err != nil {
+			logger.LogErrorfFor("Error finding scheduled expense: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		if scheduledExpense == nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		c.JSON(http.StatusOK, ScheduledExpenseDomainToRepresentationModel(scheduledExpense))
+	})
+
+	r.PUT("/api/budget/scheduled-expense/:id", func(c *gin.Context) {
+		var representation ScheduledExpenseRepresentation
+
+		ctx := ContextFactoryConverter.CreateContextFromGin(c)
+		if err := c.ShouldBindJSON(&representation); err != nil {
+			logger.LogErrorfFor("Error binding JSON: %v\n", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		domainModel, err := ScheduledExpenseRepresentationToDomainModel(representation)
+		if err != nil {
+			logger.LogErrorfFor("Error converting scheduled expense representation: %v\n", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		domainModel.Id = c.Param("id")
+		if err := facade.UpdateScheduledExpense(ctx, domainModel); err != nil {
+			if errors.Is(err, scheduledexpense.ErrScheduledExpenseNotFound) {
+				c.Status(http.StatusNotFound)
+				return
+			}
+			logger.LogErrorfFor("Error updating scheduled expense: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.Status(http.StatusNoContent)
 	})
 
 	r.POST("/api/budget/scheduled-expense", func(c *gin.Context) {

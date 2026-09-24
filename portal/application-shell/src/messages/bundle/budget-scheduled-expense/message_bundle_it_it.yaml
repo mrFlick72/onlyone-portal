@@ -14,6 +14,7 @@ scheduledExpenseDetailPage:
   menu:
     backToList: "Torna all'elenco"
   heading: "Nuova spesa pianificata"
+  headingEdit: "Modifica spesa pianificata"
   form:
     description: "Descrizione:"
     day: "Giorno (1-31):"
@@ -23,3 +24,4 @@ scheduledExpenseDetailPage:
   feedback:
     success: "Spesa pianificata salvata"
     error: "Impossibile salvare la spesa pianificata"
+    loadError: "Impossibile caricare la spesa pianificata"

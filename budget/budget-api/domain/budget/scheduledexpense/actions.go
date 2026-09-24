@@ -2,6 +2,7 @@ package scheduledexpense
 
 import (
 	"context"
+	"errors"
 	"sort"
 
 	"github.com/mrflick72/budget/budget-api/domain/tags"
@@ -33,6 +34,14 @@ func (action *CreateScheduledExpense) Execute(ctx context.Context, scheduledExpe
 	return action.Repository.Save(ctx, scheduledExpense)
 }
 
+type FindScheduledExpense struct {
+	Repository ScheduledExpenseRepository
+}
+
+func (action *FindScheduledExpense) Execute(ctx context.Context, id ScheduledExpenseId) (*ScheduledExpense, error) {
+	return action.Repository.FindFor(ctx, id)
+}
+
 type FindScheduledExpenses struct {
 	Repository ScheduledExpenseRepository
 }
@@ -46,4 +55,41 @@ func (action *FindScheduledExpenses) Execute(ctx context.Context) ([]ScheduledEx
 		return scheduledExpenses[i].Description < scheduledExpenses[j].Description
 	})
 	return scheduledExpenses, nil
+}
+
+// ErrScheduledExpenseNotFound is returned by UpdateScheduledExpense when the
+// id doesn't exist in the current user's partition — which, by construction,
+// also covers an id owned by someone else. The web layer maps it to 404.
+var ErrScheduledExpenseNotFound = errors.New("scheduled expense not found")
+
+type UpdateScheduledExpense struct {
+	Repository ScheduledExpenseRepository
+}
+
+// Execute preserves Status and LastEvaluatedDate from the existing record —
+// neither travels on the wire representation (Status is a list-row action
+// only, per ADR 0005; LastEvaluatedDate is generation-engine-internal), and
+// Save replaces the whole item, so skipping this would silently reset both
+// to their zero values on every edit.
+//
+// Ownership is enforced structurally, not by comparing UserName: FindFor
+// only ever looks inside the current user's own DynamoDB partition
+// (PK = user_name from ctx), so an id belonging to another user simply isn't
+// found — there is nothing further to compare, unlike revenue/expense whose
+// derived composite keys don't encode the owner in the partition key itself.
+// See budget-api/CLAUDE.md's Scheduled Expense DynamoDB key scheme.
+func (action *UpdateScheduledExpense) Execute(ctx context.Context, scheduledExpense *ScheduledExpense) error {
+	applyDefaultTagIfMissing(scheduledExpense)
+
+	existing, err := action.Repository.FindFor(ctx, scheduledExpense.Id)
+	if err != nil {
+		return err
+	}
+	if existing == nil {
+		return ErrScheduledExpenseNotFound
+	}
+
+	scheduledExpense.Status = existing.Status
+	scheduledExpense.LastEvaluatedDate = existing.LastEvaluatedDate
+	return action.Repository.Save(ctx, scheduledExpense)
 }

@@ -2,11 +2,10 @@ package scheduledexpense
 
 import "context"
 
-// ScheduledExpenseRepository is intentionally minimal for the create+list
-// slice (#51) — Save and FindAll only. Update/Delete/status-transition
-// methods are added additively by the tickets that need them (#52-#54), so
-// this port grows without forcing an unrelated ticket's implementation to
-// exist first.
+// ScheduledExpenseRepository grows additively as tickets need more of it
+// (#51 shipped Save+FindAll; #52 adds FindFor here; Delete/status-transition
+// methods land in #53/#54), so this port never forces an unrelated ticket's
+// implementation to exist first.
 type ScheduledExpenseRepository interface {
 	// Save persists scheduledExpense, generating its Id when empty.
 	Save(ctx context.Context, scheduledExpense *ScheduledExpense) error
@@ -17,4 +16,14 @@ type ScheduledExpenseRepository interface {
 	// DynamoDbRevenueRepository.FindByDateRange) rather than trusting a
 	// caller-supplied value.
 	FindAll(ctx context.Context) ([]ScheduledExpense, error)
+
+	// FindFor returns the ScheduledExpense with the given id, scoped to the
+	// user resolved from ctx — never the one on the struct passed to a
+	// caller. Returns (nil, nil), not an error, when no such id exists in
+	// that user's own partition: "not found" and "belongs to someone else"
+	// are indistinguishable by construction here (PK = user_name), and
+	// deliberately not treated as an error condition — callers (an Update
+	// action's ownership check, a GET-by-id endpoint choosing 404 vs 500)
+	// need to tell "not found" apart from a genuine failure.
+	FindFor(ctx context.Context, id ScheduledExpenseId) (*ScheduledExpense, error)
 }

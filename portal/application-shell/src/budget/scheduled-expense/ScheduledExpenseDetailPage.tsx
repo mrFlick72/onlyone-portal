@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react"
 import moment from "moment";
-import { Alert, Box, Button, CircularProgress, Container, Divider, Paper, Snackbar, ThemeProvider } from "@mui/material";
+import { Alert, Box, Button, CircularProgress, Container, Divider, Paper, ThemeProvider, Typography, Snackbar } from "@mui/material";
 import { ArrowBack, Save } from "@mui/icons-material";
 import themeProvider from "../../theme/ThemeProvider";
 import Menu from "../../components/menu/Menu";
@@ -12,17 +12,18 @@ import { MessageBundle } from "../../messages/MessageRepository";
 import { getSearchTagRegistry } from "../search-tags/domain/SearchTagRepository";
 import selectUiAdapterFor from "../search-tags/SearchTagsUIAdapter";
 import ScheduledExpenseForm from "./ScheduledExpenseForm";
-import { createScheduledExpense } from "./domain/ScheduledExpenseRepository";
+import { createScheduledExpense, getScheduledExpense, updateScheduledExpense } from "./domain/ScheduledExpenseRepository";
 
 type ScheduledExpenseDetailPageProps = {
     messageRegistry: MessageBundle;
 }
 
-// #51 ships create-mode only. Edit-mode (reading ?id=, loading the existing
-// values, submitting via PUT) lands in #52 once budget-api has an Update
-// action and a single-item lookup — see the parent issue.
+// Create-mode when the URL carries no ?id=, edit-mode when it does (#52) —
+// one form serves both, per the design session. Status is never loaded or
+// submitted here: it stays a list-row (pause/resume) action, per ADR 0005.
 const ScheduledExpenseDetailPage: React.FC<ScheduledExpenseDetailPageProps> = ({ messageRegistry }) => {
     const configMap = new OnlyonePortalPagesConfigMap()
+    const id = new URLSearchParams(window.location.search).get("id") ?? ""
 
     const [description, setDescription] = useState("")
     const [amount, setAmount] = useState("0.00")
@@ -37,18 +38,41 @@ const ScheduledExpenseDetailPage: React.FC<ScheduledExpenseDetailPageProps> = ({
     const [saving, setSaving] = useState(false)
     const [feedback, setFeedback] = useState<{ severity: 'success' | 'error'; message: string } | null>(null)
 
+    const detailMessages = configMap.scheduledExpenseDetail(messageRegistry)
+
     useEffect(() => {
         getSearchTagRegistry("expense").then(setSearchTagRegistry)
     }, [])
 
-    const detailMessages = configMap.scheduledExpenseDetail(messageRegistry)
+    useEffect(() => {
+        if (!id) {
+            return
+        }
+        getScheduledExpense(id).then(scheduledExpense => {
+            if (!scheduledExpense) {
+                setFeedback({ severity: 'error', message: detailMessages.feedback.loadError })
+                return
+            }
+            setDescription(scheduledExpense.description)
+            setAmount(scheduledExpense.amount)
+            setNote(scheduledExpense.notes)
+            setSearchTags(scheduledExpense.tags.map(tag => ({ value: tag.tagKey, label: tag.tagValue })))
+            setDay(String(scheduledExpense.day))
+            setMonth(scheduledExpense.month !== undefined ? String(scheduledExpense.month) : "")
+            setHasEndDate(scheduledExpense.endDate !== undefined)
+            if (scheduledExpense.endDate) {
+                setEndDate(moment(scheduledExpense.endDate, ApiDateFormatPattern).format(FormDateFormatPattern))
+            }
+        }).catch(() => {
+            setFeedback({ severity: 'error', message: detailMessages.feedback.loadError })
+        })
+        // id is stable for the page's lifetime (a full navigation is required
+        // to change it) — fetch once, not on every messageRegistry update.
+    }, [id])
 
-    // Stays on the page and confirms via toast, rather than navigating back to
-    // the list — the list link is a separate, explicit action (menu and the
-    // bottom "back" button), not an implicit side effect of saving.
     const save = useCallback(() => {
         setSaving(true)
-        createScheduledExpense({
+        const payload = {
             description,
             amount,
             notes: note,
@@ -56,8 +80,10 @@ const ScheduledExpenseDetailPage: React.FC<ScheduledExpenseDetailPageProps> = ({
             day: Number(day),
             month: month === "" ? undefined : Number(month),
             endDate: hasEndDate ? moment(endDate, FormDateFormatPattern).format(ApiDateFormatPattern) : undefined,
-        }).then(response => {
-            if (response.status === 201) {
+        }
+        const action = id ? updateScheduledExpense(id, payload) : createScheduledExpense(payload)
+        action.then(response => {
+            if (response.status === 201 || response.status === 204) {
                 setFeedback({ severity: 'success', message: detailMessages.feedback.success })
             } else {
                 setFeedback({ severity: 'error', message: detailMessages.feedback.error })
@@ -67,7 +93,7 @@ const ScheduledExpenseDetailPage: React.FC<ScheduledExpenseDetailPageProps> = ({
         }).finally(() => {
             setSaving(false)
         })
-    }, [description, amount, note, searchTags, day, month, hasEndDate, endDate, detailMessages.feedback])
+    }, [id, description, amount, note, searchTags, day, month, hasEndDate, endDate, detailMessages.feedback])
 
     return <ThemeProvider theme={themeProvider}>
         <Paper variant="outlined">
@@ -78,6 +104,10 @@ const ScheduledExpenseDetailPage: React.FC<ScheduledExpenseDetailPageProps> = ({
                     link="/budget/scheduled-expense/index" />
             </Menu>
             <Container>
+                <Typography variant="h5" sx={{ my: 2 }}>
+                    {id ? detailMessages.headingEdit : detailMessages.heading}
+                </Typography>
+
                 <ScheduledExpenseForm
                     data={{
                         description,

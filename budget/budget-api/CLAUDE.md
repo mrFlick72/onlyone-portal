@@ -246,22 +246,34 @@ The `?q=year=YYYY` query param format preserves the Python revenue-api wire form
 
 ### Scheduled Expense — `web/budget/scheduledexpense/endpoint.go`
 
-Create + list only (#51). Update, Delete and Pause/Resume (`PUT`/`DELETE`/`PATCH /api/budget/scheduled-expense/:id`)
-land in #52-#54 — see the parent issue and `docs/adr/0005-scheduled-expense-recurrence-and-generation-engine.md`.
+Create, list, get-by-id and update (#51-#52). Delete and Pause/Resume (`DELETE`/`PATCH /api/budget/scheduled-expense/:id`)
+land in #53/#54 — see the parent issue and `docs/adr/0005-scheduled-expense-recurrence-and-generation-engine.md`.
 
-| Method | Path                            | Purpose | Request body                     | Response                                  |
-|--------|----------------------------------|---------|-----------------------------------|--------------------------------------------|
-| `GET`  | `/api/budget/scheduled-expense` | List (current user only) | —                   | `ScheduledExpenseListRepresentation` `200` |
-| `POST` | `/api/budget/scheduled-expense` | Create  | `ScheduledExpenseRepresentation`  | `201 No Content`                           |
+| Method | Path                                | Purpose                   | Request body                    | Response                                   |
+|--------|--------------------------------------|----------------------------|----------------------------------|---------------------------------------------|
+| `GET`  | `/api/budget/scheduled-expense`      | List (current user only)  | —                                | `ScheduledExpenseListRepresentation` `200` |
+| `GET`  | `/api/budget/scheduled-expense/:id`  | Get one (current user only) | —                              | `ScheduledExpenseRepresentation` `200`, `404` if not found/not owned |
+| `POST` | `/api/budget/scheduled-expense`      | Create                    | `ScheduledExpenseRepresentation` | `201 No Content`                           |
+| `PUT`  | `/api/budget/scheduled-expense/:id`  | Update                    | `ScheduledExpenseRepresentation` | `204 No Content`, `404` if not found/not owned |
 
-**`ScheduledExpenseRepresentation`** (create body; `id`/`status` are server-set and ignored/empty on create):
+Update preserves `Status` and the generation engine's internal `LastEvaluatedDate` from the existing record — neither
+travels on the wire representation, and the DynamoDB adapter's `Save` replaces the whole item (see
+`domain/budget/scheduledexpense/actions.go`'s `UpdateScheduledExpense.Execute`).
+
+Ownership on both `GET /:id` and `PUT /:id` is enforced structurally, not by an explicit `UserName` comparison:
+`FindFor` only ever looks inside the current user's own DynamoDB partition (`PK = user_name` from ctx), so an `:id`
+belonging to another user is simply not found — `GET` returns `404`, `PUT`'s `UpdateScheduledExpense` returns
+`ErrScheduledExpenseNotFound`, which the endpoint maps to `404`. See the Scheduled Expense DynamoDB key scheme note above.
+
+**`ScheduledExpenseRepresentation`** (create/update body; `id`/`status` are server-set and ignored on write — tag
+shape is `{tagKey, tagValue}`, not `{key, value}`):
 
 ```json
 {
   "description": "Rent",
   "amount": "1200.00",
   "notes": "string",
-  "tags": [{"key": "housing", "value": "Housing"}],
+  "tags": [{"tagKey": "housing", "tagValue": "Housing"}],
   "day": 5,
   "month": 3,
   "endDate": "DD/MM/YYYY"

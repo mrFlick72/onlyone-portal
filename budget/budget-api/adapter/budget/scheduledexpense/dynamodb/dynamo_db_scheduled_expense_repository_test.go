@@ -205,6 +205,74 @@ func TestSaveDerivesUserNameFromContextNotFromTheStruct(t *testing.T) {
 	assert.Equal(t, "user-ctx-wins", result[0].UserName)
 }
 
+func TestFindForReturnsTheScheduledExpenseWhenItExists(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+	userCtx := testutils.NewStubbedContextWith("user-find-for")
+
+	input := scheduledexpense.ScheduledExpense{
+		UserName:    "user-find-for",
+		Description: "Rent",
+		Amount:      testutils.SafeMoneyFor("1200.00"),
+		Day:         5,
+		Status:      scheduledexpense.StatusActive,
+	}
+	idProviderMock.On("GenerateIdFor", &input).Return("FIND_FOR_ID")
+	if err := repo.Save(userCtx, &input); err != nil {
+		t.Fatalf("Expected nil error on save, got %v", err)
+	}
+
+	found, err := repo.FindFor(userCtx, "FIND_FOR_ID")
+
+	if err != nil {
+		t.Fatalf("Error finding scheduled expense: %v", err)
+	}
+	if found == nil {
+		t.Fatalf("Expected a scheduled expense, got nil")
+	}
+	assert.Equal(t, "FIND_FOR_ID", found.Id)
+	assert.Equal(t, "Rent", found.Description)
+}
+
+func TestFindForReturnsNilWithoutErrorWhenNotFound(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+	userCtx := testutils.NewStubbedContextWith("user-find-for-missing")
+
+	found, err := repo.FindFor(userCtx, "DOES_NOT_EXIST")
+
+	assert.Equal(t, nil, err)
+	if found != nil {
+		t.Fatalf("Expected nil, got %+v", found)
+	}
+}
+
+func TestFindForDoesNotLeakAnotherUsersScheduledExpense(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+	ownerCtx := testutils.NewStubbedContextWith("user-find-for-owner")
+	otherCtx := testutils.NewStubbedContextWith("user-find-for-other")
+
+	input := scheduledexpense.ScheduledExpense{
+		UserName:    "user-find-for-owner",
+		Description: "Rent",
+		Amount:      testutils.SafeMoneyFor("1200.00"),
+		Day:         5,
+		Status:      scheduledexpense.StatusActive,
+	}
+	idProviderMock.On("GenerateIdFor", &input).Return("OWNER_ONLY_ID")
+	if err := repo.Save(ownerCtx, &input); err != nil {
+		t.Fatalf("Expected nil error on save, got %v", err)
+	}
+
+	found, err := repo.FindFor(otherCtx, "OWNER_ONLY_ID")
+
+	assert.Equal(t, nil, err)
+	if found != nil {
+		t.Fatalf("Expected FindFor under another user's context to find nothing, got %+v", found)
+	}
+}
+
 func TestFindAllOnlyReturnsTheCurrentUsersScheduledExpenses(t *testing.T) {
 	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
 	repo := newScheduledExpenseRepository(idProviderMock)

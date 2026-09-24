@@ -23,3 +23,11 @@ func (m *ScheduledExpenseRepositoryMock) FindAll(ctx context.Context) ([]Schedul
 	}
 	return args.Get(0).([]ScheduledExpense), args.Error(1)
 }
+
+func (m *ScheduledExpenseRepositoryMock) FindFor(ctx context.Context, id ScheduledExpenseId) (*ScheduledExpense, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*ScheduledExpense), args.Error(1)
+}
