@@ -6,7 +6,7 @@ The parent `../CLAUDE.md` covers the monorepo as a whole (auth, framework, deplo
 
 ## Services in this directory
 
-- `budget-api/` — Go (Gin). CRUD for budget expenses and revenue, plus attachment upload/download/delete for both. Persists structured data to DynamoDB; attachment file bytes go to S3. Calls `tag-api` over REST for tag lookup. Publishes expense `CREATE`/`UPDATE`/`DELETE` events to the Kafka topic `budget-api.expense` (see `adapter/budget/expense/kafka`).
+- `budget-api/` — Go (Gin). CRUD for budget expenses and revenue, plus attachment upload/download/delete for both. Persists structured data to DynamoDB; attachment file bytes go to S3. Calls `tag-api` over REST for tag lookup. Publishes expense `CREATE`/`UPDATE`/`DELETE` events to the Kafka topic `budget-api.expense` (see `adapter/budget/expense/kafka`). Also runs an in-process scheduler (startup + hourly) that generates expenses from Scheduled Expenses — **single replica only** (see `budget-api/CLAUDE.md`).
 - `analytic-api/` — Python FastAPI. Serves expense analytics for the frontend's analytics page. Owns a Postgres **projection** of expenses kept current by consuming the `budget-api.expense` Kafka topic; never calls `budget-api` at request time. See `analytic-api/AGENTS.md`.
 - `revenue-api/` — Python FastAPI. Legacy revenue service; kept in place pending decommissioning once Go version is verified.
 - `budget-exporter/` — Python. Data export job.
@@ -22,7 +22,7 @@ domain/
   budget/expense/    # CreateBudgetExpense, UpdateBudgetExpense, FindSpentBudget, DeleteBudgetExpense + BudgetExpenseActionsFacade
   budget/revenue/    # CreateRevenue, UpdateRevenue, FindRevenue, DeleteRevenue + RevenueActionsFacade
   budget/attachment/ # SaveAttachment, GetAttachment, DeleteAttachment + AttachmentActionsFacade
-  budget/scheduledexpense/ # Create/Find/Update/Delete/Pause/ResumeScheduledExpense + ScheduledExpenseActionsFacade (#51-#54)
+  budget/scheduledexpense/ # Create/Find/Update/Delete/Pause/ResumeScheduledExpense + ScheduledExpenseActionsFacade (#51-#54); GenerateScheduledExpenses engine (#55)
   tags/              # SearchTagRepository port
   money/, time/      # value objects
 adapter/
@@ -31,7 +31,8 @@ adapter/
   budget/attachment/          # AwsCompositeAttachmentRepository — orchestrates dynamo + s3
   budget/attachment/dynamodb/ # DynamoDB impl of attachment metadata repository + id provider
   budget/attachment/s3/       # S3 impl of attachment content repository
-  budget/scheduledexpense/dynamodb/ # DynamoDB impl of ScheduledExpenseRepository + id provider
+  budget/scheduledexpense/dynamodb/ # DynamoDB impl of ScheduledExpenseRepository + GenerationRepository + id provider
+  budget/scheduledexpense/scheduler/ # gocron v2 WebServerConfigurer running the generation engine (startup + hourly)
   tags/rest/                  # REST client for tag-api + Ristretto-cached decorator
 web/
   budget/expense/    # package expense    — endpoint, converter, representation for expense

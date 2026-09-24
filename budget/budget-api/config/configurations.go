@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"strings"
+	"time"
 
 	aws_config "github.com/aws/aws-sdk-go-v2/config"
 	aws_dynamodb "github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -17,6 +18,7 @@ import (
 	"github.com/mrflick72/budget/budget-api/adapter/budget/expense/kafka"
 	revenuedynamo "github.com/mrflick72/budget/budget-api/adapter/budget/revenue/dynamodb"
 	scheduledexpensedynamo "github.com/mrflick72/budget/budget-api/adapter/budget/scheduledexpense/dynamodb"
+	"github.com/mrflick72/budget/budget-api/adapter/budget/scheduledexpense/scheduler"
 	"github.com/mrflick72/budget/budget-api/adapter/tags/rest"
 	"github.com/mrflick72/budget/budget-api/domain/budget/attachment"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
@@ -28,6 +30,7 @@ import (
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/httpclient"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
@@ -180,6 +183,16 @@ func NewRevenueActionsFacade() revenue.RevenueActions {
 }
 
 func NewScheduledExpenseRepository() scheduledexpense.ScheduledExpenseRepository {
+	return newDynamoDbScheduledExpenseRepository()
+}
+
+// NewScheduledExpenseGenerationRepository is the same DynamoDB adapter seen
+// through the generation engine's cross-user port.
+func NewScheduledExpenseGenerationRepository() scheduledexpense.GenerationRepository {
+	return newDynamoDbScheduledExpenseRepository()
+}
+
+func newDynamoDbScheduledExpenseRepository() *scheduledexpensedynamo.DynamoDbScheduledExpenseRepository {
 	cfg, err := awsclient.LoadDefaultConfig(
 		context.Background(),
 		aws_config.WithRegion("eu-central-1"),
@@ -199,7 +212,24 @@ func NewScheduledExpenseRepository() scheduledexpense.ScheduledExpenseRepository
 		// Scheduled Expense tags share expense's scope (see CONTEXT.md: "a tag
 		// list (tag keys, as on BudgetExpense)") — not a separate scope.
 		NewExpenseSearchTagRepository(),
-	)
+	).(*scheduledexpensedynamo.DynamoDbScheduledExpenseRepository)
+}
+
+// NewScheduledExpenseGenerationConfigurer builds the in-process generation
+// engine (ADR 0005) as a WebServerConfigurer for main.go to hand to
+// WebServerProvisioner.RegisterConfigurer. expenseCreator must be the facade
+// main.go already built — building another would start a second
+// reclassification listener. Interval: budget-api.scheduled-expense.
+// generation.interval (Go duration, default 1h).
+func NewScheduledExpenseGenerationConfigurer(expenseCreator scheduledexpense.BudgetExpenseCreator) server.WebServerConfigurer {
+	job := &scheduledexpense.GenerateScheduledExpenses{
+		Repository:     NewScheduledExpenseGenerationRepository(),
+		ExpenseCreator: expenseCreator,
+		Today:          date.Today,
+		Logger:         logging.GetLoggerInstanceForComponentByTypeName("GenerateScheduledExpenses"),
+	}
+	interval := configurationManager.GetConfigDurationFor("budget-api.scheduled-expense.generation.interval", time.Hour)
+	return scheduler.NewGocronGenerationConfigurer(job, interval)
 }
 
 func NewScheduledExpenseActionsFacade() scheduledexpense.ScheduledExpenseActions {
