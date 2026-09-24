@@ -28,6 +28,21 @@ type DynamoDbScheduledExpenseRepository struct {
 	ScheduledExpenseIdProvider scheduledexpense.ScheduledExpenseIdProvider
 	SearchTagRepository        tags.SearchTagRepository
 	logger                     *logging.Logger
+
+	// scanPageLimit caps each FindAllActive Scan page; 0 means DynamoDB's
+	// default (1MB pages). Tests lower it to exercise pagination.
+	scanPageLimit int32
+}
+
+// NewDynamoDbScheduledExpenseGenerationRepository is the same adapter seen
+// through the cross-user port the generation engine uses.
+func NewDynamoDbScheduledExpenseGenerationRepository(
+	tableName string,
+	client *dynamodb.Client,
+	idProvider scheduledexpense.ScheduledExpenseIdProvider,
+	searchTagRepository tags.SearchTagRepository,
+) scheduledexpense.GenerationRepository {
+	return NewDynamoDbScheduledExpenseRepository(tableName, client, idProvider, searchTagRepository).(*DynamoDbScheduledExpenseRepository)
 }
 
 func NewDynamoDbScheduledExpenseRepository(
@@ -65,8 +80,10 @@ func (repository *DynamoDbScheduledExpenseRepository) Save(ctx context.Context, 
 	se.UserName = *user.UserName
 
 	tagKeys := make([]string, 0, len(se.Tags))
+	tagNames := make(map[string]types.AttributeValue, len(se.Tags))
 	for _, tag := range se.Tags {
 		tagKeys = append(tagKeys, tag.Key)
+		tagNames[tag.Key] = &types.AttributeValueMemberS{Value: tag.Value}
 	}
 
 	item := map[string]types.AttributeValue{
@@ -78,6 +95,13 @@ func (repository *DynamoDbScheduledExpenseRepository) Save(ctx context.Context, 
 		"tag":         &types.AttributeValueMemberS{Value: strings.Join(tagKeys, ",")},
 		"day":         &types.AttributeValueMemberN{Value: strconv.Itoa(se.Day)},
 		"status":      &types.AttributeValueMemberS{Value: string(se.Status)},
+	}
+	// tag_names keeps each tag's display name as of this save, for the
+	// generation engine: it runs with no user token, so it can't resolve names
+	// through tag-api the way user-facing reads do (#55). Reads for the UI
+	// still resolve live names and ignore this attribute.
+	if len(tagNames) > 0 {
+		item["tag_names"] = &types.AttributeValueMemberM{Value: tagNames}
 	}
 	if se.Month != nil {
 		item["month"] = &types.AttributeValueMemberN{Value: strconv.Itoa(*se.Month)}
@@ -125,7 +149,7 @@ func (repository *DynamoDbScheduledExpenseRepository) FindFor(ctx context.Contex
 		return nil, nil
 	}
 
-	return repository.fromDynamo(ctx, result.Item)
+	return repository.fromDynamo(ctx, repository.resolveTags, result.Item)
 }
 
 // Delete removes the item at (PK=user_name from ctx, SK=id). Since the owner
@@ -198,6 +222,79 @@ func (repository *DynamoDbScheduledExpenseRepository) UpdateStatus(ctx context.C
 	return nil
 }
 
+// FindAllActive scans the whole table — every user's partition — for ACTIVE
+// definitions, following LastEvaluatedKey across pages. Tags come from
+// storedTags, never tag-api. A row that can't be decoded is logged and
+// skipped so one bad definition can't stop generation for everyone.
+func (repository *DynamoDbScheduledExpenseRepository) FindAllActive(ctx context.Context) ([]scheduledexpense.ScheduledExpense, error) {
+	input := &dynamodb.ScanInput{
+		TableName:                aws.String(repository.TableName),
+		FilterExpression:         aws.String("#status = :active"),
+		ExpressionAttributeNames: map[string]string{"#status": "status"},
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":active": &types.AttributeValueMemberS{Value: string(scheduledexpense.StatusActive)},
+		},
+	}
+	if repository.scanPageLimit > 0 {
+		input.Limit = aws.Int32(repository.scanPageLimit)
+	}
+
+	result := []scheduledexpense.ScheduledExpense{}
+	paginator := dynamodb.NewScanPaginator(repository.Client, input)
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			repository.logger.LogErrorfFor("Error scanning active scheduled expenses: %v", err)
+			return nil, err
+		}
+		for _, item := range page.Items {
+			se, err := repository.fromDynamo(ctx, storedTags, item)
+			if err != nil {
+				repository.logger.LogErrorfFor("Skipping undecodable scheduled expense row: %v", err)
+				continue
+			}
+			result = append(result, *se)
+		}
+	}
+	return result, nil
+}
+
+// AdvanceLastEvaluatedDate sets only last_evaluated_date on (PK=user_name
+// from ctx, SK=id). The condition requires the row to still exist and be
+// ACTIVE: a definition deleted mid-run isn't upserted back as a stub row, and
+// one paused mid-run keeps the date its pause stamped.
+func (repository *DynamoDbScheduledExpenseRepository) AdvanceLastEvaluatedDate(ctx context.Context, id scheduledexpense.ScheduledExpenseId, lastEvaluatedDate date.Date) error {
+	user, err := security.GetCurrentUser(ctx)
+	if err != nil {
+		repository.logger.LogErrorfFor("Error getting current user: %v", err)
+		return err
+	}
+
+	_, err = repository.Client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+		TableName: aws.String(repository.TableName),
+		Key: map[string]types.AttributeValue{
+			"user_name": &types.AttributeValueMemberS{Value: *user.UserName},
+			"id":        &types.AttributeValueMemberS{Value: id},
+		},
+		UpdateExpression:         aws.String("SET last_evaluated_date = :last_evaluated_date"),
+		ConditionExpression:      aws.String("attribute_exists(id) AND #status = :active"),
+		ExpressionAttributeNames: map[string]string{"#status": "status"},
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":last_evaluated_date": &types.AttributeValueMemberS{Value: lastEvaluatedDate.GetIsoFormattedDate()},
+			":active":              &types.AttributeValueMemberS{Value: string(scheduledexpense.StatusActive)},
+		},
+	})
+	if err != nil {
+		var conditionalCheckFailedException *types.ConditionalCheckFailedException
+		if errors.As(err, &conditionalCheckFailedException) {
+			return scheduledexpense.ErrScheduledExpenseNotFound
+		}
+		repository.logger.LogErrorfFor("Error advancing scheduled expense last evaluated date in DynamoDB: %v", err)
+		return err
+	}
+	return nil
+}
+
 func (repository *DynamoDbScheduledExpenseRepository) FindAll(ctx context.Context) ([]scheduledexpense.ScheduledExpense, error) {
 	user, err := security.GetCurrentUser(ctx)
 	if err != nil {
@@ -221,7 +318,7 @@ func (repository *DynamoDbScheduledExpenseRepository) FindAll(ctx context.Contex
 
 	scheduledExpenses := make([]scheduledexpense.ScheduledExpense, 0, len(result.Items))
 	for _, item := range result.Items {
-		se, err := repository.fromDynamo(ctx, item)
+		se, err := repository.fromDynamo(ctx, repository.resolveTags, item)
 		if err != nil {
 			repository.logger.LogErrorfFor("Error processing item in FindAll: %v", err)
 			continue
@@ -231,7 +328,12 @@ func (repository *DynamoDbScheduledExpenseRepository) FindAll(ctx context.Contex
 	return scheduledExpenses, nil
 }
 
-func (repository *DynamoDbScheduledExpenseRepository) fromDynamo(ctx context.Context, item map[string]types.AttributeValue) (*scheduledexpense.ScheduledExpense, error) {
+// tagReader turns a stored item's tags into SearchTags: resolveTags (live
+// names from tag-api, for user-facing reads) or storedTags (names saved on the
+// row, for the token-less generation engine).
+type tagReader func(ctx context.Context, item map[string]types.AttributeValue) ([]tags.SearchTag, error)
+
+func (repository *DynamoDbScheduledExpenseRepository) fromDynamo(ctx context.Context, readTags tagReader, item map[string]types.AttributeValue) (*scheduledexpense.ScheduledExpense, error) {
 	amount, err := money.MoneyFor(item["amount"].(*types.AttributeValueMemberS).Value)
 	if err != nil {
 		repository.logger.LogErrorfFor("invalid data format in ScheduledExpense: %v", err)
@@ -247,7 +349,7 @@ func (repository *DynamoDbScheduledExpenseRepository) fromDynamo(ctx context.Con
 		return nil, errors.New("invalid data format in ScheduledExpense")
 	}
 
-	searchTags, err := repository.resolveTags(ctx, item)
+	searchTags, err := readTags(ctx, item)
 	if err != nil {
 		return nil, err
 	}
@@ -280,6 +382,31 @@ func (repository *DynamoDbScheduledExpenseRepository) fromDynamo(ctx context.Con
 	}
 
 	return se, nil
+}
+
+// storedTags reads tag keys and the names stored at save time, without calling
+// tag-api. Rows saved before names were stored yield empty names.
+func storedTags(_ context.Context, item map[string]types.AttributeValue) ([]tags.SearchTag, error) {
+	tagAttr, ok := item["tag"].(*types.AttributeValueMemberS)
+	if !ok || tagAttr.Value == "" {
+		return []tags.SearchTag{tags.UnknownSentinel()}, nil
+	}
+
+	names := map[string]types.AttributeValue{}
+	if namesAttr, ok := item["tag_names"].(*types.AttributeValueMemberM); ok {
+		names = namesAttr.Value
+	}
+
+	tagKeys := strings.Split(tagAttr.Value, ",")
+	searchTags := make([]tags.SearchTag, 0, len(tagKeys))
+	for _, tagKey := range tagKeys {
+		searchTag := tags.SearchTag{Key: tagKey}
+		if name, ok := names[tagKey].(*types.AttributeValueMemberS); ok {
+			searchTag.Value = name.Value
+		}
+		searchTags = append(searchTags, searchTag)
+	}
+	return searchTags, nil
 }
 
 // resolveTags turns the stored comma-joined tag keys into SearchTags with

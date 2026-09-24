@@ -1,0 +1,160 @@
+package scheduledexpense
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strings"
+
+	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
+	"github.com/mrflick72/budget/budget-api/domain/time/date"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
+)
+
+// GenerationRepository is the cross-user port the generation engine needs,
+// kept apart from ScheduledExpenseRepository (whose every method is scoped to
+// the user resolved from ctx).
+type GenerationRepository interface {
+	// FindAllActive returns every user's ACTIVE definitions. Tags carry the
+	// keys and the names stored at the definition's last save — never resolved
+	// through tag-api, which needs a user access token the job doesn't have.
+	FindAllActive(ctx context.Context) ([]ScheduledExpense, error)
+
+	// AdvanceLastEvaluatedDate sets LastEvaluatedDate on the definition with
+	// the given id owned by the user resolved from ctx. Returns
+	// ErrScheduledExpenseNotFound when that definition no longer exists or is
+	// no longer ACTIVE (deleted or paused mid-run).
+	AdvanceLastEvaluatedDate(ctx context.Context, id ScheduledExpenseId, lastEvaluatedDate date.Date) error
+}
+
+// BudgetExpenseCreator is the slice of the expense facade generation needs.
+type BudgetExpenseCreator interface {
+	CreateBudgetExpense(ctx context.Context, budgetExpense *expense.BudgetExpense) error
+}
+
+// GenerateScheduledExpenses is one run of the generation engine: it evaluates
+// every ACTIVE definition for each day from LastEvaluatedDate+1 (today, when
+// never evaluated) up to today, and creates a BudgetExpense for each matching
+// day. Running it more than once a day is safe: LastEvaluatedDate makes each
+// day evaluated exactly once. See ADR 0005.
+type GenerateScheduledExpenses struct {
+	Repository     GenerationRepository
+	ExpenseCreator BudgetExpenseCreator
+	Today          func() date.Date
+	Logger         *logging.Logger
+}
+
+// Execute returns an error only when the definitions can't be listed or ctx
+// is cancelled; a failure on one definition is logged and the run moves on.
+func (action *GenerateScheduledExpenses) Execute(ctx context.Context) error {
+	definitions, err := action.Repository.FindAllActive(ctx)
+	if err != nil {
+		action.Logger.LogErrorfFor("scheduled expense generation: listing active definitions failed: %v", err)
+		return err
+	}
+
+	today := action.Today()
+	for _, definition := range definitions {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if definition.Status != StatusActive {
+			continue
+		}
+		if err := action.generateFor(ctx, definition, today); err != nil && ctx.Err() != nil {
+			return ctx.Err()
+		}
+	}
+	return nil
+}
+
+// generateFor walks one definition's pending days. It recovers from a panic
+// so a single bad definition can't take budget-api down from the scheduler's
+// goroutine.
+func (action *GenerateScheduledExpenses) generateFor(ctx context.Context, definition ScheduledExpense, today date.Date) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			action.Logger.LogErrorfFor("scheduled expense generation: panic on definition %s: %v", definition.Id, r)
+			err = fmt.Errorf("panic: %v", r)
+		}
+	}()
+
+	// Owner-only context: CreateBudgetExpense and the Kafka publisher only
+	// read UserName (ADR 0005). No AccessToken, no Authorities.
+	owner := definition.UserName
+	ownerCtx := context.WithValue(ctx, "user", security.User{UserName: &owner})
+
+	day := today
+	if definition.LastEvaluatedDate != nil {
+		day = definition.LastEvaluatedDate.AddDays(1)
+	}
+	if day.IsAfter(today) {
+		return nil
+	}
+
+	var lastAdvanced *date.Date
+	for ; !day.IsAfter(today); day = day.AddDays(1) {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if !definition.isDueOn(day) {
+			continue
+		}
+		// Generate, then advance: a crash in between re-evaluates this day on
+		// the next run — a visible duplicate, never a silent loss.
+		if err := action.ExpenseCreator.CreateBudgetExpense(ownerCtx, definition.expenseFor(day)); err != nil {
+			action.Logger.LogErrorfFor("scheduled expense generation: creating expense for definition %s on %s failed: %v", definition.Id, day.GetIsoFormattedDate(), err)
+			return err
+		}
+		if err := action.advance(ownerCtx, definition, day); err != nil {
+			return err
+		}
+		advanced := day
+		lastAdvanced = &advanced
+	}
+
+	if lastAdvanced == nil || today.IsAfter(*lastAdvanced) {
+		return action.advance(ownerCtx, definition, today)
+	}
+	return nil
+}
+
+func (action *GenerateScheduledExpenses) advance(ownerCtx context.Context, definition ScheduledExpense, day date.Date) error {
+	err := action.Repository.AdvanceLastEvaluatedDate(ownerCtx, definition.Id, day)
+	if errors.Is(err, ErrScheduledExpenseNotFound) {
+		action.Logger.LogInfofFor("scheduled expense generation: definition %s was deleted or paused mid-run, stopping", definition.Id)
+		return err
+	}
+	if err != nil {
+		action.Logger.LogErrorfFor("scheduled expense generation: advancing definition %s to %s failed: %v", definition.Id, day.GetIsoFormattedDate(), err)
+	}
+	return err
+}
+
+// isDueOn: the definition's Day, clamped to the month's last day (Day 31 fires
+// on 30 April and 28/29 February), in its Month when yearly, and not past its
+// End Date.
+func (definition ScheduledExpense) isDueOn(day date.Date) bool {
+	if definition.EndDate != nil && day.IsAfter(*definition.EndDate) {
+		return false
+	}
+	if definition.Month != nil && *definition.Month != day.GetMonth() {
+		return false
+	}
+	return day.GetDay() == min(definition.Day, day.DaysInMonth())
+}
+
+func (definition ScheduledExpense) expenseFor(day date.Date) *expense.BudgetExpense {
+	trace := fmt.Sprintf("Expense generated by the scheduled expense %q with id: %s", definition.Description, definition.Id)
+	note := trace
+	if strings.TrimSpace(definition.Notes) != "" {
+		note = definition.Notes + "\n" + trace
+	}
+	return &expense.BudgetExpense{
+		Date:   day,
+		Amount: definition.Amount,
+		Note:   note,
+		Tags:   definition.Tags,
+	}
+}

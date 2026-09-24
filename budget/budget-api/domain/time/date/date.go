@@ -22,6 +22,21 @@ func Today() Date {
 	return DateOf(time.Now())
 }
 
+// AddDays returns the date n calendar days after d (before, when n < 0).
+func (d *Date) AddDays(n int) Date {
+	return Date{t: d.t.AddDate(0, 0, n)}
+}
+
+// DaysInMonth is the number of days in d's month (28-31).
+func (d *Date) DaysInMonth() int {
+	return time.Date(d.t.Year(), d.t.Month()+1, 0, 0, 0, 0, 0, d.t.Location()).Day()
+}
+
+// IsAfter reports whether d is a later calendar day than other.
+func (d *Date) IsAfter(other Date) bool {
+	return d.t.After(other.t)
+}
+
 func (d *Date) GetTime() time.Time {
 	return d.t
 }
