@@ -1,6 +1,7 @@
 package scheduledexpense
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -61,6 +62,10 @@ func RegisterScheduledExpenseEndpoints(
 		}
 		domainModel.Id = c.Param("id")
 		if err := facade.UpdateScheduledExpense(ctx, domainModel); err != nil {
+			if errors.Is(err, scheduledexpense.ErrScheduledExpenseNotFound) {
+				c.Status(http.StatusNotFound)
+				return
+			}
 			logger.LogErrorfFor("Error updating scheduled expense: %v\n", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

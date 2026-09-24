@@ -73,7 +73,7 @@ func TestWhenUpdatingAScheduledExpenseThatDoesNotExist(t *testing.T) {
 
 	err := uut.Execute(ctx, &update)
 
-	assert.NotEqual(t, nil, err)
+	assert.Equal(t, ErrScheduledExpenseNotFound, err)
 	mockedRepository.AssertNotCalled(t, "Save")
 }
 

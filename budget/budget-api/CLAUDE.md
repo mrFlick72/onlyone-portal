@@ -254,7 +254,7 @@ land in #53/#54 — see the parent issue and `docs/adr/0005-scheduled-expense-re
 | `GET`  | `/api/budget/scheduled-expense`      | List (current user only)  | —                                | `ScheduledExpenseListRepresentation` `200` |
 | `GET`  | `/api/budget/scheduled-expense/:id`  | Get one (current user only) | —                              | `ScheduledExpenseRepresentation` `200`, `404` if not found/not owned |
 | `POST` | `/api/budget/scheduled-expense`      | Create                    | `ScheduledExpenseRepresentation` | `201 No Content`                           |
-| `PUT`  | `/api/budget/scheduled-expense/:id`  | Update                    | `ScheduledExpenseRepresentation` | `204 No Content`                           |
+| `PUT`  | `/api/budget/scheduled-expense/:id`  | Update                    | `ScheduledExpenseRepresentation` | `204 No Content`, `404` if not found/not owned |
 
 Update preserves `Status` and the generation engine's internal `LastEvaluatedDate` from the existing record — neither
 travels on the wire representation, and the DynamoDB adapter's `Save` replaces the whole item (see
@@ -262,8 +262,8 @@ travels on the wire representation, and the DynamoDB adapter's `Save` replaces t
 
 Ownership on both `GET /:id` and `PUT /:id` is enforced structurally, not by an explicit `UserName` comparison:
 `FindFor` only ever looks inside the current user's own DynamoDB partition (`PK = user_name` from ctx), so an `:id`
-belonging to another user is simply not found — `GET` returns `404`, `PUT`'s `UpdateScheduledExpense` returns its
-"not found or not authorized" error (`500`). See the Scheduled Expense DynamoDB key scheme note above.
+belonging to another user is simply not found — `GET` returns `404`, `PUT`'s `UpdateScheduledExpense` returns
+`ErrScheduledExpenseNotFound`, which the endpoint maps to `404`. See the Scheduled Expense DynamoDB key scheme note above.
 
 **`ScheduledExpenseRepresentation`** (create/update body; `id`/`status` are server-set and ignored on write — tag
 shape is `{tagKey, tagValue}`, not `{key, value}`):

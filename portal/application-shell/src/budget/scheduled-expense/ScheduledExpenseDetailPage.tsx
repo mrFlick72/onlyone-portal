@@ -63,6 +63,8 @@ const ScheduledExpenseDetailPage: React.FC<ScheduledExpenseDetailPageProps> = ({
             if (scheduledExpense.endDate) {
                 setEndDate(moment(scheduledExpense.endDate, ApiDateFormatPattern).format(FormDateFormatPattern))
             }
+        }).catch(() => {
+            setFeedback({ severity: 'error', message: detailMessages.feedback.loadError })
         })
         // id is stable for the page's lifetime (a full navigation is required
         // to change it) — fetch once, not on every messageRegistry update.

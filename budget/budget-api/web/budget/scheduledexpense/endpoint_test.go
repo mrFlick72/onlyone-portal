@@ -173,7 +173,7 @@ func TestUpdateAScheduledExpenseWhenFacadeFailsReturns500(t *testing.T) {
 	jsonValue, _ := json.Marshal(rep)
 
 	ctx := testutils.NewStubbedContextWith("USER")
-	facade.On("UpdateScheduledExpense", ctx, &domainModel).Return(errors.New("not found or not authorized"))
+	facade.On("UpdateScheduledExpense", ctx, &domainModel).Return(errors.New("ResourceNotFoundException: table not found"))
 	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
 
 	req, _ := http.NewRequest("PUT", "/api/budget/scheduled-expense/123-456", bytes.NewBuffer(jsonValue))
@@ -182,6 +182,39 @@ func TestUpdateAScheduledExpenseWhenFacadeFailsReturns500(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestUpdateScheduledExpenseWhenNotFoundReturns404(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(ScheduledExpenseActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterScheduledExpenseEndpoints(r, contextFactoryConverter, facade)
+
+	domainModel := domainscheduledexpense.ScheduledExpense{
+		Id:          "123-456",
+		Description: "Rent",
+		Amount:      testutils.SafeMoneyFor("1200.00"),
+		Day:         5,
+		Tags:        []tags.SearchTag{},
+	}
+
+	rep := ScheduledExpenseRepresentation{
+		Description: "Rent",
+		Amount:      "1200.00",
+		Day:         5,
+	}
+	jsonValue, _ := json.Marshal(rep)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	facade.On("UpdateScheduledExpense", ctx, &domainModel).Return(domainscheduledexpense.ErrScheduledExpenseNotFound)
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+
+	req, _ := http.NewRequest("PUT", "/api/budget/scheduled-expense/123-456", bytes.NewBuffer(jsonValue))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestGetScheduledExpenseById(t *testing.T) {

@@ -57,6 +57,11 @@ func (action *FindScheduledExpenses) Execute(ctx context.Context) ([]ScheduledEx
 	return scheduledExpenses, nil
 }
 
+// ErrScheduledExpenseNotFound is returned by UpdateScheduledExpense when the
+// id doesn't exist in the current user's partition — which, by construction,
+// also covers an id owned by someone else. The web layer maps it to 404.
+var ErrScheduledExpenseNotFound = errors.New("scheduled expense not found")
+
 type UpdateScheduledExpense struct {
 	Repository ScheduledExpenseRepository
 }
@@ -81,7 +86,7 @@ func (action *UpdateScheduledExpense) Execute(ctx context.Context, scheduledExpe
 		return err
 	}
 	if existing == nil {
-		return errors.New("scheduled expense not found or user not authorized to update it")
+		return ErrScheduledExpenseNotFound
 	}
 
 	scheduledExpense.Status = existing.Status
