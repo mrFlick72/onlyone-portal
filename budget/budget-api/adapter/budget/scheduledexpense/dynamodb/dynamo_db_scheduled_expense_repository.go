@@ -3,6 +3,7 @@ package dynamodb
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -32,17 +33,6 @@ type DynamoDbScheduledExpenseRepository struct {
 	// scanPageLimit caps each FindAllActive Scan page; 0 means DynamoDB's
 	// default (1MB pages). Tests lower it to exercise pagination.
 	scanPageLimit int32
-}
-
-// NewDynamoDbScheduledExpenseGenerationRepository is the same adapter seen
-// through the cross-user port the generation engine uses.
-func NewDynamoDbScheduledExpenseGenerationRepository(
-	tableName string,
-	client *dynamodb.Client,
-	idProvider scheduledexpense.ScheduledExpenseIdProvider,
-	searchTagRepository tags.SearchTagRepository,
-) scheduledexpense.GenerationRepository {
-	return NewDynamoDbScheduledExpenseRepository(tableName, client, idProvider, searchTagRepository).(*DynamoDbScheduledExpenseRepository)
 }
 
 func NewDynamoDbScheduledExpenseRepository(
@@ -248,7 +238,7 @@ func (repository *DynamoDbScheduledExpenseRepository) FindAllActive(ctx context.
 			return nil, err
 		}
 		for _, item := range page.Items {
-			se, err := repository.fromDynamo(ctx, storedTags, item)
+			se, err := repository.decodeForGeneration(ctx, item)
 			if err != nil {
 				repository.logger.LogErrorfFor("Skipping undecodable scheduled expense row: %v", err)
 				continue
@@ -257,6 +247,18 @@ func (repository *DynamoDbScheduledExpenseRepository) FindAllActive(ctx context.
 		}
 	}
 	return result, nil
+}
+
+// decodeForGeneration decodes one scanned row, turning a panic from
+// fromDynamo's unchecked attribute assertions (a row missing an attribute)
+// into an error, so the scan skips that row instead of losing the whole run.
+func (repository *DynamoDbScheduledExpenseRepository) decodeForGeneration(ctx context.Context, item map[string]types.AttributeValue) (se *scheduledexpense.ScheduledExpense, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			se, err = nil, fmt.Errorf("malformed row: %v", r)
+		}
+	}()
+	return repository.fromDynamo(ctx, storedTags, item)
 }
 
 // AdvanceLastEvaluatedDate sets only last_evaluated_date on (PK=user_name

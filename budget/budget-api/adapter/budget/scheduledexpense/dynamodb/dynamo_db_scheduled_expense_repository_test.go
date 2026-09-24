@@ -660,3 +660,35 @@ func TestAdvanceLastEvaluatedDateOnAPausedDefinitionIsNotFoundAndLeavesItUntouch
 	}
 	assert.Equal(t, "2026-09-20", found.LastEvaluatedDate.GetIsoFormattedDate())
 }
+
+// A malformed row (missing attributes) is skipped, not fatal to the scan: one
+// bad definition must not stop generation for every user.
+func TestFindAllActiveSkipsAMalformedRow(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+	userCtx := testutils.NewStubbedContextWith("user-scan-malformed")
+
+	_, err := client.PutItem(context.Background(), &dynamodb.PutItemInput{
+		TableName: aws.String(TableName),
+		Item: map[string]types.AttributeValue{
+			"user_name": &types.AttributeValueMemberS{Value: "user-scan-malformed"},
+			"id":        &types.AttributeValueMemberS{Value: "SCAN_MALFORMED_ID"},
+			"status":    &types.AttributeValueMemberS{Value: "ACTIVE"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Error seeding malformed row: %v", err)
+	}
+	good := scheduledexpense.ScheduledExpense{
+		Description: "Rent", Amount: testutils.SafeMoneyFor("1.00"), Day: 1, Status: scheduledexpense.StatusActive,
+	}
+	idProviderMock.On("GenerateIdFor", &good).Return("SCAN_WELLFORMED_ID")
+	if err := repo.Save(userCtx, &good); err != nil {
+		t.Fatalf("Expected nil error on save, got %v", err)
+	}
+
+	found := findActiveById(t, repo, "SCAN_MALFORMED_ID", "SCAN_WELLFORMED_ID")
+
+	assert.Equal(t, 1, len(found))
+	assert.Equal(t, "Rent", found["SCAN_WELLFORMED_ID"].Description)
+}
