@@ -10,7 +10,7 @@ import (
 	"github.com/mrflick72/budget/budget-api/domain/time/date"
 )
 
-// ScheduledExpense is a per-user template that the daily generation engine
+// ScheduledExpense is a per-user template that the scheduled expense job
 // evaluates and, when due, turns into a real expense.BudgetExpense for its
 // owner. See budget/budget-api/CONTEXT.md ("Scheduled Expense") and
 // docs/adr/0005-scheduled-expense-recurrence-and-generation-engine.md for the
@@ -37,7 +37,7 @@ type ScheduledExpense struct {
 
 	Status Status
 
-	// LastEvaluatedDate is stamped by the daily generation engine on every
+	// LastEvaluatedDate is stamped by the scheduled expense job on every
 	// evaluation (including pause/resume), driving its downtime-backfill logic.
 	// Nil until the definition has been evaluated for the first time.
 	LastEvaluatedDate *date.Date

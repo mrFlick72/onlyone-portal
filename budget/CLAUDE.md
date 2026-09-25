@@ -22,7 +22,7 @@ domain/
   budget/expense/    # CreateBudgetExpense, UpdateBudgetExpense, FindSpentBudget, DeleteBudgetExpense + BudgetExpenseActionsFacade
   budget/revenue/    # CreateRevenue, UpdateRevenue, FindRevenue, DeleteRevenue + RevenueActionsFacade
   budget/attachment/ # SaveAttachment, GetAttachment, DeleteAttachment + AttachmentActionsFacade
-  budget/scheduledexpense/ # Create/Find/Update/Delete/Pause/ResumeScheduledExpense + ScheduledExpenseActionsFacade (#51-#54); GenerateScheduledExpenses engine (#55)
+  budget/scheduledexpense/ # Create/Find/Update/Delete/Pause/ResumeScheduledExpense + ScheduledExpenseActionsFacade (#51-#54); ScheduledExpenseJob (#55)
   tags/              # SearchTagRepository port
   money/, time/      # value objects
 adapter/
@@ -32,7 +32,7 @@ adapter/
   budget/attachment/dynamodb/ # DynamoDB impl of attachment metadata repository + id provider
   budget/attachment/s3/       # S3 impl of attachment content repository
   budget/scheduledexpense/dynamodb/ # DynamoDB impl of ScheduledExpenseRepository (incl. the engine-only cross-user scan) + id provider
-  budget/scheduledexpense/scheduler/ # gocron v2 WebServerConfigurer running the generation engine (startup + hourly)
+  budget/scheduledexpense/scheduler/ # gocron v2 WebServerConfigurer running ScheduledExpenseJob (startup + hourly)
   tags/rest/                  # REST client for tag-api + Ristretto-cached decorator
 web/
   budget/expense/    # package expense    — endpoint, converter, representation for expense
@@ -69,7 +69,7 @@ Unlike expense/revenue's derived composite keys, `user_name` is stored verbatim 
 - PK: `user_name` (raw, not base64-encoded)
 - SK: `id` (a plain UUID)
 
-This makes `FindAll`'s per-user scoping structural (the partition key itself), and gives the daily generation engine
+This makes `FindAll`'s per-user scoping structural (the partition key itself), and gives the scheduled expense job
 (#55) a plain table Scan across all users' definitions with no derived-key bookkeeping. See
 `docs/adr/0005-scheduled-expense-recurrence-and-generation-engine.md`.
 

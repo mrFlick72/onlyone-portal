@@ -24,9 +24,9 @@ func main() {
 	attachment.RegisterAttachmentEndpoints(ginEngine, GinContextToPlainContextFactory, config.NewAttachmentActionsFacade())
 	scheduledexpense.RegisterScheduledExpenseEndpoints(ginEngine, GinContextToPlainContextFactory, config.NewScheduledExpenseActionsFacade())
 
-	// Scheduled Expense generation engine (ADR 0005): runs at startup, then
+	// Scheduled Expense job (ADR 0005): runs at startup, then
 	// hourly; disposed on shutdown with the built-in configurers.
-	engine.RegisterConfigurer(config.NewScheduledExpenseGenerationConfigurer(expenseFacade.CreateBudgetExpenseAction))
+	engine.RegisterConfigurer(config.NewScheduledExpenseJobConfigurer(expenseFacade.CreateBudgetExpenseAction))
 
 	engine.StartEngine()
 }

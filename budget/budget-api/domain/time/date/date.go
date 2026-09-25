@@ -11,7 +11,7 @@ type Date struct {
 
 // DateOf returns the calendar day of t in UTC, truncated to midnight. It is
 // the single definition of "today" for Scheduled Expense (pause/resume
-// stamping now, the daily generation engine in #55) — see ADR 0005.
+// stamping now, the scheduled expense job in #55) — see ADR 0005.
 func DateOf(t time.Time) Date {
 	u := t.UTC()
 	return Date{t: time.Date(u.Year(), u.Month(), u.Day(), 0, 0, 0, 0, time.UTC)}

@@ -75,7 +75,7 @@ func TestLastDateOfTheMouthWhenTheDataAreInvalid(t *testing.T) {
 
 // DateOf truncates to the calendar day in UTC, whatever the input's zone —
 // the single notion of "today" shared by pause/resume stamping and the daily
-// generation engine (ADR 0005).
+// scheduled expense job (ADR 0005).
 func TestDateOfTruncatesToTheUTCCalendarDay(t *testing.T) {
 	cest := time.FixedZone("CEST", 2*60*60)
 

@@ -13,7 +13,7 @@ import (
 //
 // It serves two callers. The user-facing methods (Save through UpdateStatus)
 // are all scoped to the user resolved from ctx. The generation methods at the
-// bottom exist for the generation engine (GenerateScheduledExpenses), which
+// bottom exist for the scheduled expense job (ScheduledExpenseJob), which
 // runs with no request in flight: FindAllActive is the one method that reads
 // across every user and must never be called from a user-facing action.
 type ScheduledExpenseRepository interface {
@@ -49,7 +49,7 @@ type ScheduledExpenseRepository interface {
 	// there.
 	UpdateStatus(ctx context.Context, id ScheduledExpenseId, status Status, lastEvaluatedDate date.Date) error
 
-	// --- Generation engine only (#55, ADR 0005) ---
+	// --- ScheduledExpenseJob only (#55, ADR 0005) ---
 
 	// FindAllActive returns EVERY user's ACTIVE definitions — the only method
 	// not scoped to the user resolved from ctx, so reserved for the generation

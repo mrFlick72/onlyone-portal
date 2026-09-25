@@ -9,13 +9,13 @@ import (
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
 )
 
-// GenerationJob is one run of the Scheduled Expense generation engine
-// (scheduledexpense.GenerateScheduledExpenses).
-type GenerationJob interface {
+// Job is what the configurer runs on each tick —
+// scheduledexpense.ScheduledExpenseJob in production, a fake in tests.
+type Job interface {
 	Execute(ctx context.Context) error
 }
 
-// GocronGenerationConfigurer runs the generation engine in-process on a
+// ScheduledExpenseJobConfigurer runs the ScheduledExpenseJob in-process on a
 // gocron v2 scheduler, as a golang-web-framework WebServerConfigurer
 // (registered with RegisterConfigurer): Configure starts it, Dispose shuts it
 // down within the provisioner's shutdown budget. See ADR 0005.
@@ -25,26 +25,26 @@ type GenerationJob interface {
 // LastEvaluatedDate makes each day evaluated exactly once. Singleton mode
 // keeps a slow run from overlapping the next. Single replica only: there is
 // no distributed lock (ADR 0005).
-type GocronGenerationConfigurer struct {
-	job       GenerationJob
+type ScheduledExpenseJobConfigurer struct {
+	job       Job
 	interval  time.Duration
 	scheduler gocron.Scheduler
 	logger    *logging.Logger
 }
 
-func NewGocronGenerationConfigurer(job GenerationJob, interval time.Duration) *GocronGenerationConfigurer {
-	return &GocronGenerationConfigurer{
+func NewScheduledExpenseJobConfigurer(job Job, interval time.Duration) *ScheduledExpenseJobConfigurer {
+	return &ScheduledExpenseJobConfigurer{
 		job:      job,
 		interval: interval,
-		logger:   logging.GetLoggerInstanceForComponentByType(&GocronGenerationConfigurer{}),
+		logger:   logging.GetLoggerInstanceForComponentByType(&ScheduledExpenseJobConfigurer{}),
 	}
 }
 
-func (c *GocronGenerationConfigurer) Name() string {
-	return "scheduled-expense-generation"
+func (c *ScheduledExpenseJobConfigurer) Name() string {
+	return "scheduled-expense-job"
 }
 
-func (c *GocronGenerationConfigurer) Configure() error {
+func (c *ScheduledExpenseJobConfigurer) Configure() error {
 	scheduler, err := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	if err != nil {
 		return fmt.Errorf("create scheduler: %w", err)
@@ -56,7 +56,7 @@ func (c *GocronGenerationConfigurer) Configure() error {
 		// between definitions and between days.
 		gocron.NewTask(func(ctx context.Context) {
 			if err := c.job.Execute(ctx); err != nil {
-				c.logger.LogErrorfFor("scheduled expense generation run failed: %v", err)
+				c.logger.LogErrorfFor("scheduled expense job run failed: %v", err)
 			}
 		}),
 		gocron.WithName(c.Name()),
@@ -65,16 +65,16 @@ func (c *GocronGenerationConfigurer) Configure() error {
 	)
 	if err != nil {
 		_ = scheduler.Shutdown()
-		return fmt.Errorf("schedule generation job: %w", err)
+		return fmt.Errorf("schedule scheduled expense job: %w", err)
 	}
 
 	scheduler.Start()
 	c.scheduler = scheduler
-	c.logger.LogInfofFor("scheduled expense generation started, every %s", c.interval)
+	c.logger.LogInfofFor("scheduled expense job started, every %s", c.interval)
 	return nil
 }
 
-func (c *GocronGenerationConfigurer) Dispose(ctx context.Context) error {
+func (c *ScheduledExpenseJobConfigurer) Dispose(ctx context.Context) error {
 	if c.scheduler == nil {
 		return nil
 	}

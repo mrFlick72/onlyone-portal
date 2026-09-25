@@ -87,7 +87,7 @@ func (repository *DynamoDbScheduledExpenseRepository) Save(ctx context.Context, 
 		"status":      &types.AttributeValueMemberS{Value: string(se.Status)},
 	}
 	// tag_names keeps each tag's display name as of this save, for the
-	// generation engine: it runs with no user token, so it can't resolve names
+	// scheduled expense job: it runs with no user token, so it can't resolve names
 	// through tag-api the way user-facing reads do (#55). Reads for the UI
 	// still resolve live names and ignore this attribute.
 	if len(tagNames) > 0 {
@@ -238,7 +238,7 @@ func (repository *DynamoDbScheduledExpenseRepository) FindAllActive(ctx context.
 			return nil, err
 		}
 		for _, item := range page.Items {
-			se, err := repository.decodeForGeneration(ctx, item)
+			se, err := repository.decodeForJob(ctx, item)
 			if err != nil {
 				repository.logger.LogErrorfFor("Skipping undecodable scheduled expense row: %v", err)
 				continue
@@ -249,10 +249,10 @@ func (repository *DynamoDbScheduledExpenseRepository) FindAllActive(ctx context.
 	return result, nil
 }
 
-// decodeForGeneration decodes one scanned row, turning a panic from
+// decodeForJob decodes one scanned row, turning a panic from
 // fromDynamo's unchecked attribute assertions (a row missing an attribute)
 // into an error, so the scan skips that row instead of losing the whole run.
-func (repository *DynamoDbScheduledExpenseRepository) decodeForGeneration(ctx context.Context, item map[string]types.AttributeValue) (se *scheduledexpense.ScheduledExpense, err error) {
+func (repository *DynamoDbScheduledExpenseRepository) decodeForJob(ctx context.Context, item map[string]types.AttributeValue) (se *scheduledexpense.ScheduledExpense, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			se, err = nil, fmt.Errorf("malformed row: %v", r)
@@ -332,7 +332,7 @@ func (repository *DynamoDbScheduledExpenseRepository) FindAll(ctx context.Contex
 
 // tagReader turns a stored item's tags into SearchTags: resolveTags (live
 // names from tag-api, for user-facing reads) or storedTags (names saved on the
-// row, for the token-less generation engine).
+// row, for the token-less scheduled expense job).
 type tagReader func(ctx context.Context, item map[string]types.AttributeValue) ([]tags.SearchTag, error)
 
 func (repository *DynamoDbScheduledExpenseRepository) fromDynamo(ctx context.Context, readTags tagReader, item map[string]types.AttributeValue) (*scheduledexpense.ScheduledExpense, error) {

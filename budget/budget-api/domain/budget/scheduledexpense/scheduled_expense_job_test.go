@@ -15,7 +15,7 @@ import (
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
 
-var generationTestLogger = logging.GetLoggerInstanceForComponentByTypeName("scheduledexpense-generation-test")
+var jobTestLogger = logging.GetLoggerInstanceForComponentByTypeName("scheduledexpense-job-test")
 
 func iso(s string) date.Date {
 	d, err := date.IsoDateFor(s)
@@ -32,22 +32,22 @@ func isoPtr(s string) *date.Date {
 
 func intPtr(i int) *int { return &i }
 
-// generationRecorder logs creates and advances, in order, across both fakes —
+// jobRecorder logs creates and advances, in order, across both fakes —
 // so tests can assert generate-then-advance ordering.
-type generationRecorder struct {
+type jobRecorder struct {
 	calls []string
 }
 
-func (r *generationRecorder) record(format string, args ...any) {
+func (r *jobRecorder) record(format string, args ...any) {
 	r.calls = append(r.calls, fmt.Sprintf(format, args...))
 }
 
-// fakeGenerationRepository implements only the generation methods; the
+// fakeJobRepository implements only the generation methods; the
 // embedded (nil) port makes any user-facing method panic if the engine ever
 // called one.
-type fakeGenerationRepository struct {
+type fakeJobRepository struct {
 	ScheduledExpenseRepository
-	rec         *generationRecorder
+	rec         *jobRecorder
 	definitions []ScheduledExpense
 	findErr     error
 	// advanceErrFor makes AdvanceLastEvaluatedDate fail for the given ISO day
@@ -56,11 +56,11 @@ type fakeGenerationRepository struct {
 	advanced      map[ScheduledExpenseId]date.Date
 }
 
-func (f *fakeGenerationRepository) FindAllActive(_ context.Context) ([]ScheduledExpense, error) {
+func (f *fakeJobRepository) FindAllActive(_ context.Context) ([]ScheduledExpense, error) {
 	return f.definitions, f.findErr
 }
 
-func (f *fakeGenerationRepository) AdvanceLastEvaluatedDate(ctx context.Context, id ScheduledExpenseId, d date.Date) error {
+func (f *fakeJobRepository) AdvanceLastEvaluatedDate(ctx context.Context, id ScheduledExpenseId, d date.Date) error {
 	user, _ := security.GetCurrentUser(ctx)
 	f.rec.record("advance %s %s %s", *user.UserName, id, d.GetIsoFormattedDate())
 	if err, ok := f.advanceErrFor[d.GetIsoFormattedDate()]; ok {
@@ -87,7 +87,7 @@ func (f *fakeGenerationRepository) AdvanceLastEvaluatedDate(ctx context.Context,
 // expense store.
 type fakeBudgetExpenseRepository struct {
 	expense.BudgetExpenseRepository
-	rec       *generationRecorder
+	rec       *jobRecorder
 	created   []expense.BudgetExpense
 	users     []security.User
 	createErr error
@@ -125,21 +125,21 @@ func (f *fakeBudgetExpenseEventPublisher) DeleteBudgetExpense(context.Context, e
 	return nil
 }
 
-// newGeneration wires the engine to the real CreateBudgetExpense action over
+// newJob wires the job to the real CreateBudgetExpense action over
 // fake ports, so tests exercise the actual create path.
-func newGeneration(today string, definitions ...ScheduledExpense) (*GenerateScheduledExpenses, *fakeGenerationRepository, *fakeBudgetExpenseRepository, *generationRecorder) {
-	rec := &generationRecorder{}
-	repository := &fakeGenerationRepository{rec: rec, definitions: definitions, advanceErrFor: map[string]error{}}
+func newJob(today string, definitions ...ScheduledExpense) (*ScheduledExpenseJob, *fakeJobRepository, *fakeBudgetExpenseRepository, *jobRecorder) {
+	rec := &jobRecorder{}
+	repository := &fakeJobRepository{rec: rec, definitions: definitions, advanceErrFor: map[string]error{}}
 	expenses := &fakeBudgetExpenseRepository{rec: rec}
-	uut := &GenerateScheduledExpenses{
+	uut := &ScheduledExpenseJob{
 		Repository: repository,
 		CreateBudgetExpense: &expense.CreateBudgetExpense{
 			Repository:     expenses,
 			EventPublisher: &fakeBudgetExpenseEventPublisher{},
-			Logger:         generationTestLogger,
+			Logger:         jobTestLogger,
 		},
 		Today:  func() date.Date { return iso(today) },
-		Logger: generationTestLogger,
+		Logger: jobTestLogger,
 	}
 	return uut, repository, expenses, rec
 }
@@ -166,7 +166,7 @@ func activeDefinition(day int) ScheduledExpense {
 
 // Day/Month matching, month-end clamping, End Date and backfill are all a
 // function of (definition, LastEvaluatedDate, today) → generated days.
-func TestGenerationGeneratesExactlyTheMatchingDays(t *testing.T) {
+func TestJobGeneratesExactlyTheMatchingDays(t *testing.T) {
 	cases := []struct {
 		name          string
 		day           int
@@ -205,7 +205,7 @@ func TestGenerationGeneratesExactlyTheMatchingDays(t *testing.T) {
 			definition.Month = c.month
 			definition.EndDate = c.endDate
 			definition.LastEvaluatedDate = c.lastEvaluated
-			uut, repository, creator, _ := newGeneration(c.today, definition)
+			uut, repository, creator, _ := newJob(c.today, definition)
 
 			err := uut.Execute(context.Background())
 
@@ -223,10 +223,10 @@ func TestGenerationGeneratesExactlyTheMatchingDays(t *testing.T) {
 
 // Each generated day is created before LastEvaluatedDate advances to it; the
 // walk then advances to today once.
-func TestGenerationCreatesBeforeAdvancingEachDay(t *testing.T) {
+func TestJobCreatesBeforeAdvancingEachDay(t *testing.T) {
 	definition := activeDefinition(5)
 	definition.LastEvaluatedDate = isoPtr("2026-08-01")
-	uut, _, _, rec := newGeneration("2026-09-24", definition)
+	uut, _, _, rec := newJob("2026-09-24", definition)
 
 	err := uut.Execute(context.Background())
 
@@ -242,10 +242,10 @@ func TestGenerationCreatesBeforeAdvancingEachDay(t *testing.T) {
 
 // A crash between generate and advance must surface as a visible duplicate on
 // the next run, never as a silently lost expense (ADR 0005).
-func TestGenerationCrashBetweenGenerateAndAdvanceDuplicatesRatherThanLoses(t *testing.T) {
+func TestJobCrashBetweenGenerateAndAdvanceDuplicatesRatherThanLoses(t *testing.T) {
 	definition := activeDefinition(5)
 	definition.LastEvaluatedDate = isoPtr("2026-09-04")
-	uut, repository, creator, _ := newGeneration("2026-09-05", definition)
+	uut, repository, creator, _ := newJob("2026-09-05", definition)
 	repository.advanceErrFor["2026-09-05"] = errors.New("crash before advance")
 
 	_ = uut.Execute(context.Background())
@@ -260,14 +260,14 @@ func TestGenerationCrashBetweenGenerateAndAdvanceDuplicatesRatherThanLoses(t *te
 
 // A failed create stops that definition's walk without advancing past the
 // failed day (so the next run retries it), and doesn't stop the others.
-func TestGenerationCreateFailureDoesNotAdvanceAndOtherDefinitionsStillRun(t *testing.T) {
+func TestJobCreateFailureDoesNotAdvanceAndOtherDefinitionsStillRun(t *testing.T) {
 	failing := activeDefinition(5)
 	failing.LastEvaluatedDate = isoPtr("2026-09-04")
 	other := activeDefinition(5)
 	other.Id = "OTHER_ID"
 	other.UserName = "other"
 	other.LastEvaluatedDate = isoPtr("2026-09-04")
-	uut, repository, creator, rec := newGeneration("2026-09-05", failing, other)
+	uut, repository, creator, rec := newJob("2026-09-05", failing, other)
 	creator.createErr = errors.New("DynamoDB down")
 
 	err := uut.Execute(context.Background())
@@ -279,7 +279,7 @@ func TestGenerationCreateFailureDoesNotAdvanceAndOtherDefinitionsStillRun(t *tes
 
 // A panic while generating one definition is recovered, so it can't take the
 // whole of budget-api down from a background goroutine; the rest still run.
-func TestGenerationRecoversFromAPanicInOneDefinition(t *testing.T) {
+func TestJobRecoversFromAPanicInOneDefinition(t *testing.T) {
 	panicking := activeDefinition(5)
 	panicking.UserName = "panics"
 	panicking.LastEvaluatedDate = isoPtr("2026-09-04")
@@ -287,7 +287,7 @@ func TestGenerationRecoversFromAPanicInOneDefinition(t *testing.T) {
 	other.Id = "OTHER_ID"
 	other.UserName = "other"
 	other.LastEvaluatedDate = isoPtr("2026-09-04")
-	uut, _, creator, _ := newGeneration("2026-09-05", panicking, other)
+	uut, _, creator, _ := newJob("2026-09-05", panicking, other)
 	creator.panicFor = "panics"
 
 	err := uut.Execute(context.Background())
@@ -299,11 +299,11 @@ func TestGenerationRecoversFromAPanicInOneDefinition(t *testing.T) {
 
 // Paused definitions are skipped entirely — not evaluated, not advanced —
 // even if one reaches the engine (seeded directly, not via PATCH).
-func TestGenerationSkipsPausedDefinitions(t *testing.T) {
+func TestJobSkipsPausedDefinitions(t *testing.T) {
 	paused := activeDefinition(5)
 	paused.Status = StatusPaused
 	paused.LastEvaluatedDate = isoPtr("2026-08-01")
-	uut, repository, creator, rec := newGeneration("2026-09-24", paused)
+	uut, repository, creator, rec := newJob("2026-09-24", paused)
 
 	err := uut.Execute(context.Background())
 
@@ -320,7 +320,7 @@ func TestGeneratedExpenseContent(t *testing.T) {
 	definition := activeDefinition(24)
 	definition.Id = "1a2b3c"
 	definition.Notes = "Monthly rent, paid by bank transfer"
-	uut, _, creator, _ := newGeneration("2026-09-24", definition)
+	uut, _, creator, _ := newJob("2026-09-24", definition)
 
 	err := uut.Execute(context.Background())
 
@@ -340,7 +340,7 @@ func TestGeneratedExpenseContent(t *testing.T) {
 func TestGeneratedExpenseNoteWithoutNotesIsJustTheTraceLine(t *testing.T) {
 	definition := activeDefinition(24)
 	definition.Id = "1a2b3c"
-	uut, _, creator, _ := newGeneration("2026-09-24", definition)
+	uut, _, creator, _ := newJob("2026-09-24", definition)
 
 	_ = uut.Execute(context.Background())
 
@@ -348,10 +348,10 @@ func TestGeneratedExpenseNoteWithoutNotesIsJustTheTraceLine(t *testing.T) {
 }
 
 // Shutdown cancels the job's context: the walk stops between days.
-func TestGenerationStopsWhenTheContextIsCancelled(t *testing.T) {
+func TestJobStopsWhenTheContextIsCancelled(t *testing.T) {
 	definition := activeDefinition(5)
 	definition.LastEvaluatedDate = isoPtr("2026-07-01")
-	uut, _, creator, _ := newGeneration("2026-09-24", definition)
+	uut, _, creator, _ := newJob("2026-09-24", definition)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
@@ -361,8 +361,8 @@ func TestGenerationStopsWhenTheContextIsCancelled(t *testing.T) {
 	assert.Equal(t, 0, len(creator.created))
 }
 
-func TestGenerationReturnsTheErrorWhenListingDefinitionsFails(t *testing.T) {
-	uut, repository, _, _ := newGeneration("2026-09-24")
+func TestJobReturnsTheErrorWhenListingDefinitionsFails(t *testing.T) {
+	uut, repository, _, _ := newJob("2026-09-24")
 	findErr := errors.New("scan fails")
 	repository.findErr = findErr
 

@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type fakeGenerationJob struct {
+type fakeJob struct {
 	runs chan context.Context
 }
 
-func (f *fakeGenerationJob) Execute(ctx context.Context) error {
+func (f *fakeJob) Execute(ctx context.Context) error {
 	f.runs <- ctx
 	<-ctx.Done()
 	return ctx.Err()
@@ -22,8 +22,8 @@ func (f *fakeGenerationJob) Execute(ctx context.Context) error {
 // The job runs once as soon as the scheduler starts (so a restart doubles as
 // a manual trigger), and Dispose cancels the in-flight run's context.
 func TestConfigureRunsTheJobImmediatelyAndDisposeCancelsIt(t *testing.T) {
-	job := &fakeGenerationJob{runs: make(chan context.Context, 1)}
-	uut := NewGocronGenerationConfigurer(job, time.Hour)
+	job := &fakeJob{runs: make(chan context.Context, 1)}
+	uut := NewScheduledExpenseJobConfigurer(job, time.Hour)
 
 	require.NoError(t, uut.Configure())
 
@@ -46,13 +46,13 @@ func TestConfigureRunsTheJobImmediatelyAndDisposeCancelsIt(t *testing.T) {
 }
 
 func TestDisposeWithoutConfigureIsANoOp(t *testing.T) {
-	uut := NewGocronGenerationConfigurer(&fakeGenerationJob{runs: make(chan context.Context, 1)}, time.Hour)
+	uut := NewScheduledExpenseJobConfigurer(&fakeJob{runs: make(chan context.Context, 1)}, time.Hour)
 
 	assert.NoError(t, uut.Dispose(context.Background()))
 }
 
 func TestName(t *testing.T) {
-	uut := NewGocronGenerationConfigurer(&fakeGenerationJob{}, time.Hour)
+	uut := NewScheduledExpenseJobConfigurer(&fakeJob{}, time.Hour)
 
-	assert.Equal(t, "scheduled-expense-generation", uut.Name())
+	assert.Equal(t, "scheduled-expense-job", uut.Name())
 }
