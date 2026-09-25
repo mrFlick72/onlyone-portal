@@ -42,7 +42,11 @@ func (r *generationRecorder) record(format string, args ...any) {
 	r.calls = append(r.calls, fmt.Sprintf(format, args...))
 }
 
+// fakeGenerationRepository implements only the generation methods; the
+// embedded (nil) port makes any user-facing method panic if the engine ever
+// called one.
 type fakeGenerationRepository struct {
+	ScheduledExpenseRepository
 	rec         *generationRecorder
 	definitions []ScheduledExpense
 	findErr     error

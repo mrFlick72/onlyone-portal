@@ -31,7 +31,7 @@ adapter/
   budget/attachment/          # AwsCompositeAttachmentRepository — orchestrates dynamo + s3
   budget/attachment/dynamodb/ # DynamoDB impl of attachment metadata repository + id provider
   budget/attachment/s3/       # S3 impl of attachment content repository
-  budget/scheduledexpense/dynamodb/ # DynamoDB impl of ScheduledExpenseRepository + GenerationRepository + id provider
+  budget/scheduledexpense/dynamodb/ # DynamoDB impl of ScheduledExpenseRepository (incl. the engine-only cross-user scan) + id provider
   budget/scheduledexpense/scheduler/ # gocron v2 WebServerConfigurer running the generation engine (startup + hourly)
   tags/rest/                  # REST client for tag-api + Ristretto-cached decorator
 web/

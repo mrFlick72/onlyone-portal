@@ -42,7 +42,8 @@ domain/
                      # DeleteScheduledExpense, ScheduledExpenseActionsFacade,
                      # ScheduledExpenseRepository port (additive — Save+FindAll
                      # in #51, FindFor in #52, Delete in #53, UpdateStatus in #54);
-                     # GenerateScheduledExpenses + GenerationRepository port (#55)
+                     # GenerateScheduledExpenses (#55) — the port's FindAllActive
+                     # (cross-user) + AdvanceLastEvaluatedDate are engine-only
   tags/              # SearchTagRepository port + SearchTag value object
   money/, time/      # value objects (Money, Date, Month, Year)
 adapter/
@@ -51,7 +52,7 @@ adapter/
   budget/attachment/            # AwsCompositeAttachmentRepository — orchestrates dynamo + s3
   budget/attachment/dynamodb/   # DynamoDbAttachmentMetadataRepository + DynamoDbAttachmentIdProvider
   budget/attachment/s3/         # S3AttachmentContentRepository (file bytes)
-  budget/scheduledexpense/dynamodb/ # DynamoDbScheduledExpenseRepository (both ports) + DynamoDbScheduledExpenseIdProvider
+  budget/scheduledexpense/dynamodb/ # DynamoDbScheduledExpenseRepository + DynamoDbScheduledExpenseIdProvider
   budget/scheduledexpense/scheduler/ # GocronGenerationConfigurer — runs the generation engine (WebServerConfigurer)
   tags/rest/                    # RestSearchTagRepository + RistrettoCachedSearchTagRepository decorator
 web/

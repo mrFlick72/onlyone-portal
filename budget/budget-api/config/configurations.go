@@ -183,16 +183,6 @@ func NewRevenueActionsFacade() revenue.RevenueActions {
 }
 
 func NewScheduledExpenseRepository() scheduledexpense.ScheduledExpenseRepository {
-	return newDynamoDbScheduledExpenseRepository()
-}
-
-// NewScheduledExpenseGenerationRepository is the same DynamoDB adapter seen
-// through the generation engine's cross-user port.
-func NewScheduledExpenseGenerationRepository() scheduledexpense.GenerationRepository {
-	return newDynamoDbScheduledExpenseRepository()
-}
-
-func newDynamoDbScheduledExpenseRepository() *scheduledexpensedynamo.DynamoDbScheduledExpenseRepository {
 	cfg, err := awsclient.LoadDefaultConfig(
 		context.Background(),
 		aws_config.WithRegion("eu-central-1"),
@@ -212,7 +202,7 @@ func newDynamoDbScheduledExpenseRepository() *scheduledexpensedynamo.DynamoDbSch
 		// Scheduled Expense tags share expense's scope (see CONTEXT.md: "a tag
 		// list (tag keys, as on BudgetExpense)") — not a separate scope.
 		NewExpenseSearchTagRepository(),
-	).(*scheduledexpensedynamo.DynamoDbScheduledExpenseRepository)
+	)
 }
 
 // NewScheduledExpenseGenerationConfigurer builds the in-process generation
@@ -223,7 +213,7 @@ func newDynamoDbScheduledExpenseRepository() *scheduledexpensedynamo.DynamoDbSch
 // generation.interval (Go duration, default 1h).
 func NewScheduledExpenseGenerationConfigurer(expenseCreator scheduledexpense.BudgetExpenseCreator) server.WebServerConfigurer {
 	job := &scheduledexpense.GenerateScheduledExpenses{
-		Repository:     NewScheduledExpenseGenerationRepository(),
+		Repository:     NewScheduledExpenseRepository(),
 		ExpenseCreator: expenseCreator,
 		Today:          date.Today,
 		Logger:         logging.GetLoggerInstanceForComponentByTypeName("GenerateScheduledExpenses"),

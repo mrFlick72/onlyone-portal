@@ -11,22 +11,6 @@ import (
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
 
-// GenerationRepository is the cross-user port the generation engine needs,
-// kept apart from ScheduledExpenseRepository (whose every method is scoped to
-// the user resolved from ctx).
-type GenerationRepository interface {
-	// FindAllActive returns every user's ACTIVE definitions. Tags carry the
-	// keys and the names stored at the definition's last save — never resolved
-	// through tag-api, which needs a user access token the job doesn't have.
-	FindAllActive(ctx context.Context) ([]ScheduledExpense, error)
-
-	// AdvanceLastEvaluatedDate sets LastEvaluatedDate on the definition with
-	// the given id owned by the user resolved from ctx. Returns
-	// ErrScheduledExpenseNotFound when that definition no longer exists or is
-	// no longer ACTIVE (deleted or paused mid-run).
-	AdvanceLastEvaluatedDate(ctx context.Context, id ScheduledExpenseId, lastEvaluatedDate date.Date) error
-}
-
 // BudgetExpenseCreator is the slice of the expense facade generation needs.
 type BudgetExpenseCreator interface {
 	CreateBudgetExpense(ctx context.Context, budgetExpense *expense.BudgetExpense) error
@@ -38,7 +22,7 @@ type BudgetExpenseCreator interface {
 // day. Running it more than once a day is safe: LastEvaluatedDate makes each
 // day evaluated exactly once. See ADR 0005.
 type GenerateScheduledExpenses struct {
-	Repository     GenerationRepository
+	Repository     ScheduledExpenseRepository
 	ExpenseCreator BudgetExpenseCreator
 	Today          func() date.Date
 	Logger         *logging.Logger
