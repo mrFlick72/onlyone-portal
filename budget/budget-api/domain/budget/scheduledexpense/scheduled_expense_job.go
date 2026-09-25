@@ -33,6 +33,7 @@ type ScheduledExpenseJob struct {
 // Execute returns an error only when the definitions can't be listed or ctx
 // is cancelled; a failure on one definition is logged and the run moves on.
 func (job *ScheduledExpenseJob) Execute(ctx context.Context) error {
+    job.Logger.LogInfoFor("scheduled expense job: starting")
 	definitions, err := job.Repository.FindAllActive(ctx)
 	if err != nil {
 		job.Logger.LogErrorfFor("scheduled expense job: listing active definitions failed: %v", err)
