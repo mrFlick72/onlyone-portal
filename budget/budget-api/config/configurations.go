@@ -213,7 +213,7 @@ func NewScheduledExpenseRepository() scheduledexpense.ScheduledExpenseRepository
 // WebServerProvisioner.RegisterConfigurer. createBudgetExpense must be the
 // action held by the facade main.go already built — building another facade
 // would start a second reclassification listener and Kafka client.
-// Interval: budget-api.scheduled-expense.generation.interval (Go duration,
+// Interval: budget-api.scheduled-expense.job.interval (Go duration,
 // default 1h).
 func NewScheduledExpenseJobConfigurer(createBudgetExpense *expense.CreateBudgetExpense) server.WebServerConfigurer {
 	job := &scheduledexpense.ScheduledExpenseJob{
@@ -222,7 +222,7 @@ func NewScheduledExpenseJobConfigurer(createBudgetExpense *expense.CreateBudgetE
 		Today:               date.Today,
 		Logger:              logging.GetLoggerInstanceForComponentByTypeName("ScheduledExpenseJob"),
 	}
-	interval := configurationManager.GetConfigDurationFor("budget-api.scheduled-expense.generation.interval", time.Hour)
+	interval := configurationManager.GetConfigDurationFor("budget-api.scheduled-expense.job.interval", time.Hour)
 	return scheduler.NewScheduledExpenseJobConfigurer(job, interval)
 }
 

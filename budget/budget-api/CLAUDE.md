@@ -83,7 +83,7 @@ clash with the web package itself. Same pattern in `web/budget/revenue` with `do
 | `BUDGET_ATTACHMENT_METADATA`   | `budget-api.dynamo-db.attachment-metadata.table-name`   |
 | `BUDGET_SCHEDULED_EXPENSE`     | `budget-api.dynamo-db.scheduled-expense.table-name`     |
 
-Scheduled Expense generation interval: `budget-api.scheduled-expense.generation.interval` (Go duration, default `1h`).
+Scheduled Expense generation interval: `budget-api.scheduled-expense.job.interval` (Go duration, default `1h`).
 
 S3 bucket holding attachment file bytes:
 
@@ -189,7 +189,7 @@ come due. Full rationale in `docs/adr/0005-scheduled-expense-recurrence-and-gene
 
 - **Wiring:** `config.NewScheduledExpenseJobConfigurer(expenseFacade.CreateBudgetExpenseAction)` →
   `adapter/budget/scheduledexpense/scheduler.ScheduledExpenseJobConfigurer`, registered in `main.go` with the framework's
-  `RegisterConfigurer`. It runs **once at startup, then every `budget-api.scheduled-expense.generation.interval`**
+  `RegisterConfigurer`. It runs **once at startup, then every `budget-api.scheduled-expense.job.interval`**
   (default `1h`), singleton mode; `Dispose` cancels an in-flight run. A restart is the manual trigger.
 - **Reuse the existing `CreateBudgetExpense` action.** The job creates expenses through the action held by the facade
   `main.go` already built (`NewBudgetExpenseActionsFacade()` returns the concrete facade for this). Calling
