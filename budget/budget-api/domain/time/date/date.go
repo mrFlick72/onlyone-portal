@@ -11,7 +11,7 @@ type Date struct {
 
 // DateOf returns the calendar day of t in UTC, truncated to midnight. It is
 // the single definition of "today" for Scheduled Expense (pause/resume
-// stamping now, the daily generation engine in #55) — see ADR 0005.
+// stamping now, the scheduled expense job in #55) — see ADR 0005.
 func DateOf(t time.Time) Date {
 	u := t.UTC()
 	return Date{t: time.Date(u.Year(), u.Month(), u.Day(), 0, 0, 0, 0, time.UTC)}
@@ -20,6 +20,21 @@ func DateOf(t time.Time) Date {
 // Today is DateOf(time.Now()).
 func Today() Date {
 	return DateOf(time.Now())
+}
+
+// AddDays returns the date n calendar days after d (before, when n < 0).
+func (d *Date) AddDays(n int) Date {
+	return Date{t: d.t.AddDate(0, 0, n)}
+}
+
+// DaysInMonth is the number of days in d's month (28-31).
+func (d *Date) DaysInMonth() int {
+	return time.Date(d.t.Year(), d.t.Month()+1, 0, 0, 0, 0, 0, d.t.Location()).Day()
+}
+
+// IsAfter reports whether d is a later calendar day than other.
+func (d *Date) IsAfter(other Date) bool {
+	return d.t.After(other.t)
 }
 
 func (d *Date) GetTime() time.Time {

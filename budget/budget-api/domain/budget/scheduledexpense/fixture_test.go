@@ -43,3 +43,16 @@ func (m *ScheduledExpenseRepositoryMock) UpdateStatus(ctx context.Context, id Sc
 	args := m.Called(ctx, id, status, lastEvaluatedDate)
 	return args.Error(0)
 }
+
+func (m *ScheduledExpenseRepositoryMock) FindAllActive(ctx context.Context) ([]ScheduledExpense, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]ScheduledExpense), args.Error(1)
+}
+
+func (m *ScheduledExpenseRepositoryMock) AdvanceLastEvaluatedDate(ctx context.Context, id ScheduledExpenseId, lastEvaluatedDate date.Date) error {
+	args := m.Called(ctx, id, lastEvaluatedDate)
+	return args.Error(0)
+}

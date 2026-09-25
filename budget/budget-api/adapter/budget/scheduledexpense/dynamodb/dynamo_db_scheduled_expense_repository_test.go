@@ -3,8 +3,14 @@
 package dynamodb
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"testing"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
 	"github.com/go-playground/assert/v2"
 	"github.com/mrflick72/budget/budget-api/domain/budget/scheduledexpense"
@@ -458,4 +464,231 @@ func TestUpdateStatusUnderAnotherUsersContextLeavesTheOwnersScheduledExpense(t *
 	if found.LastEvaluatedDate != nil {
 		t.Fatalf("Expected the owner's LastEvaluatedDate untouched, got %v", found.LastEvaluatedDate)
 	}
+}
+
+// findActiveById picks this test's rows out of a table-wide scan (the table is
+// shared by every test in the package).
+func findActiveById(t *testing.T, repo *DynamoDbScheduledExpenseRepository, ids ...string) map[string]scheduledexpense.ScheduledExpense {
+	t.Helper()
+	all, err := repo.FindAllActive(context.Background())
+	if err != nil {
+		t.Fatalf("Error scanning active scheduled expenses: %v", err)
+	}
+	wanted := map[string]bool{}
+	for _, id := range ids {
+		wanted[id] = true
+	}
+	found := map[string]scheduledexpense.ScheduledExpense{}
+	for _, se := range all {
+		if wanted[se.Id] {
+			found[se.Id] = se
+		}
+	}
+	return found
+}
+
+// FindAllActive spans every user's partition, returns only ACTIVE rows, and
+// reads the tag names stored at save time — the tag repository mock has no
+// expectations, so any tag-api resolution would fail the test.
+func TestFindAllActiveReturnsEveryUsersActiveDefinitionsWithStoredTagNames(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+	aliceCtx := testutils.NewStubbedContextWith("user-scan-alice")
+	bobCtx := testutils.NewStubbedContextWith("user-scan-bob")
+
+	alice := scheduledexpense.ScheduledExpense{
+		Description: "Rent", Amount: testutils.SafeMoneyFor("1200.00"), Notes: "Monthly rent",
+		Tags: []tags.SearchTag{{Key: "housing", Value: "Housing"}, {Key: "fixed", Value: "Fixed costs"}},
+		Day:  5, Status: scheduledexpense.StatusActive,
+	}
+	bob := scheduledexpense.ScheduledExpense{
+		Description: "Gym", Amount: testutils.SafeMoneyFor("40.00"),
+		Tags: []tags.SearchTag{{Key: "sport", Value: "Sport"}},
+		Day:  1, Status: scheduledexpense.StatusActive,
+	}
+	bobPaused := scheduledexpense.ScheduledExpense{
+		Description: "Magazine", Amount: testutils.SafeMoneyFor("5.00"),
+		Tags: []tags.SearchTag{{Key: "leisure", Value: "Leisure"}},
+		Day:  1, Status: scheduledexpense.StatusPaused,
+	}
+	idProviderMock.On("GenerateIdFor", &alice).Return("SCAN_ALICE_ID")
+	idProviderMock.On("GenerateIdFor", &bob).Return("SCAN_BOB_ID")
+	idProviderMock.On("GenerateIdFor", &bobPaused).Return("SCAN_BOB_PAUSED_ID")
+	for _, save := range []struct {
+		ctx context.Context
+		se  *scheduledexpense.ScheduledExpense
+	}{{aliceCtx, &alice}, {bobCtx, &bob}, {bobCtx, &bobPaused}} {
+		if err := repo.Save(save.ctx, save.se); err != nil {
+			t.Fatalf("Expected nil error on save, got %v", err)
+		}
+	}
+
+	found := findActiveById(t, repo, "SCAN_ALICE_ID", "SCAN_BOB_ID", "SCAN_BOB_PAUSED_ID")
+
+	assert.Equal(t, 2, len(found))
+	assert.Equal(t, "user-scan-alice", found["SCAN_ALICE_ID"].UserName)
+	assert.Equal(t, "Rent", found["SCAN_ALICE_ID"].Description)
+	assert.Equal(t, "Monthly rent", found["SCAN_ALICE_ID"].Notes)
+	assert.Equal(t, []tags.SearchTag{{Key: "housing", Value: "Housing"}, {Key: "fixed", Value: "Fixed costs"}}, found["SCAN_ALICE_ID"].Tags)
+	assert.Equal(t, "user-scan-bob", found["SCAN_BOB_ID"].UserName)
+	assert.Equal(t, []tags.SearchTag{{Key: "sport", Value: "Sport"}}, found["SCAN_BOB_ID"].Tags)
+}
+
+// Rows saved before tag names were stored still scan, with empty names.
+func TestFindAllActiveToleratesRowsWithoutStoredTagNames(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+
+	_, err := client.PutItem(context.Background(), &dynamodb.PutItemInput{
+		TableName: aws.String(TableName),
+		Item: map[string]types.AttributeValue{
+			"user_name":   &types.AttributeValueMemberS{Value: "user-scan-legacy"},
+			"id":          &types.AttributeValueMemberS{Value: "SCAN_LEGACY_ID"},
+			"description": &types.AttributeValueMemberS{Value: "Legacy"},
+			"amount":      &types.AttributeValueMemberS{Value: "10.00"},
+			"notes":       &types.AttributeValueMemberS{Value: ""},
+			"tag":         &types.AttributeValueMemberS{Value: "housing"},
+			"day":         &types.AttributeValueMemberN{Value: "3"},
+			"status":      &types.AttributeValueMemberS{Value: "ACTIVE"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Error seeding legacy row: %v", err)
+	}
+
+	found := findActiveById(t, repo, "SCAN_LEGACY_ID")
+
+	assert.Equal(t, []tags.SearchTag{{Key: "housing", Value: ""}}, found["SCAN_LEGACY_ID"].Tags)
+}
+
+// The scan follows LastEvaluatedKey across pages.
+func TestFindAllActiveFollowsPagination(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+	repo.scanPageLimit = 1
+	userCtx := testutils.NewStubbedContextWith("user-scan-pages")
+
+	ids := []string{"SCAN_PAGE_1", "SCAN_PAGE_2", "SCAN_PAGE_3"}
+	for i, id := range ids {
+		se := scheduledexpense.ScheduledExpense{
+			Description: fmt.Sprintf("Page %d", i), Amount: testutils.SafeMoneyFor("1.00"),
+			Day: 1, Status: scheduledexpense.StatusActive,
+		}
+		idProviderMock.On("GenerateIdFor", &se).Return(id).Once()
+		if err := repo.Save(userCtx, &se); err != nil {
+			t.Fatalf("Expected nil error on save, got %v", err)
+		}
+	}
+
+	found := findActiveById(t, repo, ids...)
+
+	assert.Equal(t, 3, len(found))
+}
+
+func TestAdvanceLastEvaluatedDateSetsOnlyThatField(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+	userCtx := testutils.NewStubbedContextWith("user-advance")
+
+	input := scheduledexpense.ScheduledExpense{
+		Description: "Rent", Amount: testutils.SafeMoneyFor("1200.00"),
+		Tags: []tags.SearchTag{{Key: "housing", Value: "Housing"}},
+		Day:  5, Status: scheduledexpense.StatusActive,
+	}
+	idProviderMock.On("GenerateIdFor", &input).Return("ADVANCE_ID")
+	if err := repo.Save(userCtx, &input); err != nil {
+		t.Fatalf("Expected nil error on save, got %v", err)
+	}
+
+	err := repo.AdvanceLastEvaluatedDate(userCtx, "ADVANCE_ID", testutils.SafeDateFor("24/09/2026"))
+
+	assert.Equal(t, nil, err)
+	found := findActiveById(t, repo, "ADVANCE_ID")["ADVANCE_ID"]
+	if found.LastEvaluatedDate == nil {
+		t.Fatalf("Expected LastEvaluatedDate to be set")
+	}
+	assert.Equal(t, "2026-09-24", found.LastEvaluatedDate.GetIsoFormattedDate())
+	assert.Equal(t, scheduledexpense.StatusActive, found.Status)
+	assert.Equal(t, "Rent", found.Description)
+	assert.Equal(t, []tags.SearchTag{{Key: "housing", Value: "Housing"}}, found.Tags)
+}
+
+// A definition deleted mid-run: not found, and no stub row upserted (a stub
+// would lack description/amount and break every read of that user's list).
+func TestAdvanceLastEvaluatedDateOnADeletedDefinitionIsNotFoundAndCreatesNothing(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+	userCtx := testutils.NewStubbedContextWith("user-advance-deleted")
+
+	err := repo.AdvanceLastEvaluatedDate(userCtx, "ADVANCE_DELETED_ID", testutils.SafeDateFor("24/09/2026"))
+
+	assert.Equal(t, scheduledexpense.ErrScheduledExpenseNotFound, err)
+	found, err := repo.FindFor(userCtx, "ADVANCE_DELETED_ID")
+	assert.Equal(t, nil, err)
+	if found != nil {
+		t.Fatalf("Expected no stub row, got %+v", found)
+	}
+}
+
+// A definition paused mid-run stops advancing: pause owns LastEvaluatedDate
+// from then on (ADR 0005).
+func TestAdvanceLastEvaluatedDateOnAPausedDefinitionIsNotFoundAndLeavesItUntouched(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+	userCtx := testutils.NewStubbedContextWith("user-advance-paused")
+
+	input := scheduledexpense.ScheduledExpense{
+		Description: "Rent", Amount: testutils.SafeMoneyFor("1200.00"),
+		Day: 5, Status: scheduledexpense.StatusActive,
+	}
+	idProviderMock.On("GenerateIdFor", &input).Return("ADVANCE_PAUSED_ID")
+	if err := repo.Save(userCtx, &input); err != nil {
+		t.Fatalf("Expected nil error on save, got %v", err)
+	}
+	if err := repo.UpdateStatus(userCtx, "ADVANCE_PAUSED_ID", scheduledexpense.StatusPaused, testutils.SafeDateFor("20/09/2026")); err != nil {
+		t.Fatalf("Expected nil error on pause, got %v", err)
+	}
+
+	err := repo.AdvanceLastEvaluatedDate(userCtx, "ADVANCE_PAUSED_ID", testutils.SafeDateFor("24/09/2026"))
+
+	assert.Equal(t, scheduledexpense.ErrScheduledExpenseNotFound, err)
+	tagRepositoryMock := new(tags.SearchTagRepositoryMock)
+	tagRepositoryMock.On("GetTagBy", userCtx, "UNKNOWN").Return(&tags.SearchTag{Key: "UNKNOWN", Value: "UNKNOWN"}, nil).Maybe()
+	found, err := newScheduledExpenseRepositoryWith(idProviderMock, tagRepositoryMock).FindFor(userCtx, "ADVANCE_PAUSED_ID")
+	if err != nil || found == nil {
+		t.Fatalf("Expected the paused definition, got %+v / %v", found, err)
+	}
+	assert.Equal(t, "2026-09-20", found.LastEvaluatedDate.GetIsoFormattedDate())
+}
+
+// A malformed row (missing attributes) is skipped, not fatal to the scan: one
+// bad definition must not stop generation for every user.
+func TestFindAllActiveSkipsAMalformedRow(t *testing.T) {
+	idProviderMock := new(DynamoDbScheduledExpenseIdProviderMock)
+	repo := newScheduledExpenseRepository(idProviderMock)
+	userCtx := testutils.NewStubbedContextWith("user-scan-malformed")
+
+	_, err := client.PutItem(context.Background(), &dynamodb.PutItemInput{
+		TableName: aws.String(TableName),
+		Item: map[string]types.AttributeValue{
+			"user_name": &types.AttributeValueMemberS{Value: "user-scan-malformed"},
+			"id":        &types.AttributeValueMemberS{Value: "SCAN_MALFORMED_ID"},
+			"status":    &types.AttributeValueMemberS{Value: "ACTIVE"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Error seeding malformed row: %v", err)
+	}
+	good := scheduledexpense.ScheduledExpense{
+		Description: "Rent", Amount: testutils.SafeMoneyFor("1.00"), Day: 1, Status: scheduledexpense.StatusActive,
+	}
+	idProviderMock.On("GenerateIdFor", &good).Return("SCAN_WELLFORMED_ID")
+	if err := repo.Save(userCtx, &good); err != nil {
+		t.Fatalf("Expected nil error on save, got %v", err)
+	}
+
+	found := findActiveById(t, repo, "SCAN_MALFORMED_ID", "SCAN_WELLFORMED_ID")
+
+	assert.Equal(t, 1, len(found))
+	assert.Equal(t, "Rent", found["SCAN_WELLFORMED_ID"].Description)
 }
