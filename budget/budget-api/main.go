@@ -5,6 +5,7 @@ import (
 	"github.com/mrflick72/budget/budget-api/web/budget/attachment"
 	"github.com/mrflick72/budget/budget-api/web/budget/expense"
 	"github.com/mrflick72/budget/budget-api/web/budget/revenue"
+	"github.com/mrflick72/budget/budget-api/web/budget/scheduledexpense"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 )
 
@@ -21,6 +22,11 @@ func main() {
 	expense.RegisterExpenseEndpoints(ginEngine, GinContextToPlainContextFactory, expenseFacade)
 	revenue.RegisterRevenueEndpoints(ginEngine, GinContextToPlainContextFactory, config.NewRevenueActionsFacade())
 	attachment.RegisterAttachmentEndpoints(ginEngine, GinContextToPlainContextFactory, config.NewAttachmentActionsFacade())
+	scheduledexpense.RegisterScheduledExpenseEndpoints(ginEngine, GinContextToPlainContextFactory, config.NewScheduledExpenseActionsFacade())
+
+	// Scheduled Expense job (ADR 0005): runs at startup, then
+	// hourly; disposed on shutdown with the built-in configurers.
+	engine.RegisterConfigurer(config.NewScheduledExpenseJobConfigurer(expenseFacade.CreateBudgetExpenseAction))
 
 	engine.StartEngine()
 }

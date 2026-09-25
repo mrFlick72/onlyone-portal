@@ -170,6 +170,12 @@ github.com/mrflick72/onlyone-portal/core-services/golang-web-framework => ../../
 | budget-api   | GET        | `/api/attachment/metadata/:budgetType/:budgetId` | Lists attachments for a parent expense or revenue                                  |
 | budget-api   | GET        | `/api/attachment/:attachmentId/content`          | Returns the raw file bytes with `Content-Disposition`                              |
 | budget-api   | DELETE     | `/api/attachment/:attachmentId`                  | Deletes both the metadata row and the S3 object                                    |
+| budget-api   | GET        | `/api/budget/scheduled-expense`                  | Lists authenticated user's scheduled expenses                                      |
+| budget-api   | GET        | `/api/budget/scheduled-expense/:id`              | Gets one scheduled expense; `404` if not found or not owned                        |
+| budget-api   | POST       | `/api/budget/scheduled-expense`                  | Creates a scheduled expense (recurring template)                                   |
+| budget-api   | PUT        | `/api/budget/scheduled-expense/:id`              | Updates a scheduled expense; `404` if not found or not owned                       |
+| budget-api   | DELETE     | `/api/budget/scheduled-expense/:id`              | Deletes the definition only; `404` if not found or not owned                       |
+| budget-api   | PATCH      | `/api/budget/scheduled-expense/:id`              | Pauses/resumes (`{"status":"ACTIVE"\|"PAUSED"}`); budget-api's first `PATCH`        |
 | plan-api     | GET        | `/api/plan`                                      | Lists authenticated user's plans                                                   |
 | plan-api     | POST       | `/api/plan`                                      | Creates a plan and returns `{ "id": "<uuid>" }`                                    |
 | plan-api     | GET/DELETE | `/api/plan/:id`                                  | Gets or deletes a plan; todos are cascade-deleted in Postgres                      |

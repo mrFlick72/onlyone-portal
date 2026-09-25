@@ -6,6 +6,8 @@ menu:
     label: "Budget"
   revenuePage:
     label: "Entrate"
+  scheduledExpensePage:
+    label: "Spese pianificate"
   planPage:
     label: "Piani"
   logOut:

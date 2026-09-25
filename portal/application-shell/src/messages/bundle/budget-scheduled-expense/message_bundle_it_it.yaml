@@ -1,0 +1,37 @@
+scheduledExpensePage:
+  menu:
+    newScheduledExpense: "Nuova spesa pianificata"
+  heading: "Spese pianificate"
+  table:
+    day: "Giorno"
+    month: "Mese"
+    monthly: "Mensile"
+  status:
+    active: "Attiva"
+    paused: "In pausa"
+  delete:
+    popup:
+      title: "Elimina spesa pianificata"
+      message: "Sei sicuro di voler eliminare questa spesa pianificata? Le spese già generate verranno mantenute."
+  feedback:
+    deleteError: "Impossibile eliminare la spesa pianificata"
+    statusError: "Impossibile cambiare lo stato della spesa pianificata"
+  action:
+    pause: "Metti in pausa"
+    resume: "Riprendi"
+
+scheduledExpenseDetailPage:
+  menu:
+    backToList: "Torna all'elenco"
+  heading: "Nuova spesa pianificata"
+  headingEdit: "Modifica spesa pianificata"
+  form:
+    description: "Descrizione:"
+    day: "Giorno (1-31):"
+    month: "Mese (lascia vuoto per mensile):"
+    setEndDate: "Imposta una data di fine"
+    endDate: "Data di fine:"
+  feedback:
+    success: "Spesa pianificata salvata"
+    error: "Impossibile salvare la spesa pianificata"
+    loadError: "Impossibile caricare la spesa pianificata"

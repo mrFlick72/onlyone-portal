@@ -1,0 +1,37 @@
+scheduledExpensePage:
+  menu:
+    newScheduledExpense: "New Scheduled Expense"
+  heading: "Scheduled Expenses"
+  table:
+    day: "Day"
+    month: "Month"
+    monthly: "Monthly"
+  status:
+    active: "Active"
+    paused: "Paused"
+  delete:
+    popup:
+      title: "Delete Scheduled Expense"
+      message: "Are you sure you want to delete this scheduled expense? Expenses it already generated are kept."
+  feedback:
+    deleteError: "Could not delete the scheduled expense"
+    statusError: "Could not change the scheduled expense status"
+  action:
+    pause: "Pause"
+    resume: "Resume"
+
+scheduledExpenseDetailPage:
+  menu:
+    backToList: "Back to List"
+  heading: "New Scheduled Expense"
+  headingEdit: "Edit Scheduled Expense"
+  form:
+    description: "Description:"
+    day: "Day (1-31):"
+    month: "Month (leave empty for monthly):"
+    setEndDate: "Set an end date"
+    endDate: "End Date:"
+  feedback:
+    success: "Scheduled expense saved"
+    error: "Could not save the scheduled expense"
+    loadError: "Could not load the scheduled expense"

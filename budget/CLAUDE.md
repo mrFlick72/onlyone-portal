@@ -6,7 +6,7 @@ The parent `../CLAUDE.md` covers the monorepo as a whole (auth, framework, deplo
 
 ## Services in this directory
 
-- `budget-api/` — Go (Gin). CRUD for budget expenses and revenue, plus attachment upload/download/delete for both. Persists structured data to DynamoDB; attachment file bytes go to S3. Calls `tag-api` over REST for tag lookup. Publishes expense `CREATE`/`UPDATE`/`DELETE` events to the Kafka topic `budget-api.expense` (see `adapter/budget/expense/kafka`).
+- `budget-api/` — Go (Gin). CRUD for budget expenses and revenue, plus attachment upload/download/delete for both. Persists structured data to DynamoDB; attachment file bytes go to S3. Calls `tag-api` over REST for tag lookup. Publishes expense `CREATE`/`UPDATE`/`DELETE` events to the Kafka topic `budget-api.expense` (see `adapter/budget/expense/kafka`). Also runs an in-process scheduler (startup + hourly) that generates expenses from Scheduled Expenses — **single replica only** (see `budget-api/CLAUDE.md`).
 - `analytic-api/` — Python FastAPI. Serves expense analytics for the frontend's analytics page. Owns a Postgres **projection** of expenses kept current by consuming the `budget-api.expense` Kafka topic; never calls `budget-api` at request time. See `analytic-api/AGENTS.md`.
 - `revenue-api/` — Python FastAPI. Legacy revenue service; kept in place pending decommissioning once Go version is verified.
 - `budget-exporter/` — Python. Data export job.
@@ -22,6 +22,7 @@ domain/
   budget/expense/    # CreateBudgetExpense, UpdateBudgetExpense, FindSpentBudget, DeleteBudgetExpense + BudgetExpenseActionsFacade
   budget/revenue/    # CreateRevenue, UpdateRevenue, FindRevenue, DeleteRevenue + RevenueActionsFacade
   budget/attachment/ # SaveAttachment, GetAttachment, DeleteAttachment + AttachmentActionsFacade
+  budget/scheduledexpense/ # Create/Find/Update/Delete/Pause/ResumeScheduledExpense + ScheduledExpenseActionsFacade (#51-#54); ScheduledExpenseJob (#55)
   tags/              # SearchTagRepository port
   money/, time/      # value objects
 adapter/
@@ -30,18 +31,21 @@ adapter/
   budget/attachment/          # AwsCompositeAttachmentRepository — orchestrates dynamo + s3
   budget/attachment/dynamodb/ # DynamoDB impl of attachment metadata repository + id provider
   budget/attachment/s3/       # S3 impl of attachment content repository
+  budget/scheduledexpense/dynamodb/ # DynamoDB impl of ScheduledExpenseRepository (incl. the engine-only cross-user scan) + id provider
+  budget/scheduledexpense/scheduler/ # gocron v2 WebServerConfigurer running ScheduledExpenseJob (startup + hourly)
   tags/rest/                  # REST client for tag-api + Ristretto-cached decorator
 web/
   budget/expense/    # package expense    — endpoint, converter, representation for expense
   budget/revenue/    # package revenue    — endpoint, converter, representation for revenue
   budget/attachment/ # package attachment — endpoint, converter, representation for attachments
-config/              # composition root — NewBudgetExpenseActionsFacade, NewRevenueActionsFacade, NewAttachmentActionsFacade
-main.go              # WebServerProvisioner + registers expense, revenue and attachment endpoints
+  budget/scheduledexpense/ # package scheduledexpense — endpoint, converter, representation for scheduled expenses
+config/              # composition root — NewBudgetExpenseActionsFacade, NewRevenueActionsFacade, NewAttachmentActionsFacade, NewScheduledExpenseActionsFacade
+main.go              # WebServerProvisioner + registers expense, revenue, attachment and scheduled-expense endpoints
 ```
 
 Key wiring facts:
-- `config.NewBudgetExpenseActionsFacade()` / `config.NewRevenueActionsFacade()` / `config.NewAttachmentActionsFacade()` are the entry points.
-- DynamoDB table names come from config keys `budget-api.dynamo-db.budget-expense.table-name`, `budget-api.dynamo-db.revenue.table-name`, and `budget-api.dynamo-db.attachment-metadata.table-name`.
+- `config.NewBudgetExpenseActionsFacade()` / `config.NewRevenueActionsFacade()` / `config.NewAttachmentActionsFacade()` / `config.NewScheduledExpenseActionsFacade()` are the entry points.
+- DynamoDB table names come from config keys `budget-api.dynamo-db.budget-expense.table-name`, `budget-api.dynamo-db.revenue.table-name`, `budget-api.dynamo-db.attachment-metadata.table-name`, and `budget-api.dynamo-db.scheduled-expense.table-name`.
 - S3 bucket for attachment content comes from `budget-api.s3.attachment.bucket-name`.
 - AWS region is hardcoded to `eu-central-1`.
 - Tag repository is wrapped in `RistrettoCachedSearchTagRepository` — preserve cache invalidation semantics when modifying tag lookup.
@@ -58,6 +62,17 @@ The Go revenue adapter preserves the Python `revenue-api` composite key layout s
 
 Do not change this scheme without a data migration plan.
 
+## Scheduled Expense DynamoDB key scheme
+
+Unlike expense/revenue's derived composite keys, `user_name` is stored verbatim as the partition key:
+
+- PK: `user_name` (raw, not base64-encoded)
+- SK: `id` (a plain UUID)
+
+This makes `FindAll`'s per-user scoping structural (the partition key itself), and gives the scheduled expense job
+(#55) a plain table Scan across all users' definitions with no derived-key bookkeeping. See
+`docs/adr/0005-scheduled-expense-recurrence-and-generation-engine.md`.
+
 ## Routes
 
 | Aggregate  | Method          | Path                                                                                |
@@ -66,6 +81,7 @@ Do not change this scheme without a data migration plan.
 | Expense    | POST/PUT/DELETE | `/api/budget/expense`, `/api/budget/expense/:id`                                    |
 | Revenue    | GET             | `/api/budget/revenue?q=year=YYYY`                                                   |
 | Revenue    | POST/PUT/DELETE | `/api/budget/revenue`, `/api/budget/revenue/:id`                                    |
+| Scheduled Expense | GET/POST/PUT/PATCH/DELETE | `/api/budget/scheduled-expense`, `/api/budget/scheduled-expense/:id` (list/create/get/update/pause-resume/delete — #51-#54) |
 | Attachment | POST            | `/api/attachment` (multipart: `file`, `budgetId`, `budgetType`, `date`, optional `attachmentId`) |
 | Attachment | GET             | `/api/attachment/metadata/:budgetType/:budgetId`                                    |
 | Attachment | GET             | `/api/attachment/:attachmentId/content` (raw bytes + `Content-Disposition`)         |

@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"strings"
+	"time"
 
 	aws_config "github.com/aws/aws-sdk-go-v2/config"
 	aws_dynamodb "github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -16,15 +17,20 @@ import (
 	"github.com/mrflick72/budget/budget-api/adapter/budget/expense/dynamodb"
 	"github.com/mrflick72/budget/budget-api/adapter/budget/expense/kafka"
 	revenuedynamo "github.com/mrflick72/budget/budget-api/adapter/budget/revenue/dynamodb"
+	scheduledexpensedynamo "github.com/mrflick72/budget/budget-api/adapter/budget/scheduledexpense/dynamodb"
+	"github.com/mrflick72/budget/budget-api/adapter/budget/scheduledexpense/scheduler"
 	"github.com/mrflick72/budget/budget-api/adapter/tags/rest"
 	"github.com/mrflick72/budget/budget-api/domain/budget/attachment"
 	"github.com/mrflick72/budget/budget-api/domain/budget/expense"
 	"github.com/mrflick72/budget/budget-api/domain/budget/revenue"
+	"github.com/mrflick72/budget/budget-api/domain/budget/scheduledexpense"
 	"github.com/mrflick72/budget/budget-api/domain/tags"
+	"github.com/mrflick72/budget/budget-api/domain/time/date"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/awsclient"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/config"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/httpclient"
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/logging"
+	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/web/server"
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
@@ -107,7 +113,10 @@ func NewNewKafkaBudgetExpenseEventPublisher() expense.BudgetExpenseEventPublishe
 // reclassification listener. The returned stop function stops that listener and
 // must be deferred by the caller so the goroutine is torn down with the process
 // (after the HTTP server has drained, so no in-flight read can still publish).
-func NewBudgetExpenseActionsFacade() (expense.BudgetExpenseActions, func()) {
+// NewBudgetExpenseActionsFacade returns the concrete facade (it satisfies
+// expense.BudgetExpenseActions for the endpoints) so main.go can also hand its
+// CreateBudgetExpenseAction to the Scheduled Expense job.
+func NewBudgetExpenseActionsFacade() (*expense.BudgetExpenseActionsFacade, func()) {
 	eventBus := expense.NewEventBus()
 	budgetExpenseRepository := NewBudgetExpenseRepository(eventBus)
 	searchTagRepository := NewExpenseSearchTagRepository()
@@ -173,6 +182,60 @@ func NewRevenueActionsFacade() revenue.RevenueActions {
 		UpdateRevenueAction: &revenue.UpdateRevenue{Repository: revenueRepository},
 		FindRevenueAction:   &revenue.FindRevenue{Repository: revenueRepository},
 		DeleteRevenueAction: &revenue.DeleteRevenue{Repository: revenueRepository},
+	}
+}
+
+func NewScheduledExpenseRepository() scheduledexpense.ScheduledExpenseRepository {
+	cfg, err := awsclient.LoadDefaultConfig(
+		context.Background(),
+		aws_config.WithRegion("eu-central-1"),
+	)
+
+	if err != nil {
+		logger.LogErrorfFor("unable to load SDK config: %s", err.Error())
+		panic("unable to load SDK config, " + err.Error())
+	}
+
+	return scheduledexpensedynamo.NewDynamoDbScheduledExpenseRepository(
+		configurationManager.GetConfigFor("budget-api.dynamo-db.scheduled-expense.table-name"),
+		aws_dynamodb.NewFromConfig(cfg),
+		&scheduledexpensedynamo.DynamoDbScheduledExpenseIdProvider{
+			UuidGenerator: func() string { return uuid.New().String() },
+		},
+		// Scheduled Expense tags share expense's scope (see CONTEXT.md: "a tag
+		// list (tag keys, as on BudgetExpense)") — not a separate scope.
+		NewExpenseSearchTagRepository(),
+	)
+}
+
+// NewScheduledExpenseJobConfigurer builds the in-process generation
+// engine (ADR 0005) as a WebServerConfigurer for main.go to hand to
+// WebServerProvisioner.RegisterConfigurer. createBudgetExpense must be the
+// action held by the facade main.go already built — building another facade
+// would start a second reclassification listener and Kafka client.
+// Interval: budget-api.scheduled-expense.job.interval (Go duration,
+// default 1h).
+func NewScheduledExpenseJobConfigurer(createBudgetExpense *expense.CreateBudgetExpense) server.WebServerConfigurer {
+	job := &scheduledexpense.ScheduledExpenseJob{
+		Repository:          NewScheduledExpenseRepository(),
+		CreateBudgetExpense: createBudgetExpense,
+		Today:               date.Today,
+		Logger:              logging.GetLoggerInstanceForComponentByTypeName("ScheduledExpenseJob"),
+	}
+	interval := configurationManager.GetConfigDurationFor("budget-api.scheduled-expense.job.interval", time.Hour)
+	return scheduler.NewScheduledExpenseJobConfigurer(job, interval)
+}
+
+func NewScheduledExpenseActionsFacade() scheduledexpense.ScheduledExpenseActions {
+	scheduledExpenseRepository := NewScheduledExpenseRepository()
+	return &scheduledexpense.ScheduledExpenseActionsFacade{
+		CreateScheduledExpenseAction: &scheduledexpense.CreateScheduledExpense{Repository: scheduledExpenseRepository},
+		FindScheduledExpensesAction:  &scheduledexpense.FindScheduledExpenses{Repository: scheduledExpenseRepository},
+		FindScheduledExpenseAction:   &scheduledexpense.FindScheduledExpense{Repository: scheduledExpenseRepository},
+		UpdateScheduledExpenseAction: &scheduledexpense.UpdateScheduledExpense{Repository: scheduledExpenseRepository},
+		DeleteScheduledExpenseAction: &scheduledexpense.DeleteScheduledExpense{Repository: scheduledExpenseRepository},
+		PauseScheduledExpenseAction:  &scheduledexpense.PauseScheduledExpense{Repository: scheduledExpenseRepository, Today: date.Today},
+		ResumeScheduledExpenseAction: &scheduledexpense.ResumeScheduledExpense{Repository: scheduledExpenseRepository, Today: date.Today},
 	}
 }
 
