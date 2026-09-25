@@ -220,9 +220,9 @@ Consolidating them is a reasonable cleanup but would change caching behavior —
 | Method   | Path                      | Purpose                 | Request body                         | Response                          |
 |----------|---------------------------|-------------------------|--------------------------------------|-----------------------------------|
 | `PUT`    | `/api/budget/expense`     | **Search** (not update) | `BudgetSearchCriteriaRepresentation` | `SpentBudgetRepresentation` `200` |
-| `POST`   | `/api/budget/expense`     | Create                  | `BudgetExpenseRepresentation`        | `201 No Content`                  |
-| `PUT`    | `/api/budget/expense/:id` | Update                  | `BudgetExpenseRepresentation`        | `204 No Content`                  |
-| `DELETE` | `/api/budget/expense/:id` | Delete                  | —                                    | `204 No Content`                  |
+| `POST`   | `/api/budget/expense`     | Create                  | `BudgetExpenseRepresentation`        | `201 No Content`, `500` on failure |
+| `PUT`    | `/api/budget/expense/:id` | Update                  | `BudgetExpenseRepresentation`        | `204 No Content`, `500` on failure |
+| `DELETE` | `/api/budget/expense/:id` | Delete                  | —                                    | `204 No Content`, `500` on failure |
 
 `PUT /api/budget/expense` is overloaded as search so the frontend can send criteria as a JSON body (plain `GET` won't
 accept a body). Do not normalize this to `GET` or `POST` without coordinating with the `application-shell` budget
@@ -258,9 +258,9 @@ bundle — the wire contract is load-bearing.
 | Method   | Path                              | Purpose        | Request body            | Response                        |
 |----------|-----------------------------------|----------------|-------------------------|---------------------------------|
 | `GET`    | `/api/budget/revenue?q=year=YYYY` | Search by year | —                       | `[]RevenueRepresentation` `200` |
-| `POST`   | `/api/budget/revenue`             | Create         | `RevenueRepresentation` | `201 No Content`                |
-| `PUT`    | `/api/budget/revenue/:id`         | Update         | `RevenueRepresentation` | `204 No Content`                |
-| `DELETE` | `/api/budget/revenue/:id`         | Delete         | —                       | `204 No Content`                |
+| `POST`   | `/api/budget/revenue`             | Create         | `RevenueRepresentation` | `201 No Content`, `500` on failure |
+| `PUT`    | `/api/budget/revenue/:id`         | Update         | `RevenueRepresentation` | `204 No Content`, `500` on failure |
+| `DELETE` | `/api/budget/revenue/:id`         | Delete         | —                       | `204 No Content`, `500` on failure |
 
 The `?q=year=YYYY` query param format preserves the Python revenue-api wire format consumed by the frontend.
 

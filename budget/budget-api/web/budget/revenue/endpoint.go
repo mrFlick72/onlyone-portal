@@ -51,7 +51,11 @@ func RegisterRevenueEndpoints(
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		facade.CreateRevenue(ctx, domainModel)
+		if err := facade.CreateRevenue(ctx, domainModel); err != nil {
+			logger.LogErrorfFor("Error creating revenue: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 		c.Status(http.StatusCreated)
 	})
 
@@ -72,13 +76,21 @@ func RegisterRevenueEndpoints(
 			return
 		}
 		domainModel.Id = c.Param("id")
-		facade.UpdateRevenue(ctx, domainModel)
+		if err := facade.UpdateRevenue(ctx, domainModel); err != nil {
+			logger.LogErrorfFor("Error updating revenue: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 		c.Status(http.StatusNoContent)
 	})
 
 	r.DELETE("/api/budget/revenue/:id", func(c *gin.Context) {
 		ctx := ContextFactoryConverter.CreateContextFromGin(c)
-		facade.DeleteRevenue(ctx, c.Param("id"))
+		if err := facade.DeleteRevenue(ctx, c.Param("id")); err != nil {
+			logger.LogErrorfFor("Error deleting revenue: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 		c.Status(http.StatusNoContent)
 	})
 
