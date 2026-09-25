@@ -83,7 +83,7 @@ clash with the web package itself. Same pattern in `web/budget/revenue` with `do
 | `BUDGET_ATTACHMENT_METADATA`   | `budget-api.dynamo-db.attachment-metadata.table-name`   |
 | `BUDGET_SCHEDULED_EXPENSE`     | `budget-api.dynamo-db.scheduled-expense.table-name`     |
 
-Scheduled Expense generation interval: `budget-api.scheduled-expense.job.interval` (Go duration, default `1h`).
+Scheduled Expense job interval: `budget-api.scheduled-expense.job.interval` (Go duration, default `1h`).
 
 S3 bucket holding attachment file bytes:
 
