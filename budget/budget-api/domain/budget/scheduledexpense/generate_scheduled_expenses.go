@@ -11,21 +11,20 @@ import (
 	"github.com/mrflick72/onlyone-portal/core-services/golang-web-framework/middleware/security"
 )
 
-// BudgetExpenseCreator is the slice of the expense facade generation needs.
-type BudgetExpenseCreator interface {
-	CreateBudgetExpense(ctx context.Context, budgetExpense *expense.BudgetExpense) error
-}
-
 // GenerateScheduledExpenses is one run of the generation engine: it evaluates
 // every ACTIVE definition for each day from LastEvaluatedDate+1 (today, when
 // never evaluated) up to today, and creates a BudgetExpense for each matching
 // day. Running it more than once a day is safe: LastEvaluatedDate makes each
 // day evaluated exactly once. See ADR 0005.
+//
+// Expenses are created through the existing CreateBudgetExpense action — the
+// same instance the expense endpoints use — so a generated expense goes
+// through exactly the path a manual one does (default tag, Kafka event).
 type GenerateScheduledExpenses struct {
-	Repository     ScheduledExpenseRepository
-	ExpenseCreator BudgetExpenseCreator
-	Today          func() date.Date
-	Logger         *logging.Logger
+	Repository          ScheduledExpenseRepository
+	CreateBudgetExpense *expense.CreateBudgetExpense
+	Today               func() date.Date
+	Logger              *logging.Logger
 }
 
 // Execute returns an error only when the definitions can't be listed or ctx
@@ -86,7 +85,7 @@ func (action *GenerateScheduledExpenses) generateFor(ctx context.Context, defini
 		}
 		// Generate, then advance: a crash in between re-evaluates this day on
 		// the next run — a visible duplicate, never a silent loss.
-		if err := action.ExpenseCreator.CreateBudgetExpense(ownerCtx, definition.expenseFor(day)); err != nil {
+		if err := action.CreateBudgetExpense.Execute(ownerCtx, definition.expenseFor(day)); err != nil {
 			action.Logger.LogErrorfFor("scheduled expense generation: creating expense for definition %s on %s failed: %v", definition.Id, day.GetIsoFormattedDate(), err)
 			return err
 		}

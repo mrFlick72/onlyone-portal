@@ -187,12 +187,13 @@ value object are unchanged and carry no `Scope`. See
 `scheduledexpense.GenerateScheduledExpenses` turns every `ACTIVE` Scheduled Expense into real `BudgetExpense`s as they
 come due. Full rationale in `docs/adr/0005-scheduled-expense-recurrence-and-generation-engine.md`; the load-bearing facts:
 
-- **Wiring:** `config.NewScheduledExpenseGenerationConfigurer(expenseFacade)` →
+- **Wiring:** `config.NewScheduledExpenseGenerationConfigurer(expenseFacade.CreateBudgetExpenseAction)` →
   `adapter/budget/scheduledexpense/scheduler.GocronGenerationConfigurer`, registered in `main.go` with the framework's
   `RegisterConfigurer`. It runs **once at startup, then every `budget-api.scheduled-expense.generation.interval`**
   (default `1h`), singleton mode; `Dispose` cancels an in-flight run. A restart is the manual trigger.
-- **Pass the existing expense facade.** Calling `NewBudgetExpenseActionsFacade()` again would start a second
-  reclassification listener.
+- **Reuse the existing `CreateBudgetExpense` action.** The job creates expenses through the action held by the facade
+  `main.go` already built (`NewBudgetExpenseActionsFacade()` returns the concrete facade for this). Calling
+  `NewBudgetExpenseActionsFacade()` again would start a second reclassification listener and Kafka client.
 - **Each day is evaluated once**, driven by `LastEvaluatedDate`: from `LastEvaluatedDate + 1` (today, when never
   evaluated) to today (`date.Today()`, UTC). A day is due when `day == min(Day, daysInMonth)`, in `Month` when set, and
   not past `EndDate`. Generate first, then advance — a crash in between yields a visible duplicate, never a loss.

@@ -113,7 +113,10 @@ func NewNewKafkaBudgetExpenseEventPublisher() expense.BudgetExpenseEventPublishe
 // reclassification listener. The returned stop function stops that listener and
 // must be deferred by the caller so the goroutine is torn down with the process
 // (after the HTTP server has drained, so no in-flight read can still publish).
-func NewBudgetExpenseActionsFacade() (expense.BudgetExpenseActions, func()) {
+// NewBudgetExpenseActionsFacade returns the concrete facade (it satisfies
+// expense.BudgetExpenseActions for the endpoints) so main.go can also hand its
+// CreateBudgetExpenseAction to the Scheduled Expense generation engine.
+func NewBudgetExpenseActionsFacade() (*expense.BudgetExpenseActionsFacade, func()) {
 	eventBus := expense.NewEventBus()
 	budgetExpenseRepository := NewBudgetExpenseRepository(eventBus)
 	searchTagRepository := NewExpenseSearchTagRepository()
@@ -207,16 +210,17 @@ func NewScheduledExpenseRepository() scheduledexpense.ScheduledExpenseRepository
 
 // NewScheduledExpenseGenerationConfigurer builds the in-process generation
 // engine (ADR 0005) as a WebServerConfigurer for main.go to hand to
-// WebServerProvisioner.RegisterConfigurer. expenseCreator must be the facade
-// main.go already built — building another would start a second
-// reclassification listener. Interval: budget-api.scheduled-expense.
-// generation.interval (Go duration, default 1h).
-func NewScheduledExpenseGenerationConfigurer(expenseCreator scheduledexpense.BudgetExpenseCreator) server.WebServerConfigurer {
+// WebServerProvisioner.RegisterConfigurer. createBudgetExpense must be the
+// action held by the facade main.go already built — building another facade
+// would start a second reclassification listener and Kafka client.
+// Interval: budget-api.scheduled-expense.generation.interval (Go duration,
+// default 1h).
+func NewScheduledExpenseGenerationConfigurer(createBudgetExpense *expense.CreateBudgetExpense) server.WebServerConfigurer {
 	job := &scheduledexpense.GenerateScheduledExpenses{
-		Repository:     NewScheduledExpenseRepository(),
-		ExpenseCreator: expenseCreator,
-		Today:          date.Today,
-		Logger:         logging.GetLoggerInstanceForComponentByTypeName("GenerateScheduledExpenses"),
+		Repository:          NewScheduledExpenseRepository(),
+		CreateBudgetExpense: createBudgetExpense,
+		Today:               date.Today,
+		Logger:              logging.GetLoggerInstanceForComponentByTypeName("GenerateScheduledExpenses"),
 	}
 	interval := configurationManager.GetConfigDurationFor("budget-api.scheduled-expense.generation.interval", time.Hour)
 	return scheduler.NewGocronGenerationConfigurer(job, interval)

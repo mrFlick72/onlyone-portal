@@ -81,7 +81,12 @@ func (f *fakeGenerationRepository) AdvanceLastEvaluatedDate(ctx context.Context,
 	return nil
 }
 
-type fakeExpenseCreator struct {
+// fakeBudgetExpenseRepository backs the real CreateBudgetExpense action: only
+// Save is implemented (the embedded nil port panics on anything else). It
+// records each save and can be told to fail or panic, simulating the
+// expense store.
+type fakeBudgetExpenseRepository struct {
+	expense.BudgetExpenseRepository
 	rec       *generationRecorder
 	created   []expense.BudgetExpense
 	users     []security.User
@@ -89,7 +94,7 @@ type fakeExpenseCreator struct {
 	panicFor  string
 }
 
-func (f *fakeExpenseCreator) CreateBudgetExpense(ctx context.Context, budgetExpense *expense.BudgetExpense) error {
+func (f *fakeBudgetExpenseRepository) Save(ctx context.Context, budgetExpense *expense.BudgetExpense) error {
 	user, _ := security.GetCurrentUser(ctx)
 	f.rec.record("create %s %s", *user.UserName, budgetExpense.Date.GetIsoFormattedDate())
 	if f.panicFor != "" && *user.UserName == f.panicFor {
@@ -103,20 +108,43 @@ func (f *fakeExpenseCreator) CreateBudgetExpense(ctx context.Context, budgetExpe
 	return nil
 }
 
-func newGeneration(today string, definitions ...ScheduledExpense) (*GenerateScheduledExpenses, *fakeGenerationRepository, *fakeExpenseCreator, *generationRecorder) {
-	rec := &generationRecorder{}
-	repository := &fakeGenerationRepository{rec: rec, definitions: definitions, advanceErrFor: map[string]error{}}
-	creator := &fakeExpenseCreator{rec: rec}
-	uut := &GenerateScheduledExpenses{
-		Repository:     repository,
-		ExpenseCreator: creator,
-		Today:          func() date.Date { return iso(today) },
-		Logger:         generationTestLogger,
-	}
-	return uut, repository, creator, rec
+type fakeBudgetExpenseEventPublisher struct {
+	created []expense.BudgetExpense
 }
 
-func createdDates(creator *fakeExpenseCreator) []string {
+func (f *fakeBudgetExpenseEventPublisher) CreateBudgetExpense(_ context.Context, budgetExpense expense.BudgetExpense) error {
+	f.created = append(f.created, budgetExpense)
+	return nil
+}
+
+func (f *fakeBudgetExpenseEventPublisher) UpdateBudgetExpense(context.Context, expense.BudgetExpense) error {
+	return nil
+}
+
+func (f *fakeBudgetExpenseEventPublisher) DeleteBudgetExpense(context.Context, expense.BudgetExpense) error {
+	return nil
+}
+
+// newGeneration wires the engine to the real CreateBudgetExpense action over
+// fake ports, so tests exercise the actual create path.
+func newGeneration(today string, definitions ...ScheduledExpense) (*GenerateScheduledExpenses, *fakeGenerationRepository, *fakeBudgetExpenseRepository, *generationRecorder) {
+	rec := &generationRecorder{}
+	repository := &fakeGenerationRepository{rec: rec, definitions: definitions, advanceErrFor: map[string]error{}}
+	expenses := &fakeBudgetExpenseRepository{rec: rec}
+	uut := &GenerateScheduledExpenses{
+		Repository: repository,
+		CreateBudgetExpense: &expense.CreateBudgetExpense{
+			Repository:     expenses,
+			EventPublisher: &fakeBudgetExpenseEventPublisher{},
+			Logger:         generationTestLogger,
+		},
+		Today:  func() date.Date { return iso(today) },
+		Logger: generationTestLogger,
+	}
+	return uut, repository, expenses, rec
+}
+
+func createdDates(creator *fakeBudgetExpenseRepository) []string {
 	dates := []string{}
 	for _, e := range creator.created {
 		dates = append(dates, e.Date.GetIsoFormattedDate())

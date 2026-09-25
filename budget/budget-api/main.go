@@ -26,7 +26,7 @@ func main() {
 
 	// Scheduled Expense generation engine (ADR 0005): runs at startup, then
 	// hourly; disposed on shutdown with the built-in configurers.
-	engine.RegisterConfigurer(config.NewScheduledExpenseGenerationConfigurer(expenseFacade))
+	engine.RegisterConfigurer(config.NewScheduledExpenseGenerationConfigurer(expenseFacade.CreateBudgetExpenseAction))
 
 	engine.StartEngine()
 }
