@@ -3,6 +3,7 @@ package expense
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -235,4 +236,85 @@ func TestFindBudgetExpensesByTimeRange(t *testing.T) {
 	facade.AssertCalled(t, "FindSpentBudget", ctx, date.NewMonthFor(budgetSearchCriteriaRepresentation.Month),
 		date.NewYearFor(budgetSearchCriteriaRepresentation.Year),
 		budgetSearchCriteriaRepresentation.SearchTagList)
+}
+
+// A failed save must surface as 500, never as the success status (#58).
+func TestCreateANewBudgetExpenseWhenFacadeFailsReturns500(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(BudgetExpenseActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
+
+	budgetExpense := expense.BudgetExpense{
+		Date:   testutils.SafeDateFor("01/01/2018"),
+		Amount: testutils.SafeMoneyFor("100.00"),
+		Note:   "Test note",
+		Tags:   []tags.SearchTag{{Key: "tagKey", Value: "tagValue"}},
+	}
+	jsonValue, _ := json.Marshal(BudgetExpenseRepresentation{
+		Date:   "01/01/2018",
+		Amount: "100.00",
+		Note:   "Test note",
+		Tags:   []tagRep.SearchTagRepresentation{{Key: "tagKey", Value: "tagValue"}},
+	})
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	facade.On("CreateBudgetExpense", ctx, &budgetExpense).Return(errors.New("ResourceNotFoundException: table not found"))
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+
+	req, _ := http.NewRequest("POST", "/api/budget/expense", bytes.NewBuffer(jsonValue))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestUpdateABudgetExpenseWhenFacadeFailsReturns500(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(BudgetExpenseActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
+
+	budgetExpense := expense.BudgetExpense{
+		Id:     "123-456",
+		Date:   testutils.SafeDateFor("01/01/2018"),
+		Amount: testutils.SafeMoneyFor("100.00"),
+		Note:   "Test note",
+		Tags:   []tags.SearchTag{{Key: "tagKey", Value: "tagValue"}},
+	}
+	jsonValue, _ := json.Marshal(BudgetExpenseRepresentation{
+		Date:   "01/01/2018",
+		Amount: "100.00",
+		Note:   "Test note",
+		Tags:   []tagRep.SearchTagRepresentation{{Key: "tagKey", Value: "tagValue"}},
+	})
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	facade.On("UpdateBudgetExpense", ctx, &budgetExpense).Return(errors.New("ConditionalCheckFailedException"))
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+
+	req, _ := http.NewRequest("PUT", "/api/budget/expense/123-456", bytes.NewBuffer(jsonValue))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestDeleteABudgetExpenseWhenFacadeFailsReturns500(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(BudgetExpenseActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterExpenseEndpoints(r, contextFactoryConverter, facade)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	facade.On("DeleteBudgetExpense", ctx, "123-456").Return(errors.New("budget expense not found or user not authorized to delete it"))
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+
+	req, _ := http.NewRequest("DELETE", "/api/budget/expense/123-456", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }

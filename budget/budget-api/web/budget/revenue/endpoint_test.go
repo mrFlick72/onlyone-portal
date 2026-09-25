@@ -3,6 +3,7 @@ package revenue
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -196,4 +197,75 @@ func TestFindRevenuesByYearBadQueryReturns400(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	facade.AssertNotCalled(t, "FindRevenue", mock.Anything, mock.Anything)
+}
+
+// A failed save must surface as 500, never as the success status (#58).
+func TestCreateANewRevenueWhenFacadeFailsReturns500(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(RevenueActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterRevenueEndpoints(r, contextFactoryConverter, facade)
+
+	domainRevenue := revenue.Revenue{
+		Date:   testutils.SafeDateFor("01/01/2018"),
+		Amount: testutils.SafeMoneyFor("100.00"),
+		Note:   "Test note",
+		Tags:   []tags.SearchTag{},
+	}
+	jsonValue, _ := json.Marshal(RevenueRepresentation{Date: "01/01/2018", Amount: "100.00", Note: "Test note"})
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	facade.On("CreateRevenue", ctx, &domainRevenue).Return(errors.New("ResourceNotFoundException: table not found"))
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+
+	req, _ := http.NewRequest("POST", "/api/budget/revenue", bytes.NewBuffer(jsonValue))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestUpdateARevenueWhenFacadeFailsReturns500(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(RevenueActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterRevenueEndpoints(r, contextFactoryConverter, facade)
+
+	domainRevenue := revenue.Revenue{
+		Id:     "123-456",
+		Date:   testutils.SafeDateFor("01/01/2018"),
+		Amount: testutils.SafeMoneyFor("100.00"),
+		Note:   "Test note",
+		Tags:   []tags.SearchTag{},
+	}
+	jsonValue, _ := json.Marshal(RevenueRepresentation{Date: "01/01/2018", Amount: "100.00", Note: "Test note"})
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	facade.On("UpdateRevenue", ctx, &domainRevenue).Return(errors.New("ConditionalCheckFailedException"))
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+
+	req, _ := http.NewRequest("PUT", "/api/budget/revenue/123-456", bytes.NewBuffer(jsonValue))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestDeleteARevenueWhenFacadeFailsReturns500(t *testing.T) {
+	r := SetUpRouter()
+	facade := new(RevenueActionsMock)
+	contextFactoryConverter := new(ContextFactoryConverterMock)
+	RegisterRevenueEndpoints(r, contextFactoryConverter, facade)
+
+	ctx := testutils.NewStubbedContextWith("USER")
+	facade.On("DeleteRevenue", ctx, "123-456").Return(errors.New("revenue not found or user not authorized to delete it"))
+	contextFactoryConverter.On("CreateContextFromGin", mock.AnythingOfType("*gin.Context")).Return(ctx)
+
+	req, _ := http.NewRequest("DELETE", "/api/budget/revenue/123-456", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }

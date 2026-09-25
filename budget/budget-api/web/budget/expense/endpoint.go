@@ -54,7 +54,11 @@ func RegisterExpenseEndpoints(
 			return
 		}
 		domainModel.Id = c.Param("id")
-		facade.UpdateBudgetExpense(ctx, domainModel)
+		if err := facade.UpdateBudgetExpense(ctx, domainModel); err != nil {
+			logger.LogErrorfFor("Error updating budget expense: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 		c.Status(http.StatusNoContent)
 	})
 
@@ -75,13 +79,21 @@ func RegisterExpenseEndpoints(
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		facade.CreateBudgetExpense(ctx, domainModel)
+		if err := facade.CreateBudgetExpense(ctx, domainModel); err != nil {
+			logger.LogErrorfFor("Error creating budget expense: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 		c.Status(http.StatusCreated)
 	})
 
 	r.DELETE("/api/budget/expense/:id", func(c *gin.Context) {
 		ctx := ContextFactoryConverter.CreateContextFromGin(c)
-		facade.DeleteBudgetExpense(ctx, c.Param("id"))
+		if err := facade.DeleteBudgetExpense(ctx, c.Param("id")); err != nil {
+			logger.LogErrorfFor("Error deleting budget expense: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 		c.Status(http.StatusNoContent)
 	})
 
